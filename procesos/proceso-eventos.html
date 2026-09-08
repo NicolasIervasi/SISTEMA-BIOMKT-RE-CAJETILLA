@@ -1,0 +1,227 @@
+<title>Proceso de eventos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..900&family=Source+Serif+4:opsz,wght@8..60,400..600&display=swap">
+
+<style>
+  :root{
+    --ground:#EDEEF0;
+    --surface:#FFFFFF;
+    --surface-2:#F4F5F7;
+    --ink:#15171B;
+    --ink-2:#434952;
+    --muted:#727A86;
+    --line:#D8DBE0;
+    --accent:#1F63A8;
+    --alerta:#B4611A;
+    --shadow:0 1px 2px rgba(20,22,26,.05), 0 10px 26px -20px rgba(20,22,26,.45);
+    --display:"Archivo","Helvetica Neue",Arial,sans-serif;
+    --body:"Source Serif 4",Georgia,"Times New Roman",serif;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#0F1114; --surface:#181B20; --surface-2:#1D2127;
+      --ink:#EAECEF; --ink-2:#C2C8D0; --muted:#8E97A2; --line:#2B3038;
+      --accent:#6FA8DC; --alerta:#DB9A4E;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 26px -20px rgba(0,0,0,.9);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#0F1114; --surface:#181B20; --surface-2:#1D2127;
+    --ink:#EAECEF; --ink-2:#C2C8D0; --muted:#8E97A2; --line:#2B3038;
+    --accent:#6FA8DC; --alerta:#DB9A4E;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 26px -20px rgba(0,0,0,.9);
+  }
+
+  *{box-sizing:border-box}
+  body{background:var(--ground);color:var(--ink);font-family:var(--body);font-size:17px;line-height:1.55}
+  .wrap{max-width:740px;margin:0 auto;padding:44px 22px 80px}
+  h1,h2,h3,.disp{font-family:var(--display);font-weight:800;font-stretch:118%;margin:0;text-wrap:balance}
+
+  header{border-bottom:2px solid var(--ink);padding-bottom:20px;margin-bottom:28px}
+  .kicker{font-family:var(--display);font-weight:800;font-stretch:125%;font-size:11.5px;letter-spacing:.16em;
+          text-transform:uppercase;color:var(--accent);display:block;margin-bottom:12px}
+  h1{font-size:clamp(2rem,6vw,2.9rem);line-height:1.02;font-stretch:125%;text-transform:uppercase}
+  .sub{margin:14px 0 0;color:var(--ink-2);max-width:54ch}
+
+  .idea{margin:24px 0 34px;padding:18px 20px;background:var(--surface);border:1px solid var(--line);
+        border-left:3px solid var(--accent);box-shadow:var(--shadow)}
+  .idea p{margin:0;font-size:18px}
+  .idea b{font-weight:600}
+
+  h2{font-size:12px;letter-spacing:.15em;text-transform:uppercase;font-stretch:125%;
+     padding-bottom:8px;border-bottom:2px solid var(--ink);margin:44px 0 18px}
+
+  .paso{display:grid;grid-template-columns:44px 1fr;gap:18px;padding-bottom:26px;position:relative}
+  .paso::before{content:"";position:absolute;left:21px;top:44px;bottom:0;width:1px;background:var(--line)}
+  .paso:last-of-type::before{display:none}
+  .n{width:44px;height:44px;border-radius:50%;background:var(--ink);color:var(--ground);
+     display:flex;align-items:center;justify-content:center;font-family:var(--display);font-weight:800;
+     font-stretch:112%;font-size:18px;position:relative;z-index:1}
+  .paso h3{font-size:21px;line-height:1.25;font-stretch:112%;font-weight:700;letter-spacing:-.005em;margin-bottom:8px;padding-top:8px}
+  .paso p{margin:0 0 10px;color:var(--ink-2);max-width:56ch}
+  .paso p:last-child{margin-bottom:0}
+  .define{margin-top:12px;padding:12px 14px;background:var(--surface-2);border:1px solid var(--line);font-size:15.5px}
+  .define b{font-family:var(--display);font-weight:800;font-stretch:110%;font-size:11px;letter-spacing:.13em;
+            text-transform:uppercase;color:var(--muted);display:block;margin-bottom:6px}
+  .define ul{margin:0;padding-left:18px}
+  .define li{margin-bottom:3px}
+  blockquote{margin:12px 0 0;padding-left:14px;border-left:2px solid var(--accent);
+             font-style:italic;color:var(--muted);font-size:15.5px;max-width:52ch}
+
+  .caso{background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);padding:20px 22px}
+  .caso h3{font-size:20px;font-stretch:112%;margin-bottom:4px}
+  .caso .estado{font-family:var(--display);font-weight:700;font-stretch:110%;font-size:12px;letter-spacing:.12em;
+                text-transform:uppercase;color:var(--accent);margin-bottom:16px;display:block}
+  .hitos{list-style:none;margin:0;padding:0}
+  .hitos li{display:grid;grid-template-columns:14px 1fr;gap:12px;padding:9px 0;border-top:1px solid var(--line);font-size:16px}
+  .hitos li:first-child{border-top:0}
+  .hitos i{width:9px;height:9px;border-radius:50%;background:var(--accent);display:block;margin-top:7px}
+  .hitos i.pend{background:transparent;border:2px solid var(--muted);width:10px;height:10px}
+  .hitos b{font-weight:600}
+  .hitos span{color:var(--ink-2)}
+
+  .confirmar{background:var(--surface);border:1px solid var(--line);border-top:3px solid var(--alerta);padding:18px 20px}
+  .confirmar ul{margin:0;padding-left:19px;color:var(--ink-2)}
+  .confirmar li{margin-bottom:9px;max-width:60ch}
+  .confirmar li:last-child{margin-bottom:0}
+  .confirmar code{font-family:var(--body);font-style:italic;color:var(--ink)}
+
+  footer{margin-top:40px;padding-top:14px;border-top:1px solid var(--line);color:var(--muted);font-size:14.5px;max-width:64ch}
+
+  @media (max-width:520px){
+    .paso{grid-template-columns:36px 1fr;gap:14px}
+    .paso::before{left:17px;top:36px}
+    .n{width:36px;height:36px;font-size:16px}
+    .paso h3{font-size:19px;padding-top:5px}
+  }
+</style>
+
+<div class="wrap">
+
+  <header>
+    <span class="kicker">Biomarketing · Proceso interno</span>
+    <h1>Cómo se arma un evento</h1>
+    <p class="sub">El paso a paso tal como lo contó Ari, ordenado. Siete pasos donde cada uno destraba al siguiente: hasta que no se cierra el lugar, no se define nada de lo que viene después.</p>
+  </header>
+
+  <div class="idea">
+    <p>La idea de fondo: <b>el cuestionario hace el trabajo</b>. Las preguntas del formulario de eventos, bien contestadas, definen solas el tipo de evento y la propuesta que hay que mandar. Por eso eventos es más simple que otros servicios.</p>
+  </div>
+
+  <h2>El proceso</h2>
+
+  <div class="paso">
+    <div class="n">1</div>
+    <div>
+      <h3>Pasar el cuestionario de eventos</h3>
+      <p>Nada arranca antes de esto. Las respuestas son las que terminan de definir todo lo demás, así que el trabajo real es que el cliente conteste bien.</p>
+      <blockquote>“Con las preguntas en sí se termina de definir todo.”</blockquote>
+    </div>
+  </div>
+
+  <div class="paso">
+    <div class="n">2</div>
+    <div>
+      <h3>Definir cuánta gente va</h3>
+      <p>Es la pregunta que ordena el resto. De la cantidad de personas sale qué tipo de evento es, y de ahí qué tipo de propuesta hay que enviar.</p>
+      <div class="define">
+        <b>Con esto ya sabés</b>
+        <ul>
+          <li>Qué tipo de evento va a ser</li>
+          <li>Qué propuesta corresponde mandar</li>
+          <li>Qué escala de lugar hay que buscar</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="paso">
+    <div class="n">3</div>
+    <div>
+      <h3>Pedir tres lugares</h3>
+      <p>Se le piden tres opciones de sede al contacto de la ciudad — en el evento anterior, a Lorena. Siempre tres: da margen para elegir sin volver a empezar la búsqueda.</p>
+    </div>
+  </div>
+
+  <div class="paso">
+    <div class="n">4</div>
+    <div>
+      <h3>Mandar la propuesta con las tres opciones</h3>
+      <p>La propuesta de evento sale con los tres lugares adentro, armada según el tipo de evento que quedó definido en el paso 2.</p>
+    </div>
+  </div>
+
+  <div class="paso">
+    <div class="n">5</div>
+    <div>
+      <h3>Elegir el lugar entre todos</h3>
+      <p>La decisión se toma en conjunto, no la define una sola persona. Este es el paso bisagra: recién con la sede cerrada se puede definir lo que sigue.</p>
+    </div>
+  </div>
+
+  <div class="paso">
+    <div class="n">6</div>
+    <div>
+      <h3>Con el lugar cerrado, definir el contenido y la logística</h3>
+      <p>Todo esto depende de la sede, por eso va después y no antes.</p>
+      <div class="define">
+        <b>Se define</b>
+        <ul>
+          <li><b>Temario</b> — de qué se va a hablar</li>
+          <li><b>Lineup</b> — quiénes hablan y en qué orden</li>
+          <li><b>Aliados estratégicos</b></li>
+          <li><b>Merienda / catering</b> — qué se come</li>
+          <li><b>Sponsors</b></li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <div class="paso">
+    <div class="n">7</div>
+    <div>
+      <h3>Cerrar sponsors y proveedores, uno por uno</h3>
+      <p>Reunión por reunión: cada acuerdo cerrado habilita el siguiente, y sumar un sponsor suele abrir la puerta a otro.</p>
+    </div>
+  </div>
+
+  <div class="paso">
+    <div class="n">8</div>
+    <div>
+      <h3>Recién ahí, comunicar</h3>
+      <p>No se anuncia con el evento a medio armar. Se termina de definir todo y se llega a la fecha con el evento cerrado, listo para contar.</p>
+      <blockquote>“Estamos terminando de definir todo para contar… ya tenemos todo armado para noviembre.”</blockquote>
+    </div>
+  </div>
+
+  <h2>El caso en curso</h2>
+
+  <div class="caso">
+    <h3>Tandil · noviembre</h3>
+    <span class="estado">En paso 7 · cerrando sponsors</span>
+    <ul class="hitos">
+      <li><i></i><span><b>Arnie</b> — se está amasando el evento con él</span></li>
+      <li><i></i><span><b>Vero (del surtidor)</b> — ya contactada</span></li>
+      <li><i class="pend"></i><span><b>Reunión con Vero</b> — la próxima semana</span></li>
+      <li><i class="pend"></i><span><b>Reunión con Lorena</b> — después de Vero</span></li>
+      <li><i class="pend"></i><span><b>Más sponsors</b> — se abren después de esas dos reuniones</span></li>
+      <li><i class="pend"></i><span><b>La chica del hotel</b> — pendiente</span></li>
+      <li><i class="pend"></i><span><b>Anuncio</b> — cuando esté todo cerrado, para llegar armados a noviembre</span></li>
+    </ul>
+  </div>
+
+  <h2>Preguntarle a Ari antes de dar esto por cerrado</h2>
+
+  <div class="confirmar">
+    <ul>
+      <li>El audio nombra un evento anterior que el transcriptor se comió (<code>“el evento de entendí”</code> y <code>“lo mismo que hicimos con tambiény”</code>). Hay que saber cuál es: es el modelo que se está copiando.</li>
+      <li>Antes de “los sponsors” arranca otra categoría de aliados que quedó cortada (<code>“buscarlos lo que serían los… ahí no me sale”</code>). Falta ese ítem del paso 6.</li>
+      <li>Los roles de <b>Lorena</b> y <b>Vero</b> se cruzan en el audio (ella misma se corrige). Quién consigue los lugares y quién es sponsor.</li>
+      <li>No aparece en ningún momento el <b>presupuesto</b>: si hay un paso de cotización o cierre comercial, va entre el 4 y el 5 y falta acá.</li>
+    </ul>
+  </div>
+
+  <footer>Reconstruido del audio de Ari del 8/9. Los pasos y el orden son los que ella describe; los títulos son nuestros.</footer>
+
+</div>
