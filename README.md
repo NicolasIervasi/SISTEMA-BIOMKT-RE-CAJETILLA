@@ -10,10 +10,10 @@ Repositorio de guiones y material audiovisual.
 
 ## Calendario
 
-- [`calendario/calendario-pau-nutri-sep-oct-2026.html`](calendario/calendario-pau-nutri-sep-oct-2026.html) — plan de 14 piezas (08/09 → 21/10 2026): grilla mensual, estado de producción, peso de cada eje de comunicación y pendientes por resolver.
+- [`calendario/calendario-pau-nutri-sep-oct-2026.html`](calendario/calendario-pau-nutri-sep-oct-2026.html) — versión simple para Pau: las 14 piezas (09/09 → 21/10 2026) con día, formato, tema y qué falta de cada una. Sin métricas ni jerga interna — el análisis de la grilla (mezcla de formatos, cadencia, ejes) está en el historial de git.
 
 ## Estructura
 
 - `guiones/` — un archivo por guion, numerado (`guion-NN-slug.md`). Cada guion incluye formato, por qué funciona, el guion completo (gancho, desarrollo, CTA, cierre) e indicaciones de producción.
 - `guiones/guion-NN-*-visual.html` — versión visual de rodaje del mismo guion: línea de tiempo, beats con timecode y encuadre, textos en pantalla, placas gráficas y guion corrido para teleprompter. Se publica como Artifact para compartir con el equipo de producción.
-- `calendario/` — planificación por período. El calendario se arma sobre un único array `ITEMS` en el HTML: agregar o cambiar una pieza ahí actualiza la grilla, los totales y los gráficos.
+- `calendario/` — planificación por período. Cada posteo es un bloque `.fila` en el HTML: día, formato, tema y estado (`e-listo`, `e-falta`, `e-sin`).
