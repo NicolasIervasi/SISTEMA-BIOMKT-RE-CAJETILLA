@@ -1,0 +1,458 @@
+<title>Batido post-entreno</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..900&family=Source+Serif+4:opsz,wght@8..60,400..700&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+  :root{
+    --ground:#EDEEF0;
+    --surface:#FFFFFF;
+    --surface-2:#F4F5F7;
+    --ink:#15171B;
+    --ink-2:#3D434C;
+    --muted:#6E7683;
+    --line:#D7DADF;
+    --line-strong:#BFC4CB;
+    --comida:#B14A1C;
+    --comida-soft:#F4E4DA;
+    --supl:#2E5F86;
+    --supl-soft:#DEE8F0;
+    --frame-bg:#DEE1E5;
+    --frame-fig:#A3ABB5;
+    --frame-line:#B9C0C8;
+    --shadow:0 1px 2px rgba(20,22,26,.06), 0 8px 24px -16px rgba(20,22,26,.35);
+
+    --display:"Archivo","Helvetica Neue",Arial,sans-serif;
+    --body:"Source Serif 4",Georgia,"Times New Roman",serif;
+    --mono:"IBM Plex Mono",ui-monospace,"SF Mono",Menlo,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#0F1114;
+      --surface:#171A1F;
+      --surface-2:#1C2026;
+      --ink:#E9EBEE;
+      --ink-2:#C0C6CE;
+      --muted:#8C95A1;
+      --line:#2A2F37;
+      --line-strong:#3A414A;
+      --comida:#E27A41;
+      --comida-soft:#2C1C13;
+      --supl:#82B2D8;
+      --supl-soft:#14212C;
+      --frame-bg:#22262C;
+      --frame-fig:#49525C;
+      --frame-line:#333941;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.9);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#0F1114;
+    --surface:#171A1F;
+    --surface-2:#1C2026;
+    --ink:#E9EBEE;
+    --ink-2:#C0C6CE;
+    --muted:#8C95A1;
+    --line:#2A2F37;
+    --line-strong:#3A414A;
+    --comida:#E27A41;
+    --comida-soft:#2C1C13;
+    --supl:#82B2D8;
+    --supl-soft:#14212C;
+    --frame-bg:#22262C;
+    --frame-fig:#49525C;
+    --frame-line:#333941;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 8px 24px -16px rgba(0,0,0,.9);
+  }
+
+  *{box-sizing:border-box}
+  body{
+    background:var(--ground);
+    color:var(--ink);
+    font-family:var(--body);
+    font-size:17px;
+    line-height:1.55;
+    -webkit-font-smoothing:antialiased;
+  }
+  .wrap{max-width:1040px;margin:0 auto;padding:40px 24px 72px}
+
+  h1,h2,h3,.disp{font-family:var(--display);font-weight:800;font-stretch:118%;letter-spacing:-.015em;text-wrap:balance;margin:0}
+  .lbl{font-family:var(--mono);font-size:11px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+
+  /* ---------- Encabezado ---------- */
+  .hero{border-bottom:2px solid var(--ink);padding-bottom:26px;margin-bottom:34px}
+  .hero .eyebrow{display:flex;gap:14px;align-items:baseline;flex-wrap:wrap;margin-bottom:18px}
+  .num{font-family:var(--display);font-stretch:125%;font-weight:900;font-size:13px;letter-spacing:.08em;
+       background:var(--ink);color:var(--ground);padding:3px 9px 2px}
+  h1{font-size:clamp(2.1rem,6.2vw,3.5rem);line-height:.98;font-stretch:125%;text-transform:uppercase;max-width:15ch}
+  .thesis{margin:20px 0 0;font-size:clamp(1.05rem,2.2vw,1.3rem);color:var(--ink-2);max-width:56ch;font-style:italic}
+  .thesis b{font-style:normal;font-weight:600;color:var(--comida)}
+
+  .meta{display:flex;flex-wrap:wrap;gap:0;margin-top:26px;border-top:1px solid var(--line)}
+  .meta div{flex:1 1 150px;padding:12px 16px 12px 0;border-right:1px solid var(--line)}
+  .meta div:last-child{border-right:0}
+  .meta .v{font-family:var(--display);font-weight:700;font-stretch:112%;font-size:15px;margin-top:3px;display:block}
+
+  /* ---------- Línea de tiempo ---------- */
+  .tl{margin:0 0 40px}
+  .tl-bar{display:flex;gap:2px;margin-top:10px}
+  .tl-seg{position:relative;padding:9px 8px 9px 9px;background:var(--surface);border-top:3px solid var(--line-strong);
+          font-family:var(--mono);font-size:10px;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);
+          overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
+  .tl-seg.k-hook{border-top-color:var(--ink);color:var(--ink)}
+  .tl-seg.k-food{border-top-color:var(--comida);color:var(--comida)}
+  .tl-seg.k-supl{border-top-color:var(--supl);color:var(--supl)}
+  .tl-seg.k-cta{border-top-color:var(--ink);color:var(--ink)}
+  .tl-foot{display:flex;justify-content:space-between;margin-top:7px;font-family:var(--mono);font-size:11px;color:var(--muted)}
+
+  /* ---------- Beats ---------- */
+  .beats{display:flex;flex-direction:column;gap:0;border-top:1px solid var(--line)}
+  .beat{display:grid;grid-template-columns:96px 1fr;gap:22px;padding:26px 0;border-bottom:1px solid var(--line);align-items:start}
+  .frame{width:96px;aspect-ratio:9/16;border:1px solid var(--frame-line);background:var(--frame-bg);border-radius:3px;overflow:hidden;position:sticky;top:18px}
+  .frame svg{display:block;width:100%;height:100%}
+
+  .beat-head{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin-bottom:12px}
+  .tc{font-family:var(--mono);font-size:12px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink);
+      background:var(--surface-2);border:1px solid var(--line);padding:2px 7px;border-radius:2px}
+  .beat-name{font-family:var(--display);font-weight:800;font-stretch:118%;font-size:12px;letter-spacing:.12em;text-transform:uppercase}
+  .k-hook .beat-name,.beat.k-hook .beat-name{color:var(--ink)}
+  .beat.k-food .beat-name{color:var(--comida)}
+  .beat.k-supl .beat-name{color:var(--supl)}
+  .beat.k-cta .beat-name{color:var(--ink)}
+
+  .line{font-size:clamp(1.15rem,2.5vw,1.42rem);line-height:1.4;max-width:44ch;margin:0;color:var(--ink)}
+  .line .strike{text-decoration:line-through;text-decoration-thickness:2px;text-decoration-color:var(--comida)}
+
+  .notes{display:flex;flex-direction:column;gap:7px;margin-top:16px;max-width:60ch}
+  .note{display:grid;grid-template-columns:104px 1fr;gap:12px;align-items:baseline;font-size:14.5px;color:var(--ink-2)}
+  .note .lbl{padding-top:1px}
+  .note .os{font-family:var(--display);font-weight:700;font-stretch:112%;letter-spacing:.02em;color:var(--ink);
+            border-bottom:2px solid var(--comida);display:inline}
+  .note .none{color:var(--muted);font-style:italic}
+
+  /* ---------- Placa COMIDA / SUPLEMENTO ---------- */
+  .plate{margin:46px 0}
+  .plate-cap{display:flex;justify-content:space-between;align-items:baseline;gap:16px;margin-bottom:10px;flex-wrap:wrap}
+  .split{display:grid;grid-template-columns:1fr 1fr;background:var(--line-strong);gap:2px;border:2px solid var(--ink);box-shadow:var(--shadow)}
+  .pane{padding:26px 22px 24px;min-height:240px;display:flex;flex-direction:column}
+  .pane.food{background:var(--comida-soft)}
+  .pane.supp{background:var(--supl-soft)}
+  .pane h3{font-size:clamp(1.6rem,4.6vw,2.4rem);font-stretch:125%;text-transform:uppercase;line-height:.95}
+  .pane.food h3{color:var(--comida)}
+  .pane.supp h3{color:var(--supl)}
+  .pane .role{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;margin-top:8px;color:var(--ink-2)}
+  .sources{list-style:none;margin:18px 0 0;padding:0;display:flex;flex-wrap:wrap;gap:6px}
+  .sources li{font-family:var(--display);font-weight:600;font-stretch:106%;font-size:14px;
+              background:var(--surface);border:1px solid var(--line);color:var(--ink);padding:4px 10px;border-radius:2px}
+  .pane p{font-size:15px;color:var(--ink-2);margin:18px 0 0;max-width:34ch}
+  .pane .kicker{margin-top:auto;padding-top:18px;font-family:var(--display);font-weight:800;font-stretch:112%;
+                font-size:14px;letter-spacing:.03em;text-transform:uppercase}
+  .pane.food .kicker{color:var(--comida)}
+  .pane.supp .kicker{color:var(--supl)}
+
+  /* ---------- Bloques inferiores ---------- */
+  .cols{display:grid;grid-template-columns:1.05fr .95fr;gap:34px;margin-top:46px;align-items:start}
+  h2{font-size:13px;letter-spacing:.14em;text-transform:uppercase;font-stretch:125%;padding-bottom:9px;border-bottom:2px solid var(--ink);margin-bottom:16px}
+  .why p{margin:0 0 14px;max-width:52ch;color:var(--ink-2)}
+  .why p:first-of-type{color:var(--ink)}
+
+  .checks{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:1px;background:var(--line)}
+  .checks li{background:var(--surface);padding:11px 14px;font-size:14.5px;display:grid;grid-template-columns:auto 1fr;gap:11px;align-items:baseline}
+  .checks li::before{content:"";width:11px;height:11px;border:1.5px solid var(--line-strong);border-radius:2px;display:block;transform:translateY(1px)}
+  .checks li b{font-family:var(--display);font-weight:700;font-stretch:110%}
+
+  .prompter{margin-top:46px}
+  .prompter-body{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--comida);
+                 padding:26px 28px;box-shadow:var(--shadow)}
+  .prompter-body p{margin:0 0 15px;font-size:19px;line-height:1.5;max-width:62ch}
+  .prompter-body p:last-child{margin-bottom:0}
+  .prompter-body .cue{font-family:var(--mono);font-size:11px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:4px}
+
+  footer{margin-top:46px;padding-top:16px;border-top:1px solid var(--line);font-size:13.5px;color:var(--muted);max-width:70ch}
+  footer code{font-family:var(--mono);font-size:12.5px;color:var(--ink-2)}
+
+  @media (max-width:820px){
+    .cols{grid-template-columns:1fr;gap:34px}
+    .split{grid-template-columns:1fr}
+    .beat{grid-template-columns:64px 1fr;gap:16px}
+    .frame{width:64px;position:static}
+    .note{grid-template-columns:1fr;gap:2px}
+    .tl-bar{flex-wrap:wrap}
+    .tl-seg{flex:1 1 90px}
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="hero">
+    <div class="eyebrow">
+      <span class="num">GUION 01</span>
+      <span class="lbl">Biomarketing · Nutrición · Post-entreno</span>
+    </div>
+    <h1>El batido de proteína no es obligatorio</h1>
+    <p class="thesis">“El batido de proteína es <b>una herramienta</b>, no un requisito del entrenamiento.”</p>
+    <div class="meta">
+      <div><span class="lbl">Formato</span><span class="v">Reel vertical 9:16</span></div>
+      <div><span class="lbl">Recurso</span><span class="v">Hablando a cámara</span></div>
+      <div><span class="lbl">Presenta</span><span class="v">Paula</span></div>
+      <div><span class="lbl">Duración est.</span><span class="v">1:10</span></div>
+      <div><span class="lbl">Prop</span><span class="v">Shaker</span></div>
+    </div>
+  </header>
+
+  <section class="tl">
+    <span class="lbl">Estructura en el tiempo · 8 beats</span>
+    <div class="tl-bar">
+      <div class="tl-seg k-hook" style="flex:7">Gancho</div>
+      <div class="tl-seg k-food" style="flex:8">Contexto</div>
+      <div class="tl-seg k-food" style="flex:10">Giro</div>
+      <div class="tl-seg k-supl" style="flex:6">Placa</div>
+      <div class="tl-seg k-supl" style="flex:14">Mito del reloj</div>
+      <div class="tl-seg k-food" style="flex:7">Remate</div>
+      <div class="tl-seg k-cta" style="flex:8">CTA</div>
+      <div class="tl-seg k-cta" style="flex:10">Cierre</div>
+    </div>
+    <div class="tl-foot"><span>0:00</span><span>0:35</span><span>1:10</span></div>
+  </section>
+
+  <div class="beats">
+
+    <article class="beat k-hook">
+      <div class="frame">
+        <svg viewBox="0 0 90 160" role="img" aria-label="Plano medio de Paula con shaker en la mano">
+          <rect width="90" height="160" fill="var(--frame-bg)"/>
+          <rect x="7" y="9" width="76" height="142" fill="none" stroke="var(--frame-line)" stroke-dasharray="3 3"/>
+          <circle cx="42" cy="58" r="14" fill="var(--frame-fig)"/>
+          <path d="M18 122c0-16 11-27 24-27s24 11 24 27z" fill="var(--frame-fig)"/>
+          <rect x="60" y="86" width="11" height="22" rx="2" fill="var(--comida)"/>
+          <rect x="61.5" y="83" width="8" height="4" rx="1" fill="var(--comida)"/>
+          <rect x="16" y="128" width="58" height="22" fill="none" stroke="var(--frame-line)"/>
+        </svg>
+      </div>
+      <div>
+        <div class="beat-head"><span class="tc">0:00 – 0:07</span><span class="beat-name">Gancho</span></div>
+        <p class="line">“¿Se te terminó la proteína? Tranquilo: no vas a perder masa muscular ni lo logrado en la semana de entrenamiento.”</p>
+        <div class="notes">
+          <div class="note"><span class="lbl">Encuadre</span><span>Plano medio, cámara a la altura de los ojos, fondo limpio.</span></div>
+          <div class="note"><span class="lbl">Acción</span><span>Entra con el shaker en la mano y lo apoya sobre la mesa al cerrar la frase.</span></div>
+          <div class="note"><span class="lbl">En pantalla</span><span class="none">Nada. El gancho lo sostiene la cara y la frase.</span></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="beat k-food">
+      <div class="frame">
+        <svg viewBox="0 0 90 160" role="img" aria-label="Plano medio con subtítulo inferior">
+          <rect width="90" height="160" fill="var(--frame-bg)"/>
+          <rect x="7" y="9" width="76" height="142" fill="none" stroke="var(--frame-line)" stroke-dasharray="3 3"/>
+          <circle cx="45" cy="56" r="14" fill="var(--frame-fig)"/>
+          <path d="M21 120c0-16 11-27 24-27s24 11 24 27z" fill="var(--frame-fig)"/>
+          <rect x="18" y="128" width="54" height="6" rx="1" fill="var(--comida)"/>
+          <rect x="26" y="139" width="38" height="6" rx="1" fill="var(--frame-line)"/>
+        </svg>
+      </div>
+      <div>
+        <div class="beat-head"><span class="tc">0:07 – 0:15</span><span class="beat-name">Contexto</span></div>
+        <p class="line">“La proteína después de entrenar importa, sobre todo si hacés fuerza y querés tener buena recuperación o ganar masa muscular.”</p>
+        <div class="notes">
+          <div class="note"><span class="lbl">Encuadre</span><span>Se mantiene el plano medio del gancho.</span></div>
+          <div class="note"><span class="lbl">En pantalla</span><span><span class="os">LA PROTEÍNA SÍ IMPORTA</span> — se concede el punto antes de discutirlo.</span></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="beat k-food">
+      <div class="frame">
+        <svg viewBox="0 0 90 160" role="img" aria-label="Fuentes de proteína apareciendo en pantalla">
+          <rect width="90" height="160" fill="var(--frame-bg)"/>
+          <rect x="7" y="9" width="76" height="142" fill="none" stroke="var(--frame-line)" stroke-dasharray="3 3"/>
+          <circle cx="30" cy="60" r="12" fill="var(--frame-fig)"/>
+          <path d="M9 118c0-14 9.4-24 21-24s21 10 21 24z" fill="var(--frame-fig)"/>
+          <rect x="52" y="44" width="30" height="9" rx="1.5" fill="var(--comida)" opacity=".95"/>
+          <rect x="52" y="57" width="24" height="9" rx="1.5" fill="var(--comida)" opacity=".75"/>
+          <rect x="52" y="70" width="28" height="9" rx="1.5" fill="var(--comida)" opacity=".55"/>
+          <rect x="52" y="83" width="21" height="9" rx="1.5" fill="var(--comida)" opacity=".35"/>
+        </svg>
+      </div>
+      <div>
+        <div class="beat-head"><span class="tc">0:15 – 0:25</span><span class="beat-name">Giro</span></div>
+        <p class="line">“Pero proteína no significa automáticamente proteína en polvo. Podés obtenerla de huevos, carne, pollo, pescado, lácteos o cualquier otra fuente que forme parte de tu alimentación.”</p>
+        <div class="notes">
+          <div class="note"><span class="lbl">Encuadre</span><span>Paula se corre a un lado del cuadro: se libera el aire de la derecha para los textos.</span></div>
+          <div class="note"><span class="lbl">En pantalla</span><span>Las fuentes entran una por una, al ritmo de la enumeración: <span class="os">HUEVOS · CARNE · POLLO · PESCADO · LÁCTEOS</span></span></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="beat k-supl">
+      <div class="frame">
+        <svg viewBox="0 0 90 160" role="img" aria-label="Placa dividida comida y suplemento">
+          <rect width="90" height="160" fill="var(--frame-bg)"/>
+          <rect x="0" y="30" width="45" height="100" fill="var(--comida)" opacity=".85"/>
+          <rect x="45" y="30" width="45" height="100" fill="var(--supl)" opacity=".85"/>
+          <rect x="43.5" y="30" width="3" height="100" fill="var(--frame-bg)"/>
+          <rect x="8" y="70" width="29" height="7" rx="1" fill="#fff" opacity=".92"/>
+          <rect x="53" y="70" width="29" height="7" rx="1" fill="#fff" opacity=".92"/>
+          <rect x="53" y="81" width="18" height="5" rx="1" fill="#fff" opacity=".6"/>
+        </svg>
+      </div>
+      <div>
+        <div class="beat-head"><span class="tc">0:25 – 0:31</span><span class="beat-name">Placa clave</span></div>
+        <p class="line">“El suplemento hace exactamente eso: suplementa. Es una forma más de aumentar tu consumo de proteína.”</p>
+        <div class="notes">
+          <div class="note"><span class="lbl">En pantalla</span><span>Pantalla partida al medio: <span class="os">COMIDA</span> a la izquierda, <span class="os">SUPLEMENTO</span> a la derecha. Es la placa que sostiene todo el video (detalle abajo).</span></div>
+          <div class="note"><span class="lbl">Ritmo</span><span>La división entra seca, sin transición, sobre la palabra “suplementa”.</span></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="beat k-supl">
+      <div class="frame">
+        <svg viewBox="0 0 90 160" role="img" aria-label="30 minutos tachado y 24 a 48 horas">
+          <rect width="90" height="160" fill="var(--frame-bg)"/>
+          <rect x="7" y="9" width="76" height="142" fill="none" stroke="var(--frame-line)" stroke-dasharray="3 3"/>
+          <circle cx="45" cy="52" r="17" fill="none" stroke="var(--frame-fig)" stroke-width="3"/>
+          <path d="M45 42v11l7 5" fill="none" stroke="var(--frame-fig)" stroke-width="3" stroke-linecap="round"/>
+          <line x1="27" y1="70" x2="63" y2="34" stroke="var(--comida)" stroke-width="3.5"/>
+          <rect x="20" y="94" width="50" height="12" rx="1.5" fill="var(--supl)"/>
+          <rect x="28" y="111" width="34" height="6" rx="1" fill="var(--frame-line)"/>
+        </svg>
+      </div>
+      <div>
+        <div class="beat-head"><span class="tc">0:31 – 0:45</span><span class="beat-name">Mito del reloj</span></div>
+        <p class="line">“No existe un reloj que a los treinta minutos post entreno diga: ‘listo, perdiste tu oportunidad’. Hay estudios que indican que inclusive 24 a 48 horas post ejercicio tus músculos siguen asimilando la proteína que estás ingiriendo.”</p>
+        <div class="notes">
+          <div class="note"><span class="lbl">En pantalla</span><span><span class="os"><span class="strike">30 MIN</span></span> se tacha y da paso a <span class="os">24 – 48 HS</span></span></div>
+          <div class="note"><span class="lbl">Acción</span><span>Gesto de “tiempo” con la mano en “treinta minutos”; se abre en “24 a 48 horas”.</span></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="beat k-food">
+      <div class="frame">
+        <svg viewBox="0 0 90 160" role="img" aria-label="Comparación día completo contra treinta minutos">
+          <rect width="90" height="160" fill="var(--frame-bg)"/>
+          <rect x="7" y="9" width="76" height="142" fill="none" stroke="var(--frame-line)" stroke-dasharray="3 3"/>
+          <circle cx="45" cy="54" r="13" fill="var(--frame-fig)"/>
+          <path d="M22 118c0-15 10-25 23-25s23 10 23 25z" fill="var(--frame-fig)"/>
+          <rect x="14" y="126" width="45" height="10" rx="1.5" fill="var(--comida)"/>
+          <rect x="61" y="126" width="10" height="10" rx="1.5" fill="var(--frame-line)"/>
+        </svg>
+      </div>
+      <div>
+        <div class="beat-head"><span class="tc">0:45 – 0:52</span><span class="beat-name">Remate</span></div>
+        <p class="line">“Lo que hacés durante todo el día importa mucho más que entrar en pánico por esos treinta minutos.”</p>
+        <div class="notes">
+          <div class="note"><span class="lbl">En pantalla</span><span>Barra larga vs. barra corta: <span class="os">TODO EL DÍA</span> junto a un bloque mínimo de 30 min.</span></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="beat k-cta">
+      <div class="frame">
+        <svg viewBox="0 0 90 160" role="img" aria-label="Llamado a escribir por privado">
+          <rect width="90" height="160" fill="var(--frame-bg)"/>
+          <rect x="7" y="9" width="76" height="142" fill="none" stroke="var(--frame-line)" stroke-dasharray="3 3"/>
+          <circle cx="45" cy="50" r="14" fill="var(--frame-fig)"/>
+          <path d="M21 112c0-16 11-26 24-26s24 10 24 26z" fill="var(--frame-fig)"/>
+          <rect x="18" y="120" width="54" height="24" rx="3" fill="var(--ink)"/>
+          <rect x="25" y="128" width="40" height="4" rx="1" fill="var(--ground)"/>
+          <rect x="25" y="135" width="26" height="4" rx="1" fill="var(--ground)" opacity=".6"/>
+        </svg>
+      </div>
+      <div>
+        <div class="beat-head"><span class="tc">0:52 – 1:00</span><span class="beat-name">Llamado a la acción</span></div>
+        <p class="line">“Si querés saber cuánta proteína necesita tu cuerpo para lograr tus objetivos, escribime por privado y agendamos una consulta.”</p>
+        <div class="notes">
+          <div class="note"><span class="lbl">Acción</span><span>Vuelve al centro del cuadro y habla directo a cámara, sin props.</span></div>
+          <div class="note"><span class="lbl">En pantalla</span><span><span class="os">ESCRIBIME POR PRIVADO</span> en la zona segura inferior, por encima del copy de Instagram.</span></div>
+        </div>
+      </div>
+    </article>
+
+    <article class="beat k-cta">
+      <div class="frame">
+        <svg viewBox="0 0 90 160" role="img" aria-label="Cierre con shaker y llamada a guardar el video">
+          <rect width="90" height="160" fill="var(--frame-bg)"/>
+          <rect x="7" y="9" width="76" height="142" fill="none" stroke="var(--frame-line)" stroke-dasharray="3 3"/>
+          <circle cx="40" cy="54" r="13" fill="var(--frame-fig)"/>
+          <path d="M17 116c0-15 10-25 23-25s23 10 23 25z" fill="var(--frame-fig)"/>
+          <rect x="61" y="80" width="12" height="24" rx="2" fill="var(--comida)"/>
+          <rect x="62.5" y="76" width="9" height="4" rx="1" fill="var(--comida)"/>
+          <path d="M33 124h24v22l-12-8-12 8z" fill="var(--ink)"/>
+        </svg>
+      </div>
+      <div>
+        <div class="beat-head"><span class="tc">1:00 – 1:10</span><span class="beat-name">Cierre</span></div>
+        <p class="line">“El batido puede ser práctico. Obligatorio, no. Guardate este video para la próxima vez que alguien te diga que tenés que tomarlo sí o sí después de entrenar.”</p>
+        <div class="notes">
+          <div class="note"><span class="lbl">Acción</span><span>Levanta el shaker y lo vuelve a apoyar: cierra el gesto que abrió el video.</span></div>
+          <div class="note"><span class="lbl">En pantalla</span><span>Ícono de guardado + <span class="os">GUARDALO</span></span></div>
+        </div>
+      </div>
+    </article>
+
+  </div>
+
+  <section class="plate">
+    <div class="plate-cap">
+      <span class="lbl">Placa obligatoria · 0:25 – 0:31</span>
+      <span class="lbl">La división es el video entero en una imagen</span>
+    </div>
+    <div class="split">
+      <div class="pane food">
+        <h3>Comida</h3>
+        <span class="role">La base · cubre el requerimiento</span>
+        <ul class="sources">
+          <li>Huevos</li><li>Carne</li><li>Pollo</li><li>Pescado</li><li>Lácteos</li><li>Otras fuentes</li>
+        </ul>
+        <p>Si tu alimentación ya cubre la proteína que necesitás, el objetivo está cumplido acá.</p>
+        <span class="kicker">Esto es lo que sostiene el resultado</span>
+      </div>
+      <div class="pane supp">
+        <h3>Suplemento</h3>
+        <span class="role">La herramienta · practicidad</span>
+        <ul class="sources"><li>Proteína en polvo</li></ul>
+        <p>Una forma más de aumentar tu consumo de proteína cuando la comida no llega o no es cómoda.</p>
+        <span class="kicker">Suma. No es un requisito</span>
+      </div>
+    </div>
+  </section>
+
+  <div class="cols">
+    <section class="why">
+      <h2>Por qué funciona</h2>
+      <p>Ataca una escena completamente instalada en el gimnasio: terminar la última serie y automáticamente preparar el shaker.</p>
+      <p>El punto no es decir que la proteína en polvo “no sirve”, sino ubicarla en el lugar correcto. Si la persona cubre sus necesidades de proteína con comida, no necesita agregar un batido simplemente porque terminó de entrenar.</p>
+      <p>Por eso el video concede primero (“la proteína post-entreno importa”) y recién después corre el foco: el enemigo no es el suplemento, es la obligación.</p>
+    </section>
+
+    <section>
+      <h2>Propuesta de producción</h2>
+      <ul class="checks">
+        <li><span><b>Vertical 9:16</b> (1080 × 1920), audio con micrófono cercano.</span></li>
+        <li><span><b>Shaker en mano</b> en el gancho, vuelve en el cierre: el prop abre y cierra.</span></li>
+        <li><span><b>Placa COMIDA / SUPLEMENTO</b> dividida, sin transición, en 0:25.</span></li>
+        <li><span><b>Subtítulos quemados</b>: el reel se ve sin sonido.</span></li>
+        <li><span><b>Zona segura inferior</b> libre: ahí entra el copy de Instagram.</span></li>
+        <li><span><b>Sin cifras de gramos</b> en pantalla: la cantidad se resuelve en la consulta.</span></li>
+      </ul>
+    </section>
+  </div>
+
+  <section class="prompter">
+    <h2>Guion corrido · teleprompter</h2>
+    <div class="prompter-body">
+      <p><span class="cue">Gancho — con el shaker en la mano</span>¿Se te terminó la proteína? Tranquilo: no vas a perder masa muscular ni lo logrado en la semana de entrenamiento.</p>
+      <p><span class="cue">Desarrollo</span>La proteína después de entrenar importa, sobre todo si hacés fuerza y querés tener buena recuperación o ganar masa muscular. Pero proteína no significa automáticamente proteína en polvo. Podés obtenerla de huevos, carne, pollo, pescado, lácteos o cualquier otra fuente que forme parte de tu alimentación. El suplemento hace exactamente eso: suplementa. Es una forma más de aumentar tu consumo de proteína. No existe un reloj que a los treinta minutos post entreno diga: “listo, perdiste tu oportunidad”. Hay estudios que indican que inclusive 24 a 48 horas post ejercicio tus músculos siguen asimilando la proteína que estás ingiriendo. Lo que hacés durante todo el día importa mucho más que entrar en pánico por esos treinta minutos.</p>
+      <p><span class="cue">Llamado a la acción</span>Si querés saber cuánta proteína necesita tu cuerpo para lograr tus objetivos, escribime por privado y agendamos una consulta.</p>
+      <p><span class="cue">Cierre</span>El batido puede ser práctico. Obligatorio, no. Guardate este video para la próxima vez que alguien te diga que tenés que tomarlo sí o sí después de entrenar.</p>
+    </div>
+  </section>
+
+  <footer>
+    Los tiempos son estimados a ritmo de lectura natural (~1:10 en total) y los encuadres son propuesta, no cierre.
+    Correcciones de tipeo respecto del guion original: <code>“Se te termino”</code> → <code>“¿Se te terminó?”</code> y <code>“saber saber”</code> → <code>“saber”</code>.
+  </footer>
+
+</div>
