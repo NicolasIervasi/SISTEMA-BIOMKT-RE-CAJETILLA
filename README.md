@@ -14,7 +14,7 @@ Repositorio de guiones y material audiovisual.
 
 ## Procesos
 
-- [`procesos/proceso-eventos.html`](procesos/proceso-eventos.html) — cómo se arma un evento, paso a paso (reconstruido del audio de Ari), con el caso de Tandil noviembre y los puntos a confirmar.
+- [`procesos/proceso-eventos.html`](procesos/proceso-eventos.html) — cómo se arma un evento, en ocho pasos: del cuestionario inicial al anuncio, con el lugar como paso bisagra.
 
 ## Estructura
 
