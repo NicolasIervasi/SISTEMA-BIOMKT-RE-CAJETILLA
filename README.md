@@ -14,6 +14,7 @@ Repositorio de guiones y material audiovisual.
 
 ## Procesos
 
+- [`procesos/procesos-eventos-audiovisual.html`](procesos/procesos-eventos-audiovisual.html) — eventos y contenido audiovisual en el formato del PDF de servicios (Garet / violeta #635BA7). Fuente del PDF `Procesos-Eventos-y-Contenido-Audiovisual.pdf`.
 - [`procesos/proceso-eventos.html`](procesos/proceso-eventos.html) — cómo se arma un evento, en ocho pasos: del cuestionario inicial al anuncio, con el lugar como paso bisagra.
 
 ## Estructura
