@@ -1,0 +1,418 @@
+<title>Calendario Pau Nutri</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@100..125,400..900&family=Source+Serif+4:opsz,wght@8..60,400..600&family=IBM+Plex+Mono:wght@400;500;600&display=swap">
+
+<style>
+  :root{
+    --ground:#EDEEF0;
+    --surface:#FFFFFF;
+    --surface-2:#F4F5F7;
+    --ink:#15171B;
+    --ink-2:#3D434C;
+    --muted:#6E7683;
+    --line:#D7DADF;
+    --line-strong:#BEC4CB;
+
+    /* pilares — paleta categórica validada (CVD) */
+    --p-nutrir:#C24E13;
+    --p-ident:#1F63A8;
+    --p-autor:#4F7A22;
+    --p-conv:#9B2F63;
+    --p-otro:#6E7683;
+
+    /* estado — rampa secuencial de un solo tono (sin tema → editado) */
+    --e-1:#C9CDD3;
+    --e-2:#9AA1AB;
+    --e-3:#5B6470;
+    --e-4:#1E232B;
+
+    --accent:var(--p-nutrir);
+    --shadow:0 1px 2px rgba(20,22,26,.05), 0 10px 26px -18px rgba(20,22,26,.4);
+
+    --display:"Archivo","Helvetica Neue",Arial,sans-serif;
+    --body:"Source Serif 4",Georgia,"Times New Roman",serif;
+    --mono:"IBM Plex Mono",ui-monospace,Menlo,monospace;
+  }
+  @media (prefers-color-scheme: dark){
+    :root:not([data-theme="light"]){
+      --ground:#0F1114; --surface:#171A1F; --surface-2:#1C2026;
+      --ink:#E9EBEE; --ink-2:#C0C6CE; --muted:#8C95A1;
+      --line:#2A2F37; --line-strong:#3B424B;
+      --p-nutrir:#D66A2E; --p-ident:#4E93CF; --p-autor:#77A036; --p-conv:#CE5A90; --p-otro:#8C95A1;
+      --e-1:#333941; --e-2:#5A626C; --e-3:#98A0AA; --e-4:#E9EBEE;
+      --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 26px -18px rgba(0,0,0,.9);
+    }
+  }
+  :root[data-theme="dark"]{
+    --ground:#0F1114; --surface:#171A1F; --surface-2:#1C2026;
+    --ink:#E9EBEE; --ink-2:#C0C6CE; --muted:#8C95A1;
+    --line:#2A2F37; --line-strong:#3B424B;
+    --p-nutrir:#D66A2E; --p-ident:#4E93CF; --p-autor:#77A036; --p-conv:#CE5A90; --p-otro:#8C95A1;
+    --e-1:#333941; --e-2:#5A626C; --e-3:#98A0AA; --e-4:#E9EBEE;
+    --shadow:0 1px 2px rgba(0,0,0,.4), 0 10px 26px -18px rgba(0,0,0,.9);
+  }
+
+  *{box-sizing:border-box}
+  body{background:var(--ground);color:var(--ink);font-family:var(--body);font-size:16.5px;line-height:1.5;-webkit-font-smoothing:antialiased}
+  .wrap{max-width:1060px;margin:0 auto;padding:40px 24px 80px}
+  h1,h2,h3,.disp{font-family:var(--display);font-weight:800;font-stretch:118%;letter-spacing:-.01em;margin:0;text-wrap:balance}
+  .lbl{font-family:var(--mono);font-size:10.5px;font-weight:500;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
+  a{color:var(--accent)}
+  :focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+  /* ---- encabezado ---- */
+  header.top{border-bottom:2px solid var(--ink);padding-bottom:22px;margin-bottom:26px}
+  .top .eyebrow{display:flex;gap:12px;align-items:baseline;flex-wrap:wrap;margin-bottom:14px}
+  .tag{font-family:var(--display);font-weight:900;font-stretch:125%;font-size:12px;letter-spacing:.08em;background:var(--ink);color:var(--ground);padding:3px 9px 2px}
+  h1{font-size:clamp(2rem,5.4vw,3.1rem);line-height:1;font-stretch:125%;text-transform:uppercase}
+  .sub{margin-top:12px;color:var(--ink-2);max-width:60ch}
+
+  /* ---- tiles ---- */
+  .tiles{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;background:var(--line);border:1px solid var(--line);margin-bottom:34px}
+  .tile{background:var(--surface);padding:15px 16px 16px}
+  .tile .big{font-family:var(--display);font-weight:800;font-stretch:118%;font-size:30px;line-height:1.05;font-variant-numeric:tabular-nums;display:block;margin:6px 0 3px}
+  .tile .foot{font-size:13.5px;color:var(--muted)}
+  .tile.alert .big{color:var(--accent)}
+  .tile.alert .foot{color:var(--ink-2)}
+
+  /* ---- meses ---- */
+  .months{display:grid;grid-template-columns:1fr 1fr;gap:26px;margin-bottom:12px}
+  .mo h3{font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-stretch:125%;margin-bottom:10px;color:var(--ink)}
+  .grid{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+  .dow{font-family:var(--mono);font-size:10px;color:var(--muted);text-align:center;padding-bottom:3px}
+  .cell{aspect-ratio:1/1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;
+        background:var(--surface);border:1px solid transparent;font-family:var(--mono);font-size:11.5px;color:var(--muted);
+        font-variant-numeric:tabular-nums;border-radius:2px}
+  .cell.empty{background:transparent}
+  .cell.pub{color:var(--ink);border-color:var(--line-strong)}
+  .cell.today{border-color:var(--ink);border-width:2px;color:var(--ink)}
+  .dot{width:7px;height:7px;border-radius:50%}
+  .dot.reel{background:var(--ink)}
+  .dot.carr{background:transparent;border:1.5px solid var(--ink);width:8px;height:8px}
+  .legend{display:flex;gap:16px;flex-wrap:wrap;align-items:center;margin:2px 0 40px;font-size:13px;color:var(--muted)}
+  .legend span{display:flex;gap:6px;align-items:center}
+
+  /* ---- distribución ---- */
+  .dist{display:grid;grid-template-columns:1.15fr .85fr;gap:34px;margin-bottom:44px;align-items:start}
+  h2{font-size:12px;letter-spacing:.14em;text-transform:uppercase;font-stretch:125%;padding-bottom:8px;border-bottom:2px solid var(--ink);margin-bottom:16px}
+  .bars{display:flex;flex-direction:column;gap:11px}
+  .bar-row{display:grid;grid-template-columns:132px 1fr 26px;gap:10px;align-items:center;font-size:14px}
+  .bar-row .nm{color:var(--ink-2)}
+  .track{height:14px;background:var(--surface-2);border-radius:2px;overflow:hidden}
+  .fill{height:100%;border-radius:0 4px 4px 0}
+  .bar-row .n{font-family:var(--mono);font-size:13px;font-variant-numeric:tabular-nums;text-align:right;color:var(--ink)}
+  .hint{font-size:13.5px;color:var(--muted);margin-top:14px;max-width:44ch}
+
+  .stack{display:flex;gap:2px;height:16px;margin-bottom:14px}
+  .stack div{border-radius:2px}
+  .skey{display:flex;flex-direction:column;gap:8px}
+  .skey .row{display:grid;grid-template-columns:12px 1fr auto;gap:10px;align-items:center;font-size:14px;color:var(--ink-2)}
+  .swatch{width:12px;height:12px;border-radius:2px}
+  .skey .n{font-family:var(--mono);font-size:13px;font-variant-numeric:tabular-nums;color:var(--ink)}
+
+  /* ---- filtros ---- */
+  .filters{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-bottom:22px}
+  .filters .lbl{margin-right:4px}
+  button.f{font-family:var(--mono);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;
+           background:var(--surface);color:var(--ink-2);border:1px solid var(--line-strong);border-radius:2px;
+           padding:6px 11px;cursor:pointer}
+  button.f[aria-pressed="true"]{background:var(--ink);color:var(--ground);border-color:var(--ink)}
+
+  /* ---- lista ---- */
+  .weekhead{display:flex;align-items:baseline;gap:12px;margin:26px 0 10px}
+  .weekhead .rule{flex:1;height:1px;background:var(--line)}
+  .item{display:grid;grid-template-columns:74px 1fr;gap:20px;background:var(--surface);border:1px solid var(--line);
+        border-left:3px solid var(--line-strong);padding:16px 18px;margin-bottom:8px;box-shadow:var(--shadow)}
+  .item.open{border-left-style:dashed;border-left-color:var(--accent)}
+  .item.done{border-left-color:var(--ink)}
+  .when{text-align:center;border-right:1px solid var(--line);padding-right:14px}
+  .when .d{font-family:var(--display);font-weight:800;font-stretch:118%;font-size:29px;line-height:1;font-variant-numeric:tabular-nums;display:block}
+  .when .m,.when .w{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);display:block;margin-top:4px}
+  .chips{display:flex;gap:7px;flex-wrap:wrap;align-items:center;margin-bottom:9px}
+  .chip{font-family:var(--mono);font-size:10.5px;letter-spacing:.1em;text-transform:uppercase;padding:3px 8px;border-radius:2px;border:1px solid var(--line-strong);color:var(--ink-2)}
+  .chip.fmt{background:var(--ink);color:var(--ground);border-color:var(--ink)}
+  .chip.fmt.carr{background:transparent;color:var(--ink);border:1px solid var(--ink)}
+  .chip.est{border-style:dashed}
+  .chip.est.hecho{border-style:solid;background:var(--surface-2)}
+  .tema{font-family:var(--display);font-weight:700;font-stretch:112%;font-size:19px;line-height:1.22;margin:0 0 8px;max-width:40ch;letter-spacing:-.005em}
+  .tema.idea{font-family:var(--body);font-weight:400;font-style:italic;font-size:18px;color:var(--ink-2)}
+  .tema.idea::before{content:"Idea sugerida · ";font-family:var(--mono);font-style:normal;font-size:10.5px;letter-spacing:.12em;text-transform:uppercase;color:var(--accent)}
+  .obj{font-size:14.5px;color:var(--ink-2);margin:0;max-width:56ch}
+  .ejes{display:flex;gap:6px;flex-wrap:wrap;margin-top:11px}
+  .eje{font-family:var(--mono);font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;display:flex;align-items:center;gap:6px;color:var(--ink-2)}
+  .eje i{width:9px;height:9px;border-radius:2px;display:block}
+  .extra{margin-top:10px;font-size:13.5px;color:var(--muted)}
+  .extra a{text-decoration:none;border-bottom:1px solid var(--accent)}
+
+  /* ---- notas ---- */
+  .notes{margin-top:48px}
+  .note{background:var(--surface);border:1px solid var(--line);border-top:3px solid var(--accent);padding:16px 18px;margin-bottom:8px}
+  .note h4{font-family:var(--display);font-weight:800;font-stretch:112%;font-size:14px;margin:0 0 6px;letter-spacing:.01em}
+  .note p{margin:0;font-size:14.5px;color:var(--ink-2);max-width:70ch}
+  footer{margin-top:40px;padding-top:14px;border-top:1px solid var(--line);font-size:13px;color:var(--muted)}
+
+  @media (max-width:860px){
+    .tiles{grid-template-columns:1fr 1fr}
+    .months{grid-template-columns:1fr}
+    .dist{grid-template-columns:1fr}
+    .item{grid-template-columns:56px 1fr;gap:14px}
+    .when{padding-right:10px}
+    .bar-row{grid-template-columns:104px 1fr 24px}
+  }
+</style>
+
+<div class="wrap">
+
+  <header class="top">
+    <div class="eyebrow">
+      <span class="tag">PAU NUTRI</span>
+      <span class="lbl">Biomarketing · Plan de contenidos</span>
+    </div>
+    <h1>Calendario<br>Septiembre – Octubre 2026</h1>
+    <p class="sub">14 piezas en seis semanas, alternando reel y carrusel sobre una cadencia de miércoles y sábado. Cuatro ejes de comunicación: nutrir, identificación, autoridad y conversión.</p>
+  </header>
+
+  <section class="tiles" id="tiles"></section>
+
+  <section>
+    <div class="months" id="months"></div>
+    <div class="legend">
+      <span><i class="dot reel"></i> Reel</span>
+      <span><i class="dot carr"></i> Carrusel</span>
+      <span>Recuadro grueso: hoy</span>
+    </div>
+  </section>
+
+  <section class="dist">
+    <div>
+      <h2>Peso de cada eje</h2>
+      <div class="bars" id="bars"></div>
+      <p class="hint">Cada pieza puede sumar a más de un eje; se cuentan todas las menciones. Nutrir absorbe la mayor parte del plan y la conversión aparece solo dos veces, las dos apoyadas en otro eje.</p>
+    </div>
+    <div>
+      <h2>Estado de producción</h2>
+      <div class="stack" id="stack"></div>
+      <div class="skey" id="skey"></div>
+      <p class="hint">Los siete pendientes de tema son exactamente los siete carruseles: el guion escrito solo existe para reels.</p>
+    </div>
+  </section>
+
+  <section>
+    <div class="filters">
+      <span class="lbl">Ver</span>
+      <button class="f" data-f="todos" aria-pressed="true">Todos</button>
+      <button class="f" data-f="reel" aria-pressed="false">Reels</button>
+      <button class="f" data-f="carrusel" aria-pressed="false">Carruseles</button>
+      <button class="f" data-f="abierto" aria-pressed="false">Sin tema cerrado</button>
+      <button class="f" data-f="pendiente" aria-pressed="false">Falta grabar</button>
+    </div>
+    <div id="list"></div>
+  </section>
+
+  <section class="notes">
+    <h2>Para revisar antes de cerrar el calendario</h2>
+    <div class="note">
+      <h4>La mezcla real es 7 reels + 7 carruseles, no 8 + 6</h4>
+      <p>La grilla alterna una pieza y una, así que quedan siete de cada formato. Para llegar a 8 reels hay que convertir un carrusel: el candidato más natural es “Déficit calórico explicado fácil” (07/10), que funciona hablado a cámara con una placa, o “¿Qué mirar además del peso?” (14/10), que es una enumeración corta y filmable.</p>
+    </div>
+    <div class="note">
+      <h4>El par 29 + 30 de septiembre es lo que invierte la cadencia</h4>
+      <p>Los otros doce posteos caen miércoles o sábado. El 29 es martes y queda pegado al 30, y desde ahí octubre arranca con los reels los sábados en vez de los miércoles. Si se quiere sostener el ritmo, el reel de fluctuaciones va el 30/09 y septiembre cierra con siete piezas.</p>
+    </div>
+    <div class="note">
+      <h4>Dos vocabularios de ejes conviviendo</h4>
+      <p>El plan define cuatro ejes, pero en las fichas aparecen también “Educación”, “Bienestar” y “Venta”. Acá quedaron unificados: Educación dentro de Nutrir y Venta dentro de Conversión. Bienestar se mantuvo aparte, en gris, porque es el único caso y conviene decidir si entra como quinto eje o se absorbe en Nutrir.</p>
+    </div>
+    <div class="note">
+      <h4>Los siete carruseles llegan sin tema cerrado</h4>
+      <p>El primero se publica el 12/09. Las ideas sugeridas están cargadas como propuesta, no como definición: hay que bajarlas a guion, texto por placa, para que entren en producción.</p>
+    </div>
+  </section>
+
+  <footer>Los temas ya publicados (pérdida de peso sin dietas extremas, tiempo para cocinar, colaciones y metabolismo, hábitos simples) quedan fuera de esta grilla para no repetir.</footer>
+
+</div>
+
+<script>
+(function(){
+  var EJES = {
+    nutrir: {n:"Nutrir / Educación", c:"var(--p-nutrir)"},
+    identificacion: {n:"Identificación", c:"var(--p-ident)"},
+    autoridad: {n:"Autoridad", c:"var(--p-autor)"},
+    conversion: {n:"Conversión", c:"var(--p-conv)"},
+    bienestar: {n:"Bienestar", c:"var(--p-otro)"}
+  };
+  var ESTADOS = {
+    editado:    {n:"Editado", c:"var(--e-4)", hecho:true},
+    grabado:    {n:"Grabado", c:"var(--e-3)", hecho:true},
+    porgrabar:  {n:"Por grabar", c:"var(--e-2)", hecho:false},
+    pordefinir: {n:"Tema por definir", c:"var(--e-1)", hecho:false}
+  };
+  var MESES = ["enero","febrero","marzo","abril","mayo","junio","julio","agosto","septiembre","octubre","noviembre","diciembre"];
+  var DOW = ["L","M","M","J","V","S","D"];
+  var DIAS = ["lunes","martes","miércoles","jueves","viernes","sábado","domingo"];
+
+  var ITEMS = [
+    {y:2026,m:9,d:9, fmt:"reel", tema:"Post-entreno: el batido de proteína NO es obligatorio", estado:"editado",
+     obj:"Romper una creencia común en personas que entrenan y mostrar que la alimentación va más allá de suplementos.",
+     ejes:["nutrir","autoridad"],
+     extra:'Guion escrito y storyboard listo · <a href="https://claude.ai/code/artifact/6306d161-73e5-4461-8d3f-25316f4f4706" target="_blank" rel="noopener">ver guion visual</a>'},
+    {y:2026,m:9,d:12, fmt:"carrusel", tema:"5 errores que pueden estar frenando tus resultados aunque entrenes", estado:"pordefinir", idea:true,
+     obj:"Contenido guardable para personas activas que buscan mejorar composición corporal.", ejes:["nutrir"]},
+    {y:2026,m:9,d:16, fmt:"reel", tema:"Transpirar más NO significa quemar más grasa", estado:"grabado",
+     obj:"Derribar un mito muy instalado en personas que entrenan.", ejes:["nutrir"], extra:"Grabado con voz en off"},
+    {y:2026,m:9,d:19, fmt:"carrusel", tema:"¿Por qué entreno y no veo cambios?", estado:"pordefinir", idea:true,
+     obj:"Cruzar alimentación, descanso, constancia y planificación.", ejes:["identificacion"]},
+    {y:2026,m:9,d:23, fmt:"reel", tema:"Como sano, pero no veo cambios", estado:"grabado",
+     obj:"Hablarle directamente al paciente que siente frustración porque “hace todo bien”.", ejes:["identificacion","conversion"]},
+    {y:2026,m:9,d:26, fmt:"carrusel", tema:"Proteína: cuánto necesitás realmente", estado:"pordefinir", idea:true,
+     obj:"Contenido educativo para público fitness.", ejes:["nutrir"], extra:"Continúa el reel del 09/09: ahí se dice que la cantidad se resuelve en consulta"},
+    {y:2026,m:9,d:29, fmt:"reel", tema:"¿Subiste un kilo de un día para otro?", estado:"porgrabar",
+     obj:"Explicar fluctuaciones normales del peso y bajar ansiedad.", ejes:["nutrir"]},
+    {y:2026,m:9,d:30, fmt:"carrusel", tema:"Antes de cambiar tu alimentación, revisá estos hábitos", estado:"pordefinir", idea:true,
+     obj:"Ordenar la base antes de intervenir el plan.", ejes:["nutrir"]},
+    {y:2026,m:10,d:3, fmt:"reel", tema:"Una comida NO define tu progreso", estado:"porgrabar",
+     obj:"Trabajar mentalidad flexible y evitar culpa alimentaria.", ejes:["bienestar","nutrir"]},
+    {y:2026,m:10,d:7, fmt:"carrusel", tema:"Déficit calórico explicado fácil", estado:"pordefinir", idea:true,
+     obj:"Educar sin caer en contenido técnico.", ejes:["autoridad"]},
+    {y:2026,m:10,d:10, fmt:"reel", tema:"NEAT: el movimiento que hacés sin darte cuenta", estado:"porgrabar",
+     obj:"Mostrar factores que influyen en el gasto energético además del entrenamiento.", ejes:["nutrir","autoridad"]},
+    {y:2026,m:10,d:14, fmt:"carrusel", tema:"¿Qué mirar además del peso?", estado:"pordefinir", idea:true,
+     obj:"Medidas, fotos, rendimiento y energía como indicadores de progreso.", ejes:["nutrir"]},
+    {y:2026,m:10,d:17, fmt:"reel", tema:"Antropometría: qué mide y para qué sirve", estado:"porgrabar",
+     obj:"Mostrar una herramienta profesional y diferenciar la consulta.", ejes:["autoridad","conversion"]},
+    {y:2026,m:10,d:21, fmt:"carrusel", tema:"Señales de que tu alimentación está acompañando tu entrenamiento", estado:"pordefinir", idea:true,
+     obj:"Cerrar el bloque con una lectura positiva del progreso.", ejes:["nutrir"]}
+  ];
+
+  function dt(it){ return new Date(it.y, it.m-1, it.d); }
+  function mondayIdx(date){ return (date.getDay()+6)%7; }
+  function semana(it){
+    var off = mondayIdx(new Date(it.y, it.m-1, 1));
+    return Math.floor((it.d + off - 1)/7) + 1;
+  }
+  function esc(s){ return String(s).replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
+
+  /* ---------- tiles ---------- */
+  var reels = ITEMS.filter(function(i){return i.fmt==="reel";}).length;
+  var carrs = ITEMS.length - reels;
+  var sinTema = ITEMS.filter(function(i){return i.estado==="pordefinir";}).length;
+  var porGrabar = ITEMS.filter(function(i){return i.estado==="porgrabar";}).length;
+  var hoy = new Date(); hoy.setHours(0,0,0,0);
+  var prox = ITEMS.filter(function(i){ return dt(i) >= hoy; })[0];
+  var proxTxt, proxFoot;
+  if (prox){
+    var dias = Math.round((dt(prox)-hoy)/86400000);
+    proxTxt = String(prox.d).padStart(2,"0")+"/"+String(prox.m).padStart(2,"0");
+    proxFoot = (dias===0?"hoy":dias===1?"mañana":"en "+dias+" días") + " · " + prox.fmt + " " + ESTADOS[prox.estado].n.toLowerCase();
+  } else { proxTxt = "—"; proxFoot = "Plan cumplido"; }
+
+  document.getElementById("tiles").innerHTML = [
+    ['<span class="lbl">Piezas</span><span class="big">'+ITEMS.length+'</span><span class="foot">08/09 → 21/10 · 6 semanas</span>',''],
+    ['<span class="lbl">Formatos</span><span class="big">'+reels+" / "+carrs+'</span><span class="foot">reels / carruseles · el plan pedía 8 / 6</span>','alert'],
+    ['<span class="lbl">Sin tema cerrado</span><span class="big">'+sinTema+'</span><span class="foot">todos carruseles · '+porGrabar+' reels por grabar</span>','alert'],
+    ['<span class="lbl">Próxima publicación</span><span class="big">'+proxTxt+'</span><span class="foot">'+proxFoot+'</span>','']
+  ].map(function(t){ return '<div class="tile '+t[1]+'">'+t[0]+'</div>'; }).join("");
+
+  /* ---------- meses ---------- */
+  var meses = [{y:2026,m:9},{y:2026,m:10}];
+  document.getElementById("months").innerHTML = meses.map(function(mm){
+    var first = new Date(mm.y, mm.m-1, 1);
+    var off = mondayIdx(first);
+    var ndays = new Date(mm.y, mm.m, 0).getDate();
+    var cells = "";
+    for (var i=0;i<off;i++) cells += '<div class="cell empty"></div>';
+    for (var d=1; d<=ndays; d++){
+      var it = ITEMS.filter(function(x){ return x.m===mm.m && x.d===d; })[0];
+      var esHoy = (hoy.getFullYear()===mm.y && hoy.getMonth()===mm.m-1 && hoy.getDate()===d);
+      var cls = "cell" + (it?" pub":"") + (esHoy?" today":"");
+      var titulo = it ? esc(it.fmt+" · "+it.tema) : "";
+      cells += '<div class="'+cls+'"'+(titulo?' title="'+titulo+'"':'')+'>'+d+
+               (it ? '<i class="dot '+(it.fmt==="reel"?"reel":"carr")+'"></i>' : '<i class="dot" style="background:transparent"></i>')+
+               '</div>';
+    }
+    return '<div class="mo"><h3>'+MESES[mm.m-1]+' '+mm.y+'</h3><div class="grid">'+
+           DOW.map(function(x){return '<div class="dow">'+x+'</div>';}).join("")+cells+'</div></div>';
+  }).join("");
+
+  /* ---------- ejes ---------- */
+  var conteo = {};
+  Object.keys(EJES).forEach(function(k){ conteo[k]=0; });
+  ITEMS.forEach(function(i){ i.ejes.forEach(function(e){ conteo[e]++; }); });
+  var maxEje = Math.max.apply(null, Object.keys(conteo).map(function(k){return conteo[k];}));
+  document.getElementById("bars").innerHTML = Object.keys(EJES)
+    .sort(function(a,b){ return conteo[b]-conteo[a]; })
+    .map(function(k){
+      return '<div class="bar-row"><span class="nm">'+EJES[k].n+'</span>'+
+             '<span class="track"><span class="fill" style="width:'+(conteo[k]/maxEje*100)+'%;background:'+EJES[k].c+'"></span></span>'+
+             '<span class="n">'+conteo[k]+'</span></div>';
+    }).join("");
+
+  /* ---------- estados ---------- */
+  var orden = ["editado","grabado","porgrabar","pordefinir"];
+  var cE = {};
+  orden.forEach(function(k){ cE[k] = ITEMS.filter(function(i){return i.estado===k;}).length; });
+  document.getElementById("stack").innerHTML = orden.map(function(k){
+    return '<div style="flex:'+cE[k]+';background:'+ESTADOS[k].c+'" title="'+ESTADOS[k].n+': '+cE[k]+'"></div>';
+  }).join("");
+  document.getElementById("skey").innerHTML = orden.map(function(k){
+    return '<div class="row"><i class="swatch" style="background:'+ESTADOS[k].c+'"></i><span>'+ESTADOS[k].n+'</span><span class="n">'+cE[k]+'</span></div>';
+  }).join("");
+
+  /* ---------- lista ---------- */
+  function tarjeta(it){
+    var f = dt(it);
+    var abierto = it.estado==="pordefinir";
+    var cls = "item" + (abierto?" open":"") + (it.estado==="editado"?" done":"");
+    return '<article class="'+cls+'" data-fmt="'+it.fmt+'" data-estado="'+it.estado+'">'+
+      '<div class="when"><span class="d">'+String(it.d).padStart(2,"0")+'</span>'+
+        '<span class="m">'+MESES[it.m-1].slice(0,3)+'</span><span class="w">'+DIAS[mondayIdx(f)].slice(0,3)+'</span></div>'+
+      '<div>'+
+        '<div class="chips">'+
+          '<span class="chip fmt'+(it.fmt==="carrusel"?" carr":"")+'">'+it.fmt+'</span>'+
+          '<span class="chip est'+(ESTADOS[it.estado].hecho?" hecho":"")+'">'+ESTADOS[it.estado].n+'</span>'+
+        '</div>'+
+        '<h3 class="tema'+(it.idea?" idea":"")+'">'+esc(it.tema)+'</h3>'+
+        '<p class="obj">'+esc(it.obj)+'</p>'+
+        '<div class="ejes">'+ it.ejes.map(function(e){
+            return '<span class="eje"><i style="background:'+EJES[e].c+'"></i>'+EJES[e].n+'</span>';
+          }).join("") +'</div>'+
+        (it.extra ? '<p class="extra">'+it.extra+'</p>' : '')+
+      '</div></article>';
+  }
+
+  var html = "", ultima = "";
+  ITEMS.forEach(function(it){
+    var clave = it.m+"-"+semana(it);
+    if (clave !== ultima){
+      ultima = clave;
+      html += '<div class="weekhead"><span class="lbl">'+MESES[it.m-1]+' · semana '+semana(it)+'</span><span class="rule"></span></div>';
+    }
+    html += tarjeta(it);
+  });
+  document.getElementById("list").innerHTML = html;
+
+  /* ---------- filtros ---------- */
+  var botones = Array.prototype.slice.call(document.querySelectorAll("button.f"));
+  botones.forEach(function(b){
+    b.addEventListener("click", function(){
+      botones.forEach(function(o){ o.setAttribute("aria-pressed", String(o===b)); });
+      var f = b.dataset.f;
+      Array.prototype.forEach.call(document.querySelectorAll(".item"), function(el){
+        var ok = f==="todos" ||
+                 (f==="reel" && el.dataset.fmt==="reel") ||
+                 (f==="carrusel" && el.dataset.fmt==="carrusel") ||
+                 (f==="abierto" && el.dataset.estado==="pordefinir") ||
+                 (f==="pendiente" && (el.dataset.estado==="porgrabar" || el.dataset.estado==="pordefinir"));
+        el.hidden = !ok;
+      });
+      Array.prototype.forEach.call(document.querySelectorAll(".weekhead"), function(h){
+        var vis = false, n = h.nextElementSibling;
+        while (n && n.classList.contains("item")){ if (!n.hidden) vis = true; n = n.nextElementSibling; }
+        h.hidden = !vis;
+      });
+    });
+  });
+})();
+</script>
