@@ -43,16 +43,6 @@
       var(--bg)}
   .content{position:relative;z-index:2}
 
-  /* ---- custom cursor ---- */
-  .cursor,.cursor-dot{position:fixed;top:0;left:0;z-index:100;pointer-events:none;border-radius:50%;
-      transform:translate(-50%,-50%);will-change:transform}
-  .cursor{width:38px;height:38px;border:1.5px solid var(--verde);mix-blend-mode:difference;
-      transition:width .25s var(--ease),height .25s var(--ease),background .25s var(--ease),opacity .3s}
-  .cursor-dot{width:6px;height:6px;background:var(--verde)}
-  .cursor.big{width:78px;height:78px;background:var(--verde);border-color:var(--verde)}
-  body.hascursor{cursor:none}
-  @media (hover:none),(pointer:coarse){.cursor,.cursor-dot{display:none}body.hascursor{cursor:auto}}
-
   /* ---- intro loader ---- */
   #intro{position:fixed;inset:0;z-index:200;background:var(--bg);display:grid;place-items:center;
       transition:transform .9s var(--ease)}
@@ -207,9 +197,6 @@
 
 <div class="bg-grad"></div>
 <canvas id="field"></canvas>
-
-<div class="cursor" id="cur"></div>
-<div class="cursor-dot" id="curd"></div>
 
 <div id="intro"><div class="n mono">BIO<b>·</b><span id="pct">00</span></div></div>
 
@@ -374,23 +361,6 @@
 
   /* ---------- pointer tracking ---------- */
   addEventListener('pointermove', function(e){ pointer.tx=e.clientX; pointer.ty=e.clientY; }, {passive:true});
-
-  /* ---------- custom cursor ---------- */
-  if(fine && !reduce){
-    document.body.classList.add('hascursor');
-    var cur=document.getElementById('cur'), curd=document.getElementById('curd');
-    var cx=pointer.tx, cy=pointer.ty;
-    document.querySelectorAll('[data-c]').forEach(function(el){
-      el.addEventListener('pointerenter',function(){cur.classList.add('big')});
-      el.addEventListener('pointerleave',function(){cur.classList.remove('big')});
-    });
-    (function loop(){
-      cx+=(pointer.tx-cx)*.18; cy+=(pointer.ty-cy)*.18;
-      cur.style.transform='translate('+cx+'px,'+cy+'px) translate(-50%,-50%)';
-      curd.style.transform='translate('+pointer.tx+'px,'+pointer.ty+'px) translate(-50%,-50%)';
-      requestAnimationFrame(loop);
-    })();
-  } else { document.getElementById('cur').style.display='none'; document.getElementById('curd').style.display='none'; }
 
   /* ---------- magnetic buttons ---------- */
   if(fine && !reduce){
