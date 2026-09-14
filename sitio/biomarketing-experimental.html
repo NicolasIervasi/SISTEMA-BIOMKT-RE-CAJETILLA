@@ -7,255 +7,291 @@
 <meta name="description" content="Comunicación, branding y audiovisual en Mar del Plata. Escuchamos antes de proponer.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Newsreader:opsz,wght@6..72,200;6..72,300;6..72,400&family=Archivo:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap">
 <style>
   :root{
-    --bg:#0c0c0f;
-    --bg-2:#101014;
-    --text:#e9e7e1;
-    --muted:#8c897f;
-    --faint:#5a5852;
-    --line:rgba(233,231,225,.12);
-    --line-2:rgba(233,231,225,.20);
-    --violeta:#9f83e6;      /* violeta atenuado, sobrio */
-    --verde:#a6e04b;        /* solo como susurro */
-    --s2:16px; --s3:24px; --s4:40px; --s5:72px; --s6:120px; --s7:180px;
-    --gutter:clamp(22px,6vw,120px);
-    --maxw:1240px;
+    --acc:#7838e5;         /* violeta marca */
+    --acc-2:#a6e04b;       /* verde marca */
+    --ink:#0a0a0c;
+    --text:#f4f3ef;
+    --muted:#a7a5a0;
+    --line:rgba(244,243,239,.16);
+    --ease:cubic-bezier(.22,1,.36,1);
+    --gutter:clamp(20px,5vw,68px);
+    --maxw:1440px;
   }
   *{box-sizing:border-box}
   html{-webkit-text-size-adjust:100%}
-  body{margin:0;background:var(--bg);color:var(--text);overflow-x:hidden;
-       font-family:"Archivo","Helvetica Neue",Arial,sans-serif;font-weight:400;
-       font-size:16px;line-height:1.6;-webkit-font-smoothing:antialiased;letter-spacing:.005em}
+  body{margin:0;background:var(--ink);color:var(--text);overflow-x:hidden;
+       font-family:"Archivo","Helvetica Neue",Arial,sans-serif;font-weight:400;line-height:1.5;
+       -webkit-font-smoothing:antialiased}
   a{color:inherit;text-decoration:none}
   p{margin:0}
-  img{max-width:100%;display:block}
-  ::selection{background:var(--violeta);color:var(--bg)}
-  .serif{font-family:"Newsreader","Georgia",serif;font-weight:300;letter-spacing:-.01em}
+  video{display:block}
+  ::selection{background:var(--acc);color:#fff}
   .wrap{max-width:var(--maxw);margin-inline:auto;padding-inline:var(--gutter)}
-  .lab{font-size:11px;letter-spacing:.22em;text-transform:uppercase;color:var(--muted);font-weight:500}
-  :focus-visible{outline:1px solid var(--violeta);outline-offset:4px}
-  .dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--verde);vertical-align:middle}
+  .u{text-transform:uppercase;letter-spacing:.14em}
+  .lab{font-size:12px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
+  :focus-visible{outline:1px solid var(--acc-2);outline-offset:4px}
 
-  /* ---- nav ---- */
-  header{position:absolute;top:0;left:0;right:0;z-index:10}
-  .nav{display:flex;align-items:center;justify-content:space-between;gap:24px;padding-block:var(--s4)}
-  .brand{font-size:15px;letter-spacing:.04em;font-weight:600;text-transform:uppercase;display:flex;align-items:center;gap:9px}
-  .nav-links{display:none;gap:var(--s4)}
-  .nav-links a{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted);
-               transition:color .25s ease}
-  .nav-links a:hover{color:var(--text)}
-  .nav-c{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--text);
-         border-bottom:1px solid var(--line-2);padding-bottom:3px;transition:border-color .25s ease}
-  .nav-c:hover{border-color:var(--violeta)}
-  @media(min-width:860px){.nav-links{display:flex}}
+  .cta{display:inline-flex;align-items:center;gap:12px;font-weight:600;letter-spacing:.02em;
+       color:var(--acc-2);transition:gap .3s var(--ease)}
+  .cta:hover{gap:20px}
+  .cta.big{font-size:clamp(1.1rem,2.2vw,1.7rem)}
 
-  /* ---- hero ---- */
-  .hero{min-height:100svh;display:flex;flex-direction:column;justify-content:center;
-        padding-block:clamp(120px,20vh,220px)}
-  .hero h1{font-family:"Newsreader",serif;font-weight:200;letter-spacing:-.015em;
-           font-size:clamp(2.9rem,8.2vw,7.4rem);line-height:1.02;max-width:15ch;margin:0}
-  .hero h1 .p{color:var(--violeta)}
-  .hero .under{display:flex;flex-wrap:wrap;justify-content:space-between;gap:var(--s4);
-               margin-top:clamp(var(--s5),9vw,var(--s6));align-items:flex-end}
-  .hero .sub{max-width:38ch;color:var(--muted);font-size:clamp(15px,1.4vw,17px);line-height:1.65}
-  .hero .sub b{color:var(--text);font-weight:500}
-  .cta{display:inline-flex;align-items:center;gap:12px;font-size:13px;letter-spacing:.16em;
-       text-transform:uppercase;color:var(--text);padding-bottom:8px;border-bottom:1px solid var(--line-2);
-       transition:border-color .3s ease,gap .3s ease;white-space:nowrap}
-  .cta:hover{border-color:var(--violeta);gap:18px}
+  /* ---------- hero ---------- */
+  .hero{position:relative;min-height:100svh;display:flex;flex-direction:column;overflow:hidden;isolation:isolate}
+  .hero .bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2}
+  .hero .fallback{position:absolute;inset:0;z-index:-3;background:
+      radial-gradient(80% 60% at 70% 10%, #241a3a, transparent 60%),
+      radial-gradient(90% 70% at 10% 100%, #17122a, transparent 60%), #0a0a0c}
+  .hero .scrim{position:absolute;inset:0;z-index:-1;
+      background:linear-gradient(180deg, rgba(10,10,12,.55) 0%, rgba(10,10,12,.15) 34%, rgba(10,10,12,.75) 100%)}
+  .nav{display:flex;align-items:center;justify-content:space-between;gap:20px;
+       padding-top:clamp(20px,3vw,30px)}
+  .brand{display:flex;align-items:center;gap:11px;font-weight:700;font-size:17px;letter-spacing:-.01em;text-transform:uppercase}
+  .brand .o{width:30px;height:30px;border-radius:50%;border:2px solid var(--acc);display:grid;place-items:center;flex:none}
+  .brand .o i{width:9px;height:9px;border-radius:50%;background:var(--acc-2);display:block}
+  .nav-links{display:none;gap:36px}
+  .nav-links a{font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--text);opacity:.85;transition:opacity .2s}
+  .nav-links a:hover{opacity:1}
+  .nav-c{font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
+         border:1px solid var(--line);border-radius:999px;padding:9px 18px;transition:border-color .3s,background .3s}
+  .nav-c:hover{border-color:var(--acc-2);background:rgba(166,224,75,.08)}
+  @media(min-width:900px){.nav-links{display:flex}}
 
-  /* ---- section scaffold ---- */
-  section{border-top:1px solid var(--line);padding-block:clamp(var(--s6),14vw,var(--s7))}
-  .head{display:grid;grid-template-columns:1fr;gap:var(--s4);margin-bottom:clamp(var(--s5),8vw,var(--s6))}
-  .head .num{font-size:11px;letter-spacing:.2em;color:var(--faint);text-transform:uppercase}
-  .head h2{font-family:"Newsreader",serif;font-weight:200;font-size:clamp(1.9rem,4.6vw,3.6rem);
-           line-height:1.05;letter-spacing:-.01em;max-width:20ch;margin:0}
-  @media(min-width:820px){.head{grid-template-columns:180px 1fr;align-items:baseline;gap:var(--s5)}}
+  .hero-body{flex:1;display:flex;flex-direction:column;justify-content:flex-end;
+             padding-bottom:clamp(30px,5vh,58px);gap:clamp(26px,4vw,44px)}
+  .rowA{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:18px}
+  .rowA .tag{max-width:32ch;font-weight:600;font-size:clamp(13px,1.3vw,15px);line-height:1.5;text-transform:uppercase;letter-spacing:.06em}
+  .rowB{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:24px}
+  .rowB .desc{max-width:30ch;color:var(--muted);font-weight:500;font-size:clamp(13px,1.3vw,15px);line-height:1.55}
+  .rowB .desc b{color:var(--text);font-weight:600}
+  .headline{text-align:right;font-weight:800;text-transform:uppercase;letter-spacing:-.02em;
+            font-size:clamp(2.6rem,10vw,9.5rem);line-height:.86;margin:0}
+  .headline .ln{display:block;overflow:hidden}
+  .headline .ln>span{display:block;transform:translateY(110%)}
+  .headline .em{color:var(--acc)}
+  .play .headline .ln:nth-child(1)>span{animation:rise .8s var(--ease) .35s forwards}
+  .play .headline .ln:nth-child(2)>span{animation:rise .8s var(--ease) .49s forwards}
+  .play .headline .ln:nth-child(3)>span{animation:rise .8s var(--ease) .63s forwards}
+  @keyframes rise{to{transform:none}}
 
-  /* about */
-  .about .body{display:grid;grid-template-columns:1fr;gap:var(--s4);max-width:none}
-  .about p{font-size:clamp(17px,1.9vw,22px);line-height:1.6;color:var(--text);font-weight:400;max-width:58ch}
-  .about .body .m{color:var(--muted);font-size:16px;line-height:1.7;max-width:52ch}
-  @media(min-width:820px){.about .body{grid-template-columns:1.4fr 1fr;gap:var(--s5)}}
+  /* entrance for nav + rows */
+  .fd{opacity:0;transform:translateY(-14px)}
+  .play .fd{animation:fd .6s var(--ease) forwards}
+  .fd.d1{animation-delay:.05s}.fd.d2{animation-delay:.15s}.fd.d3{animation-delay:.25s}.fd.d4{animation-delay:.35s}
+  @keyframes fd{to{opacity:1;transform:none}}
+  .fu{opacity:0;transform:translateY(26px)}
+  .play .fu{animation:fu .7s var(--ease) forwards}
+  .fu.a{animation-delay:.7s}.fu.b{animation-delay:.82s}
+  @keyframes fu{to{opacity:1;transform:none}}
 
-  /* servicios */
-  .srv{display:flex;flex-direction:column}
-  .srv a{display:grid;grid-template-columns:auto 1fr;gap:var(--s4);align-items:baseline;
-         padding-block:clamp(28px,4vw,44px);border-top:1px solid var(--line);transition:padding-left .4s ease}
+  /* ---------- sections ---------- */
+  section{border-top:1px solid var(--line)}
+  .pad{padding-block:clamp(80px,12vw,170px)}
+  .shead{display:grid;grid-template-columns:1fr;gap:22px;margin-bottom:clamp(48px,7vw,90px)}
+  .shead .lab .n{color:var(--acc-2)}
+  .shead h2{margin:0;font-weight:800;text-transform:uppercase;letter-spacing:-.015em;
+            font-size:clamp(2rem,5.4vw,4.4rem);line-height:.98;max-width:20ch}
+  @media(min-width:820px){.shead{grid-template-columns:200px 1fr;gap:var(--gutter);align-items:baseline}}
+
+  /* about with media */
+  .about .grid{display:grid;grid-template-columns:1fr;gap:clamp(28px,4vw,56px);align-items:center}
+  .about .copy p{font-size:clamp(18px,2.2vw,26px);font-weight:500;line-height:1.4;max-width:24ch}
+  .about .copy .m{margin-top:24px;color:var(--muted);font-size:16px;font-weight:400;max-width:44ch;line-height:1.6}
+  .about .media{position:relative;aspect-ratio:5/6;border-radius:4px;overflow:hidden;background:#14111f}
+  .about .media video,.about .media .ph{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  @media(min-width:820px){.about .grid{grid-template-columns:1fr 1fr}}
+
+  /* servicios list */
+  .srv a{display:grid;grid-template-columns:auto 1fr auto;gap:clamp(16px,3vw,40px);align-items:center;
+         padding-block:clamp(24px,3.4vw,40px);border-top:1px solid var(--line);transition:padding-left .4s var(--ease)}
   .srv a:hover{padding-left:14px}
-  .srv .i{font-size:12px;letter-spacing:.12em;color:var(--faint);font-variant-numeric:tabular-nums}
-  .srv .main{display:flex;flex-direction:column;gap:12px}
-  .srv h3{font-family:"Newsreader",serif;font-weight:300;font-size:clamp(1.6rem,3.8vw,2.7rem);
-          line-height:1;letter-spacing:-.01em;margin:0;transition:color .3s ease}
-  .srv a:hover h3{color:var(--violeta)}
-  .srv .d{color:var(--muted);font-size:15px;max-width:46ch;line-height:1.6}
-  .srv .ar{grid-column:2;color:var(--faint);font-size:13px;letter-spacing:.14em;text-transform:uppercase;
-           opacity:0;transform:translateX(-6px);transition:opacity .3s ease,transform .3s ease}
-  .srv a:hover .ar{opacity:1;transform:none;color:var(--violeta)}
+  .srv .i{font-size:13px;font-weight:600;color:var(--muted);letter-spacing:.1em}
+  .srv h3{margin:0;font-weight:800;text-transform:uppercase;letter-spacing:-.01em;
+          font-size:clamp(1.7rem,5vw,3.4rem);line-height:1;transition:color .3s}
+  .srv .d{display:block;color:var(--muted);font-size:15px;margin-top:10px;max-width:46ch}
+  .srv .go{font-size:clamp(1.4rem,3vw,2rem);color:var(--muted);transition:color .3s,transform .3s var(--ease)}
+  .srv a:hover h3{color:var(--acc)}
+  .srv a:hover .go{color:var(--acc-2);transform:translate(4px,-4px)}
 
-  /* trabajos — marcos sobrios, sin color gritón */
-  .work{display:grid;grid-template-columns:1fr;gap:var(--s4)}
+  /* trabajos: video/media tiles */
+  .work{display:grid;grid-template-columns:1fr;gap:14px}
   @media(min-width:640px){.work{grid-template-columns:1fr 1fr}}
-  @media(min-width:980px){.work{grid-template-columns:1fr 1fr 1fr}}
-  .frame{border:1px solid var(--line);aspect-ratio:4/5;display:flex;flex-direction:column;
-         justify-content:space-between;padding:var(--s3);background:var(--bg-2);
-         transition:border-color .35s ease,background .35s ease}
-  .frame:hover{border-color:var(--line-2);background:#13131a}
-  .frame .tg{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--faint)}
-  .frame .nm{font-family:"Newsreader",serif;font-weight:300;font-size:clamp(1.2rem,2.4vw,1.7rem);line-height:1.05}
-  .work-note{grid-column:1/-1;color:var(--faint);font-size:12px;letter-spacing:.06em;margin-top:8px}
+  @media(min-width:1000px){.work{grid-template-columns:1fr 1fr 1fr}}
+  .tile{position:relative;aspect-ratio:4/5;border-radius:4px;overflow:hidden;display:flex;align-items:flex-end;
+        padding:18px;isolation:isolate;background:#14111f}
+  .tile .ph{position:absolute;inset:0;z-index:-2;transition:transform .7s var(--ease)}
+  .tile:hover .ph{transform:scale(1.05)}
+  .tile::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,transparent 45%,rgba(10,10,12,.8))}
+  .tile .cap{font-weight:700;text-transform:uppercase;letter-spacing:.02em;font-size:15px}
+  .tile .cap small{display:block;font-weight:500;letter-spacing:.14em;color:var(--acc-2);font-size:11px;margin-bottom:5px}
+  .tile .ph{background:linear-gradient(150deg,#1c1530,#3a2b66)}
+  .tile:nth-child(3n) .ph{background:linear-gradient(150deg,#171225,#2b2150)}
+  .tile:nth-child(3n+1) .ph{background:linear-gradient(150deg,#211838,#4b3a86)}
+  .work .note{grid-column:1/-1;color:var(--muted);font-size:12px;letter-spacing:.04em;margin-top:6px}
 
   /* proceso */
-  .proc{display:flex;flex-direction:column}
-  .step{display:grid;grid-template-columns:1fr;gap:14px;padding-block:clamp(26px,4vw,40px);
-        border-top:1px solid var(--line)}
-  .step .n{font-size:12px;letter-spacing:.14em;color:var(--faint)}
-  .step h3{font-family:"Newsreader",serif;font-weight:300;font-size:clamp(1.4rem,3vw,2.1rem);margin:0;letter-spacing:-.01em}
-  .step p{color:var(--muted);font-size:16px;line-height:1.65;max-width:56ch}
-  @media(min-width:820px){.step{grid-template-columns:200px 1fr;gap:var(--s5);align-items:baseline}}
+  .proc .step{display:grid;grid-template-columns:1fr;gap:12px;padding-block:clamp(24px,3.4vw,38px);border-top:1px solid var(--line)}
+  .proc .step .n{font-size:13px;font-weight:600;color:var(--acc);letter-spacing:.1em}
+  .proc .step h3{margin:0;font-weight:800;text-transform:uppercase;font-size:clamp(1.4rem,3vw,2.1rem);letter-spacing:-.01em}
+  .proc .step p{color:var(--muted);font-size:16px;line-height:1.6;max-width:58ch}
+  @media(min-width:820px){.proc .step{grid-template-columns:180px 1fr;gap:var(--gutter);align-items:baseline}}
 
-  /* contacto */
-  .contact{text-align:left}
-  .contact h2{font-family:"Newsreader",serif;font-weight:200;font-size:clamp(2.4rem,7vw,6rem);
-              line-height:1.02;letter-spacing:-.015em;max-width:16ch;margin:0}
-  .contact h2 .p{color:var(--violeta)}
-  .contact .cta{margin-top:clamp(var(--s4),5vw,var(--s5));font-size:14px}
+  /* contacto con video */
+  .contact{position:relative;overflow:hidden;isolation:isolate}
+  .contact .bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2;opacity:.5}
+  .contact .fallback{position:absolute;inset:0;z-index:-3;background:radial-gradient(70% 100% at 50% 0,#241a3a,transparent 60%),#0a0a0c}
+  .contact .scrim{position:absolute;inset:0;z-index:-1;background:rgba(10,10,12,.55)}
+  .contact h2{margin:0;font-weight:800;text-transform:uppercase;letter-spacing:-.02em;
+              font-size:clamp(2.6rem,9vw,8rem);line-height:.9;max-width:15ch}
+  .contact h2 .em{color:var(--acc)}
+  .contact .cta{margin-top:clamp(28px,4vw,44px)}
 
   /* footer */
-  footer{border-top:1px solid var(--line);padding-block:var(--s5)}
-  .f-grid{display:grid;grid-template-columns:1fr;gap:var(--s4)}
+  footer{border-top:1px solid var(--line)}
+  .f-grid{display:grid;grid-template-columns:1fr;gap:34px;padding-block:clamp(48px,7vw,80px)}
   @media(min-width:720px){.f-grid{grid-template-columns:2fr 1fr 1fr}}
-  .f-grid h4{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--faint);margin:0 0 18px;font-weight:500}
-  .f-grid a,.f-grid span{display:block;color:var(--muted);font-size:14px;margin-bottom:11px;transition:color .25s ease}
+  .f-grid h4{margin:0 0 16px;font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--acc-2)}
+  .f-grid a,.f-grid span{display:block;color:var(--muted);font-size:15px;margin-bottom:10px;transition:color .2s}
   .f-grid a:hover{color:var(--text)}
-  .f-brand p{color:var(--muted);max-width:32ch;margin-top:14px;font-size:14px;line-height:1.7}
-  .f-bottom{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;margin-top:var(--s5);
-            padding-top:var(--s3);border-top:1px solid var(--line);color:var(--faint);font-size:12px;letter-spacing:.06em}
+  .f-brand p{color:var(--muted);max-width:32ch;margin-top:14px;font-size:15px;line-height:1.6}
+  .f-bottom{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;
+            border-top:1px solid var(--line);padding-block:26px;color:var(--muted);font-size:12px;letter-spacing:.06em}
 
-  @media (prefers-reduced-motion: reduce){*{transition:none !important}}
+  /* reveal on scroll (motionsite) */
+  .rev{opacity:0;transform:translateY(30px);transition:opacity .8s var(--ease),transform .8s var(--ease)}
+  .rev.in{opacity:1;transform:none}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important;transition:none !important}
+    .headline .ln>span{transform:none}
+    .fd,.fu,.rev{opacity:1;transform:none}
+  }
 </style>
 </head>
 <body>
 
-<header>
+<!-- ================= HERO ================= -->
+<section class="hero" id="top">
+  <div class="fallback"></div>
+  <video class="bg" autoplay muted loop playsinline preload="auto"
+    poster=""
+    src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260517_222138_3e3205be-3364-417b-a64a-bfe087acbec4.mp4"></video>
+  <div class="scrim"></div>
+
   <div class="wrap nav">
-    <a class="brand" href="#top"><span class="dot"></span> Biomarketing</a>
+    <a class="brand fd d1" href="#top"><span class="o"><i></i></span> Biomarketing</a>
     <nav class="nav-links" aria-label="Principal">
-      <a href="#estudio">Estudio</a>
-      <a href="#servicios">Servicios</a>
-      <a href="#trabajos">Trabajos</a>
-      <a href="#proceso">Proceso</a>
+      <a class="fd d2" href="#estudio">Estudio</a>
+      <a class="fd d2" href="#servicios">Servicios</a>
+      <a class="fd d3" href="#trabajos">Trabajos</a>
+      <a class="fd d3" href="#proceso">Proceso</a>
     </nav>
-    <a class="nav-c" href="https://wa.me/2236346417" target="_blank" rel="noopener">Contacto</a>
+    <a class="nav-c fd d4" href="https://wa.me/2236346417" target="_blank" rel="noopener">Contacto ↗</a>
   </div>
-</header>
 
-<!-- HERO -->
-<main id="top">
-<section class="hero" style="border-top:0">
-  <div class="wrap">
-    <h1 class="serif">Cada marca tiene<br>una historia<span class="p">.</span></h1>
-    <div class="under">
-      <p class="sub">Somos Biomarketing. Comunicación, branding y audiovisual en Mar del Plata. <b>Escuchamos antes de proponer.</b></p>
-      <a class="cta" href="https://wa.me/2236346417" target="_blank" rel="noopener">Agendar una reunión →</a>
+  <div class="wrap hero-body">
+    <div class="rowA">
+      <p class="tag fu a">Cada marca tiene una historia<br>que merece ser contada.</p>
+      <a class="cta big fu a" href="https://wa.me/2236346417" target="_blank" rel="noopener">Agendar una reunión ↗</a>
     </div>
-  </div>
-</section>
-
-<!-- ESTUDIO / ABOUT -->
-<section class="about" id="estudio">
-  <div class="wrap">
-    <div class="head">
-      <span class="num">01 — Estudio</span>
-      <h2 class="serif">Un estudio de comunicación en Mar del Plata.</h2>
-    </div>
-    <div class="body">
-      <p>Antes de proponer un logo o una campaña, nos sentamos a entender tu marca, tu público y qué querés vender. La mitad del trabajo pasa en esa primera charla.</p>
-      <p class="m">Trabajamos con negocios de la ciudad y la costa: gastronomía, inmobiliarias, comercios y profesionales. Marcas reales, con gente detrás.</p>
+    <div class="rowB">
+      <p class="desc fu b">Comunicación, branding y audiovisual en Mar del Plata. <b>Escuchamos antes de proponer.</b></p>
+      <h1 class="headline">
+        <span class="ln"><span>Marketing</span></span>
+        <span class="ln"><span>Comunicación</span></span>
+        <span class="ln"><span class="em">Publicidad</span></span>
+      </h1>
     </div>
   </div>
 </section>
 
-<!-- SERVICIOS -->
-<section id="servicios">
+<!-- ================= ESTUDIO ================= -->
+<section class="about pad" id="estudio">
   <div class="wrap">
-    <div class="head">
-      <span class="num">02 — Servicios</span>
-      <h2 class="serif">Cuatro maneras de acompañarte.</h2>
+    <div class="shead rev"><span class="lab"><span class="n">01</span> — Estudio</span>
+      <h2>Un estudio de comunicación en Mar del Plata</h2></div>
+    <div class="grid">
+      <div class="copy rev">
+        <p>Antes de proponer un logo o una campaña, nos sentamos a entender tu marca.</p>
+        <p class="m">La mitad del trabajo pasa en esa primera charla: tu público, tu historia y qué querés vender. Trabajamos con negocios de la ciudad y la costa.</p>
+      </div>
+      <div class="media rev">
+        <video class="bg-m" autoplay muted loop playsinline preload="auto"
+          style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"
+          src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260517_222138_3e3205be-3364-417b-a64a-bfe087acbec4.mp4"></video>
+      </div>
     </div>
+  </div>
+</section>
+
+<!-- ================= SERVICIOS ================= -->
+<section class="pad" id="servicios">
+  <div class="wrap">
+    <div class="shead rev"><span class="lab"><span class="n">02</span> — Servicios</span>
+      <h2>Cuatro maneras de acompañarte</h2></div>
     <div class="srv">
-      <a href="https://wa.me/2236346417" target="_blank" rel="noopener">
-        <span class="i">01</span>
-        <div class="main"><h3>Branding</h3><p class="d">Logo, identidad visual y el manual para usarla igual en todos lados.</p><span class="ar">Agendar →</span></div>
-      </a>
-      <a href="https://wa.me/2236346417" target="_blank" rel="noopener">
-        <span class="i">02</span>
-        <div class="main"><h3>Páginas web</h3><p class="d">Sitios que cargan rápido y llevan a la gente a escribirte.</p><span class="ar">Agendar →</span></div>
-      </a>
-      <a href="https://wa.me/2236346417" target="_blank" rel="noopener">
-        <span class="i">03</span>
-        <div class="main"><h3>Audiovisual</h3><p class="d">Fotografía, reels y spots para redes y campañas.</p><span class="ar">Agendar →</span></div>
-      </a>
-      <a href="https://wa.me/2236346417" target="_blank" rel="noopener">
-        <span class="i">04</span>
-        <div class="main"><h3>Estrategia</h3><p class="d">Un plan de contenido con fechas y temas, no ideas sueltas.</p><span class="ar">Agendar →</span></div>
-      </a>
+      <a class="rev" href="https://wa.me/2236346417" target="_blank" rel="noopener">
+        <span class="i">01</span><div><h3>Branding</h3><span class="d">Logo, identidad visual y el manual para usarla igual en todos lados.</span></div><span class="go">↗</span></a>
+      <a class="rev" href="https://wa.me/2236346417" target="_blank" rel="noopener">
+        <span class="i">02</span><div><h3>Páginas web</h3><span class="d">Sitios que cargan rápido y llevan a la gente a escribirte.</span></div><span class="go">↗</span></a>
+      <a class="rev" href="https://wa.me/2236346417" target="_blank" rel="noopener">
+        <span class="i">03</span><div><h3>Audiovisual</h3><span class="d">Fotografía, reels y spots para redes y campañas.</span></div><span class="go">↗</span></a>
+      <a class="rev" href="https://wa.me/2236346417" target="_blank" rel="noopener">
+        <span class="i">04</span><div><h3>Estrategia</h3><span class="d">Un plan de contenido con fechas y temas, no ideas sueltas.</span></div><span class="go">↗</span></a>
     </div>
   </div>
 </section>
 
-<!-- TRABAJOS -->
-<section id="trabajos">
+<!-- ================= TRABAJOS ================= -->
+<section class="pad" id="trabajos">
   <div class="wrap">
-    <div class="head">
-      <span class="num">03 — Trabajos</span>
-      <h2 class="serif">Algunas de las marcas que acompañamos.</h2>
-    </div>
+    <div class="shead rev"><span class="lab"><span class="n">03</span> — Trabajos</span>
+      <h2>Algunas de las marcas que acompañamos</h2></div>
     <div class="work">
-      <div class="frame"><span class="tg">Spot</span><span class="nm serif">Marca deportiva</span></div>
-      <div class="frame"><span class="tg">Fotografía</span><span class="nm serif">Producto</span></div>
-      <div class="frame"><span class="tg">Reel</span><span class="nm serif">Gastronomía</span></div>
-      <div class="frame"><span class="tg">Branding</span><span class="nm serif">Inmobiliaria</span></div>
-      <div class="frame"><span class="tg">Campaña</span><span class="nm serif">Fitness</span></div>
-      <div class="frame"><span class="tg">Editorial</span><span class="nm serif">Moda</span></div>
-      <p class="work-note">Marcos de muestra — reemplazar por las piezas reales del portfolio.</p>
+      <div class="tile rev"><span class="ph"></span><span class="cap"><small>Spot</small>Marca deportiva</span></div>
+      <div class="tile rev"><span class="ph"></span><span class="cap"><small>Fotografía</small>Producto</span></div>
+      <div class="tile rev"><span class="ph"></span><span class="cap"><small>Reel</small>Gastronomía</span></div>
+      <div class="tile rev"><span class="ph"></span><span class="cap"><small>Branding</small>Inmobiliaria</span></div>
+      <div class="tile rev"><span class="ph"></span><span class="cap"><small>Campaña</small>Fitness</span></div>
+      <div class="tile rev"><span class="ph"></span><span class="cap"><small>Editorial</small>Moda</span></div>
+      <p class="note">Placeholders — reemplazar por los videos/fotos reales del portfolio.</p>
     </div>
   </div>
 </section>
 
-<!-- PROCESO -->
-<section id="proceso">
+<!-- ================= PROCESO ================= -->
+<section class="proc pad" id="proceso">
   <div class="wrap">
-    <div class="head">
-      <span class="num">04 — Proceso</span>
-      <h2 class="serif">Conectamos primero, creamos después.</h2>
-    </div>
-    <div class="proc">
-      <div class="step"><span class="n">01</span><div><h3 class="serif">Primera reunión</h3><p>Nos encontramos para conocer tu marca, tu historia y qué querés lograr.</p></div></div>
-      <div class="step"><span class="n">02</span><div><h3 class="serif">Asesoramiento</h3><p>Analizamos tu situación y armamos un plan a medida, con prioridades claras.</p></div></div>
-      <div class="step"><span class="n">03</span><div><h3 class="serif">Segunda reunión</h3><p>Nos volvemos a encontrar para poner todo en marcha y arrancar.</p></div></div>
-    </div>
+    <div class="shead rev"><span class="lab"><span class="n">04</span> — Proceso</span>
+      <h2>Conectamos primero, creamos después</h2></div>
+    <div class="step rev"><span class="n">01</span><div><h3>Primera reunión</h3><p>Nos encontramos para conocer tu marca, tu historia y qué querés lograr.</p></div></div>
+    <div class="step rev"><span class="n">02</span><div><h3>Asesoramiento</h3><p>Analizamos tu situación y armamos un plan a medida, con prioridades claras.</p></div></div>
+    <div class="step rev"><span class="n">03</span><div><h3>Segunda reunión</h3><p>Nos volvemos a encontrar para poner todo en marcha y arrancar.</p></div></div>
   </div>
 </section>
 
-<!-- CONTACTO -->
-<section class="contact">
+<!-- ================= CONTACTO ================= -->
+<section class="contact pad">
+  <div class="fallback"></div>
+  <video class="bg" autoplay muted loop playsinline preload="auto"
+    src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260517_222138_3e3205be-3364-417b-a64a-bfe087acbec4.mp4"></video>
+  <div class="scrim"></div>
   <div class="wrap">
-    <span class="num" style="display:block;margin-bottom:var(--s4)">05 — Contacto</span>
-    <h2 class="serif">Contanos qué necesita tu marca<span class="p">.</span></h2>
-    <a class="cta" href="https://wa.me/2236346417" target="_blank" rel="noopener">Agendar una reunión →</a>
+    <span class="lab rev" style="display:block;margin-bottom:26px">05 — Contacto</span>
+    <h2 class="rev">Contanos qué<br>necesita tu marca<span class="em">.</span></h2>
+    <a class="cta big rev" href="https://wa.me/2236346417" target="_blank" rel="noopener">Agendar una reunión ↗</a>
   </div>
 </section>
-</main>
 
-<!-- FOOTER -->
+<!-- ================= FOOTER ================= -->
 <footer>
   <div class="wrap">
     <div class="f-grid">
       <div class="f-brand">
-        <span class="brand"><span class="dot"></span> Biomarketing</span>
+        <span class="brand"><span class="o"><i></i></span> Biomarketing</span>
         <p>Comunicación, branding y audiovisual en Mar del Plata.</p>
       </div>
       <div>
@@ -275,5 +311,15 @@
   </div>
 </footer>
 
+<script>
+  document.documentElement.classList.remove('no');
+  document.body.classList.add('play');
+  if('IntersectionObserver' in window){
+    var io=new IntersectionObserver(function(es){es.forEach(function(en){
+      if(en.isIntersecting){en.target.classList.add('in');io.unobserve(en.target);}});},
+      {threshold:.14,rootMargin:'0px 0px -8% 0px'});
+    document.querySelectorAll('.rev').forEach(function(el){io.observe(el)});
+  } else { document.querySelectorAll('.rev').forEach(function(el){el.classList.add('in')}); }
+</script>
 </body>
 </html>
