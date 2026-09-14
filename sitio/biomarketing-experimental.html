@@ -10,12 +10,12 @@
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800&display=swap">
 <style>
   :root{
-    --acc:#7838e5;         /* violeta marca */
-    --acc-2:#a6e04b;       /* verde marca */
-    --ink:#0a0a0c;
+    --acc:#8a5cf0;
+    --acc-2:#a6e04b;
+    --ink:#08070c;
     --text:#f4f3ef;
-    --muted:#a7a5a0;
-    --line:rgba(244,243,239,.16);
+    --muted:#9d9aa4;
+    --line:rgba(244,243,239,.14);
     --ease:cubic-bezier(.22,1,.36,1);
     --gutter:clamp(20px,5vw,68px);
     --maxw:1440px;
@@ -27,33 +27,29 @@
        -webkit-font-smoothing:antialiased}
   a{color:inherit;text-decoration:none}
   p{margin:0}
-  video{display:block}
   ::selection{background:var(--acc);color:#fff}
   .wrap{max-width:var(--maxw);margin-inline:auto;padding-inline:var(--gutter)}
-  .u{text-transform:uppercase;letter-spacing:.14em}
   .lab{font-size:12px;font-weight:600;letter-spacing:.2em;text-transform:uppercase;color:var(--muted)}
   :focus-visible{outline:1px solid var(--acc-2);outline-offset:4px}
 
-  .cta{display:inline-flex;align-items:center;gap:12px;font-weight:600;letter-spacing:.02em;
-       color:var(--acc-2);transition:gap .3s var(--ease)}
+  /* fondo generativo (una sola pieza, detras de todo) */
+  #gl{position:fixed;inset:0;width:100%;height:100%;z-index:0;display:block}
+  .content{position:relative;z-index:1}
+
+  .cta{display:inline-flex;align-items:center;gap:12px;font-weight:600;color:var(--acc-2);transition:gap .3s var(--ease)}
   .cta:hover{gap:20px}
   .cta.big{font-size:clamp(1.1rem,2.2vw,1.7rem)}
 
-  /* ---------- hero ---------- */
-  .hero{position:relative;min-height:100svh;display:flex;flex-direction:column;overflow:hidden;isolation:isolate}
-  .hero .bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2}
-  .hero .fallback{position:absolute;inset:0;z-index:-3;background:
-      radial-gradient(80% 60% at 70% 10%, #241a3a, transparent 60%),
-      radial-gradient(90% 70% at 10% 100%, #17122a, transparent 60%), #0a0a0c}
-  .hero .scrim{position:absolute;inset:0;z-index:-1;
-      background:linear-gradient(180deg, rgba(10,10,12,.55) 0%, rgba(10,10,12,.15) 34%, rgba(10,10,12,.75) 100%)}
-  .nav{display:flex;align-items:center;justify-content:space-between;gap:20px;
-       padding-top:clamp(20px,3vw,30px)}
+  /* ---------- hero (transparente: se ve el shader) ---------- */
+  .hero{position:relative;min-height:100svh;display:flex;flex-direction:column;isolation:isolate}
+  .hero .scrim{position:absolute;inset:0;z-index:-1;pointer-events:none;
+      background:linear-gradient(180deg, rgba(8,7,12,.5) 0%, rgba(8,7,12,.05) 32%, rgba(8,7,12,.72) 100%)}
+  .nav{display:flex;align-items:center;justify-content:space-between;gap:20px;padding-top:clamp(20px,3vw,30px)}
   .brand{display:flex;align-items:center;gap:11px;font-weight:700;font-size:17px;letter-spacing:-.01em;text-transform:uppercase}
   .brand .o{width:30px;height:30px;border-radius:50%;border:2px solid var(--acc);display:grid;place-items:center;flex:none}
   .brand .o i{width:9px;height:9px;border-radius:50%;background:var(--acc-2);display:block}
   .nav-links{display:none;gap:36px}
-  .nav-links a{font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:var(--text);opacity:.85;transition:opacity .2s}
+  .nav-links a{font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;opacity:.85;transition:opacity .2s}
   .nav-links a:hover{opacity:1}
   .nav-c{font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;
          border:1px solid var(--line);border-radius:999px;padding:9px 18px;transition:border-color .3s,background .3s}
@@ -76,8 +72,6 @@
   .play .headline .ln:nth-child(2)>span{animation:rise .8s var(--ease) .49s forwards}
   .play .headline .ln:nth-child(3)>span{animation:rise .8s var(--ease) .63s forwards}
   @keyframes rise{to{transform:none}}
-
-  /* entrance for nav + rows */
   .fd{opacity:0;transform:translateY(-14px)}
   .play .fd{animation:fd .6s var(--ease) forwards}
   .fd.d1{animation-delay:.05s}.fd.d2{animation-delay:.15s}.fd.d3{animation-delay:.25s}.fd.d4{animation-delay:.35s}
@@ -87,8 +81,8 @@
   .fu.a{animation-delay:.7s}.fu.b{animation-delay:.82s}
   @keyframes fu{to{opacity:1;transform:none}}
 
-  /* ---------- sections ---------- */
-  section{border-top:1px solid var(--line)}
+  /* ---------- sections solidas (tapan el shader) ---------- */
+  .solid{background:var(--ink);border-top:1px solid var(--line)}
   .pad{padding-block:clamp(80px,12vw,170px)}
   .shead{display:grid;grid-template-columns:1fr;gap:22px;margin-bottom:clamp(48px,7vw,90px)}
   .shead .lab .n{color:var(--acc-2)}
@@ -96,15 +90,16 @@
             font-size:clamp(2rem,5.4vw,4.4rem);line-height:.98;max-width:20ch}
   @media(min-width:820px){.shead{grid-template-columns:200px 1fr;gap:var(--gutter);align-items:baseline}}
 
-  /* about with media */
   .about .grid{display:grid;grid-template-columns:1fr;gap:clamp(28px,4vw,56px);align-items:center}
   .about .copy p{font-size:clamp(18px,2.2vw,26px);font-weight:500;line-height:1.4;max-width:24ch}
   .about .copy .m{margin-top:24px;color:var(--muted);font-size:16px;font-weight:400;max-width:44ch;line-height:1.6}
-  .about .media{position:relative;aspect-ratio:5/6;border-radius:4px;overflow:hidden;background:#14111f}
-  .about .media video,.about .media .ph{position:absolute;inset:0;width:100%;height:100%;object-fit:cover}
+  .about .card{aspect-ratio:5/6;border-radius:6px;border:1px solid var(--line);
+       background:radial-gradient(120% 90% at 70% 15%, rgba(138,92,240,.28), transparent 55%),
+                  radial-gradient(90% 80% at 15% 100%, rgba(166,224,75,.14), transparent 55%), #0d0b16;
+       display:flex;align-items:flex-end;padding:24px}
+  .about .card .lab{color:var(--muted)}
   @media(min-width:820px){.about .grid{grid-template-columns:1fr 1fr}}
 
-  /* servicios list */
   .srv a{display:grid;grid-template-columns:auto 1fr auto;gap:clamp(16px,3vw,40px);align-items:center;
          padding-block:clamp(24px,3.4vw,40px);border-top:1px solid var(--line);transition:padding-left .4s var(--ease)}
   .srv a:hover{padding-left:14px}
@@ -116,41 +111,36 @@
   .srv a:hover h3{color:var(--acc)}
   .srv a:hover .go{color:var(--acc-2);transform:translate(4px,-4px)}
 
-  /* trabajos: video/media tiles */
   .work{display:grid;grid-template-columns:1fr;gap:14px}
   @media(min-width:640px){.work{grid-template-columns:1fr 1fr}}
   @media(min-width:1000px){.work{grid-template-columns:1fr 1fr 1fr}}
-  .tile{position:relative;aspect-ratio:4/5;border-radius:4px;overflow:hidden;display:flex;align-items:flex-end;
-        padding:18px;isolation:isolate;background:#14111f}
+  .tile{position:relative;aspect-ratio:4/5;border-radius:6px;overflow:hidden;border:1px solid var(--line);
+        display:flex;align-items:flex-end;padding:18px;isolation:isolate;background:#0d0b16}
   .tile .ph{position:absolute;inset:0;z-index:-2;transition:transform .7s var(--ease)}
   .tile:hover .ph{transform:scale(1.05)}
-  .tile::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,transparent 45%,rgba(10,10,12,.8))}
+  .tile::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,transparent 45%,rgba(8,7,12,.85))}
   .tile .cap{font-weight:700;text-transform:uppercase;letter-spacing:.02em;font-size:15px}
   .tile .cap small{display:block;font-weight:500;letter-spacing:.14em;color:var(--acc-2);font-size:11px;margin-bottom:5px}
-  .tile .ph{background:linear-gradient(150deg,#1c1530,#3a2b66)}
-  .tile:nth-child(3n) .ph{background:linear-gradient(150deg,#171225,#2b2150)}
-  .tile:nth-child(3n+1) .ph{background:linear-gradient(150deg,#211838,#4b3a86)}
+  .tile .ph{background:radial-gradient(90% 70% at 60% 20%, rgba(138,92,240,.4), transparent 60%), #171029}
+  .tile:nth-child(3n) .ph{background:radial-gradient(80% 70% at 40% 30%, rgba(120,60,220,.42), transparent 60%), #120e22}
+  .tile:nth-child(3n+1) .ph{background:radial-gradient(90% 80% at 70% 80%, rgba(166,224,75,.18), transparent 55%), #1a1330}
   .work .note{grid-column:1/-1;color:var(--muted);font-size:12px;letter-spacing:.04em;margin-top:6px}
 
-  /* proceso */
   .proc .step{display:grid;grid-template-columns:1fr;gap:12px;padding-block:clamp(24px,3.4vw,38px);border-top:1px solid var(--line)}
   .proc .step .n{font-size:13px;font-weight:600;color:var(--acc);letter-spacing:.1em}
   .proc .step h3{margin:0;font-weight:800;text-transform:uppercase;font-size:clamp(1.4rem,3vw,2.1rem);letter-spacing:-.01em}
   .proc .step p{color:var(--muted);font-size:16px;line-height:1.6;max-width:58ch}
   @media(min-width:820px){.proc .step{grid-template-columns:180px 1fr;gap:var(--gutter);align-items:baseline}}
 
-  /* contacto con video */
-  .contact{position:relative;overflow:hidden;isolation:isolate}
-  .contact .bg{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;z-index:-2;opacity:.5}
-  .contact .fallback{position:absolute;inset:0;z-index:-3;background:radial-gradient(70% 100% at 50% 0,#241a3a,transparent 60%),#0a0a0c}
-  .contact .scrim{position:absolute;inset:0;z-index:-1;background:rgba(10,10,12,.55)}
+  /* contacto (transparente: se ve el shader) */
+  .contact{position:relative;border-top:1px solid var(--line)}
+  .contact .scrim{position:absolute;inset:0;z-index:-1;pointer-events:none;background:rgba(8,7,12,.4)}
   .contact h2{margin:0;font-weight:800;text-transform:uppercase;letter-spacing:-.02em;
               font-size:clamp(2.6rem,9vw,8rem);line-height:.9;max-width:15ch}
   .contact h2 .em{color:var(--acc)}
   .contact .cta{margin-top:clamp(28px,4vw,44px)}
 
-  /* footer */
-  footer{border-top:1px solid var(--line)}
+  footer{background:var(--ink);border-top:1px solid var(--line)}
   .f-grid{display:grid;grid-template-columns:1fr;gap:34px;padding-block:clamp(48px,7vw,80px)}
   @media(min-width:720px){.f-grid{grid-template-columns:2fr 1fr 1fr}}
   .f-grid h4{margin:0 0 16px;font-size:12px;font-weight:600;letter-spacing:.16em;text-transform:uppercase;color:var(--acc-2)}
@@ -160,7 +150,6 @@
   .f-bottom{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;
             border-top:1px solid var(--line);padding-block:26px;color:var(--muted);font-size:12px;letter-spacing:.06em}
 
-  /* reveal on scroll (motionsite) */
   .rev{opacity:0;transform:translateY(30px);transition:opacity .8s var(--ease),transform .8s var(--ease)}
   .rev.in{opacity:1;transform:none}
 
@@ -173,14 +162,12 @@
 </head>
 <body>
 
+<canvas id="gl" aria-hidden="true"></canvas>
+
+<div class="content">
 <!-- ================= HERO ================= -->
 <section class="hero" id="top">
-  <div class="fallback"></div>
-  <video class="bg" autoplay muted loop playsinline preload="auto"
-    poster=""
-    src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260517_222138_3e3205be-3364-417b-a64a-bfe087acbec4.mp4"></video>
   <div class="scrim"></div>
-
   <div class="wrap nav">
     <a class="brand fd d1" href="#top"><span class="o"><i></i></span> Biomarketing</a>
     <nav class="nav-links" aria-label="Principal">
@@ -191,7 +178,6 @@
     </nav>
     <a class="nav-c fd d4" href="https://wa.me/2236346417" target="_blank" rel="noopener">Contacto ↗</a>
   </div>
-
   <div class="wrap hero-body">
     <div class="rowA">
       <p class="tag fu a">Cada marca tiene una historia<br>que merece ser contada.</p>
@@ -209,7 +195,7 @@
 </section>
 
 <!-- ================= ESTUDIO ================= -->
-<section class="about pad" id="estudio">
+<section class="about solid pad" id="estudio">
   <div class="wrap">
     <div class="shead rev"><span class="lab"><span class="n">01</span> — Estudio</span>
       <h2>Un estudio de comunicación en Mar del Plata</h2></div>
@@ -218,17 +204,13 @@
         <p>Antes de proponer un logo o una campaña, nos sentamos a entender tu marca.</p>
         <p class="m">La mitad del trabajo pasa en esa primera charla: tu público, tu historia y qué querés vender. Trabajamos con negocios de la ciudad y la costa.</p>
       </div>
-      <div class="media rev">
-        <video class="bg-m" autoplay muted loop playsinline preload="auto"
-          style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover"
-          src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260517_222138_3e3205be-3364-417b-a64a-bfe087acbec4.mp4"></video>
-      </div>
+      <div class="card rev"><span class="lab">Estudio · Mar del Plata</span></div>
     </div>
   </div>
 </section>
 
 <!-- ================= SERVICIOS ================= -->
-<section class="pad" id="servicios">
+<section class="solid pad" id="servicios">
   <div class="wrap">
     <div class="shead rev"><span class="lab"><span class="n">02</span> — Servicios</span>
       <h2>Cuatro maneras de acompañarte</h2></div>
@@ -246,7 +228,7 @@
 </section>
 
 <!-- ================= TRABAJOS ================= -->
-<section class="pad" id="trabajos">
+<section class="solid pad" id="trabajos">
   <div class="wrap">
     <div class="shead rev"><span class="lab"><span class="n">03</span> — Trabajos</span>
       <h2>Algunas de las marcas que acompañamos</h2></div>
@@ -257,13 +239,13 @@
       <div class="tile rev"><span class="ph"></span><span class="cap"><small>Branding</small>Inmobiliaria</span></div>
       <div class="tile rev"><span class="ph"></span><span class="cap"><small>Campaña</small>Fitness</span></div>
       <div class="tile rev"><span class="ph"></span><span class="cap"><small>Editorial</small>Moda</span></div>
-      <p class="note">Placeholders — reemplazar por los videos/fotos reales del portfolio.</p>
+      <p class="note">Placeholders — reemplazar por fotos/videos reales del portfolio.</p>
     </div>
   </div>
 </section>
 
 <!-- ================= PROCESO ================= -->
-<section class="proc pad" id="proceso">
+<section class="proc solid pad" id="proceso">
   <div class="wrap">
     <div class="shead rev"><span class="lab"><span class="n">04</span> — Proceso</span>
       <h2>Conectamos primero, creamos después</h2></div>
@@ -275,9 +257,6 @@
 
 <!-- ================= CONTACTO ================= -->
 <section class="contact pad">
-  <div class="fallback"></div>
-  <video class="bg" autoplay muted loop playsinline preload="auto"
-    src="https://d8j0ntlcm91z4.cloudfront.net/user_38xzZboKViGWJOttwIXH07lWA1P/hf_20260517_222138_3e3205be-3364-417b-a64a-bfe087acbec4.mp4"></video>
   <div class="scrim"></div>
   <div class="wrap">
     <span class="lab rev" style="display:block;margin-bottom:26px">05 — Contacto</span>
@@ -310,16 +289,70 @@
     <div class="f-bottom"><span>© 2026 Biomarketing</span><span>Mar del Plata, Argentina</span></div>
   </div>
 </footer>
+</div>
 
 <script>
-  document.documentElement.classList.remove('no');
-  document.body.classList.add('play');
-  if('IntersectionObserver' in window){
-    var io=new IntersectionObserver(function(es){es.forEach(function(en){
-      if(en.isIntersecting){en.target.classList.add('in');io.unobserve(en.target);}});},
-      {threshold:.14,rootMargin:'0px 0px -8% 0px'});
-    document.querySelectorAll('.rev').forEach(function(el){io.observe(el)});
-  } else { document.querySelectorAll('.rev').forEach(function(el){el.classList.add('in')}); }
+/* ---------- fondo generativo WebGL: flujo aurora violeta/verde ---------- */
+(function(){
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var cv = document.getElementById('gl');
+  var gl = cv.getContext('webgl') || cv.getContext('experimental-webgl');
+  if(!gl){ document.body.style.background='#0b0916'; return; }
+  var vs='attribute vec2 p;void main(){gl_Position=vec4(p,0.,1.);}';
+  var fs=[
+  'precision highp float;',
+  'uniform vec2 u_res;uniform float u_t;',
+  'float hash(vec2 p){return fract(sin(dot(p,vec2(127.1,311.7)))*43758.5453);}',
+  'float noise(vec2 p){vec2 i=floor(p),f=fract(p);f=f*f*(3.-2.*f);',
+  ' float a=hash(i),b=hash(i+vec2(1,0)),c=hash(i+vec2(0,1)),d=hash(i+vec2(1,1));',
+  ' return mix(mix(a,b,f.x),mix(c,d,f.x),f.y);}',
+  'float fbm(vec2 p){float v=0.,a=.5;for(int i=0;i<6;i++){v+=a*noise(p);p=p*2.02+3.1;a*=.5;}return v;}',
+  'void main(){',
+  ' vec2 uv=gl_FragCoord.xy/u_res.xy;',
+  ' vec2 p=uv;p.x*=u_res.x/u_res.y;',
+  ' float t=u_t*0.045;',
+  ' vec2 q=vec2(fbm(p*1.6+vec2(0.,t)),fbm(p*1.6+vec2(4.2,1.3-t)));',
+  ' vec2 r=vec2(fbm(p*1.6+2.0*q+vec2(1.7,9.2)+t*0.8),fbm(p*1.6+2.0*q+vec2(8.3,2.8)-t*0.6));',
+  ' float f=fbm(p*1.6+2.6*r);',
+  ' f=clamp(f,0.,1.);',
+  ' vec3 dark=vec3(0.028,0.024,0.05);',
+  ' vec3 deep=vec3(0.10,0.05,0.24);',
+  ' vec3 vio =vec3(0.42,0.24,0.86);',
+  ' vec3 grn =vec3(0.60,0.85,0.28);',
+  ' vec3 col=mix(dark,deep,smoothstep(0.15,0.6,f));',
+  ' col=mix(col,vio,smoothstep(0.55,0.95,f));',
+  ' float ridge=smoothstep(0.62,0.72,f)-smoothstep(0.72,0.86,f);',
+  ' col+=grn*ridge*0.28*smoothstep(0.3,0.8,length(r));',
+  ' float vig=smoothstep(1.25,0.25,length(uv-0.5));',
+  ' col*=0.55+0.55*vig;',
+  ' col+=0.015;',
+  ' gl_FragColor=vec4(col,1.);',
+  '}'].join('\n');
+  function sh(t,s){var o=gl.createShader(t);gl.shaderSource(o,s);gl.compileShader(o);return o;}
+  var pr=gl.createProgram();gl.attachShader(pr,sh(gl.VERTEX_SHADER,vs));gl.attachShader(pr,sh(gl.FRAGMENT_SHADER,fs));
+  gl.linkProgram(pr);gl.useProgram(pr);
+  var buf=gl.createBuffer();gl.bindBuffer(gl.ARRAY_BUFFER,buf);
+  gl.bufferData(gl.ARRAY_BUFFER,new Float32Array([-1,-1,3,-1,-1,3]),gl.STATIC_DRAW);
+  var loc=gl.getAttribLocation(pr,'p');gl.enableVertexAttribArray(loc);gl.vertexAttribPointer(loc,2,gl.FLOAT,false,0,0);
+  var uRes=gl.getUniformLocation(pr,'u_res'),uT=gl.getUniformLocation(pr,'u_t');
+  function size(){var d=Math.min(window.devicePixelRatio||1,1.5);
+    cv.width=Math.floor(innerWidth*d);cv.height=Math.floor(innerHeight*d);
+    gl.viewport(0,0,cv.width,cv.height);}
+  size();addEventListener('resize',size);
+  function draw(ms){gl.uniform2f(uRes,cv.width,cv.height);gl.uniform1f(uT,ms*0.001);
+    gl.drawArrays(gl.TRIANGLES,0,3);if(!reduce)requestAnimationFrame(draw);}
+  if(reduce){gl.uniform2f(uRes,cv.width,cv.height);gl.uniform1f(uT,8.0);gl.drawArrays(gl.TRIANGLES,0,3);}
+  else requestAnimationFrame(draw);
+})();
+
+/* ---------- entradas + reveals ---------- */
+document.body.classList.add('play');
+if('IntersectionObserver' in window){
+  var io=new IntersectionObserver(function(es){es.forEach(function(en){
+    if(en.isIntersecting){en.target.classList.add('in');io.unobserve(en.target);}});},
+    {threshold:.14,rootMargin:'0px 0px -8% 0px'});
+  document.querySelectorAll('.rev').forEach(function(el){io.observe(el)});
+} else { document.querySelectorAll('.rev').forEach(function(el){el.classList.add('in')}); }
 </script>
 </body>
 </html>
