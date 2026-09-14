@@ -1,0 +1,510 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Biomarketing · Estudio Vivo</title>
+<meta name="description" content="Agencia de comunicación consciente en Mar del Plata. Una experiencia viva: branding, web, audiovisual y estrategia.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;600;800;900&family=JetBrains+Mono:wght@400;500;700&display=swap">
+<style>
+  :root{
+    --violeta:#7838e5;
+    --violeta-claro:#9868ea;
+    --verde:#a6e04b;
+    --bg:#08040f;
+    --bg-2:#0f0820;
+    --on:#efeaf8;
+    --on-mut:#a99fc4;
+    --ease:cubic-bezier(.19,1,.22,1);
+    --gutter:clamp(18px,4.5vw,64px);
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{margin:0;background:var(--bg);color:var(--on);overflow-x:hidden;
+       font-family:"JetBrains Mono","SFMono-Regular",monospace;font-size:15px;line-height:1.5;
+       -webkit-font-smoothing:antialiased}
+  h1,h2,h3{font-family:"Archivo","Arial Black",sans-serif;margin:0;line-height:.9;font-weight:900}
+  a{color:inherit;text-decoration:none}
+  p{margin:0}
+  ::selection{background:var(--verde);color:#000}
+  .wrap{max-width:1400px;margin-inline:auto;padding-inline:var(--gutter)}
+  .mono{font-family:"JetBrains Mono",monospace}
+  .up{text-transform:uppercase;letter-spacing:.16em}
+  :focus-visible{outline:2px solid var(--verde);outline-offset:3px}
+
+  /* ---- canvas backdrop ---- */
+  #field{position:fixed;inset:0;z-index:0;display:block}
+  .bg-grad{position:fixed;inset:0;z-index:-1;
+    background:
+      radial-gradient(60% 50% at 78% 12%, rgba(166,224,75,.10), transparent 60%),
+      radial-gradient(70% 60% at 20% 90%, rgba(120,56,229,.28), transparent 60%),
+      var(--bg)}
+  .content{position:relative;z-index:2}
+
+  /* ---- custom cursor ---- */
+  .cursor,.cursor-dot{position:fixed;top:0;left:0;z-index:100;pointer-events:none;border-radius:50%;
+      transform:translate(-50%,-50%);will-change:transform}
+  .cursor{width:38px;height:38px;border:1.5px solid var(--verde);mix-blend-mode:difference;
+      transition:width .25s var(--ease),height .25s var(--ease),background .25s var(--ease),opacity .3s}
+  .cursor-dot{width:6px;height:6px;background:var(--verde)}
+  .cursor.big{width:78px;height:78px;background:var(--verde);border-color:var(--verde)}
+  body.hascursor{cursor:none}
+  @media (hover:none),(pointer:coarse){.cursor,.cursor-dot{display:none}body.hascursor{cursor:auto}}
+
+  /* ---- intro loader ---- */
+  #intro{position:fixed;inset:0;z-index:200;background:var(--bg);display:grid;place-items:center;
+      transition:transform .9s var(--ease)}
+  #intro.done{transform:translateY(-100%)}
+  #intro .n{font-family:"Archivo",sans-serif;font-weight:900;font-size:clamp(4rem,16vw,13rem);
+      color:var(--on);line-height:1}
+  #intro .n b{color:var(--verde)}
+
+  /* ---- nav ---- */
+  nav.top{position:absolute;top:0;left:0;right:0;z-index:10}
+  .nav-in{display:flex;align-items:center;justify-content:space-between;gap:20px;
+      padding-top:clamp(16px,2.5vw,26px)}
+  .logo{display:flex;align-items:center;gap:10px;font-family:"Archivo",sans-serif;font-weight:800;
+      font-size:16px;letter-spacing:.02em}
+  .logo .o{width:14px;height:14px;border-radius:50%;background:var(--verde);
+      box-shadow:0 0 18px var(--verde);animation:pulse 2.4s var(--ease) infinite}
+  @keyframes pulse{50%{transform:scale(.7);opacity:.7}}
+  .nav-menu{display:none;gap:26px}
+  .nav-menu a{font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--on-mut);
+      transition:color .2s}
+  .nav-menu a:hover{color:var(--verde)}
+  .nav-cta{font-family:"Archivo",sans-serif;font-weight:800;font-size:12px;letter-spacing:.1em;
+      text-transform:uppercase;border:1.5px solid var(--on);border-radius:999px;padding:10px 18px;
+      transition:.3s var(--ease);display:inline-block}
+  .nav-cta:hover{background:var(--verde);border-color:var(--verde);color:#000}
+  @media(min-width:900px){.nav-menu{display:flex}}
+
+  /* ---- hero ---- */
+  .hero{position:relative;min-height:100svh;display:flex;flex-direction:column;justify-content:center;
+      padding-block:clamp(90px,14vh,140px)}
+  .hero .kicker{display:flex;align-items:center;gap:12px;color:var(--verde);font-size:12px;
+      letter-spacing:.24em;text-transform:uppercase;margin-bottom:min(4vh,34px)}
+  .hero .kicker::before{content:"";width:40px;height:1px;background:var(--verde)}
+  .word{font-family:"Archivo",sans-serif;font-weight:900;text-transform:uppercase;
+      font-size:clamp(3.4rem,17vw,15rem);line-height:.82;letter-spacing:-.03em;
+      display:flex;flex-wrap:wrap}
+  .word .l{display:inline-block;will-change:transform;transition:color .25s linear}
+  .word .l.sp{width:.28em}
+  .hero .sub{display:flex;flex-wrap:wrap;gap:16px 34px;align-items:flex-end;justify-content:space-between;
+      margin-top:min(5vh,40px)}
+  .hero .claim{max-width:40ch;font-size:clamp(13px,1.4vw,16px);color:var(--on-mut)}
+  .hero .claim b{color:var(--on);font-weight:700}
+  .magnet{position:relative;display:inline-flex;align-items:center;gap:12px;
+      font-family:"Archivo",sans-serif;font-weight:900;text-transform:uppercase;letter-spacing:.04em;
+      font-size:clamp(15px,1.5vw,18px);background:var(--verde);color:#000;border-radius:999px;
+      padding:18px 26px;will-change:transform;transition:transform .35s var(--ease)}
+  .magnet .arw{transition:transform .35s var(--ease)}
+  .magnet:hover .arw{transform:translateX(5px)}
+
+  /* ---- marquee ---- */
+  .marquee{position:relative;z-index:2;border-block:1px solid rgba(255,255,255,.12);
+      overflow:hidden;white-space:nowrap;background:rgba(120,56,229,.08)}
+  .marquee .track{display:inline-flex;gap:0;animation:scroll 26s linear infinite}
+  .marquee:hover .track{animation-play-state:paused}
+  .marquee span{font-family:"Archivo",sans-serif;font-weight:900;text-transform:uppercase;
+      font-size:clamp(1.4rem,3.6vw,2.8rem);letter-spacing:.02em;padding:14px 28px;color:var(--on)}
+  .marquee span .dot{color:var(--verde)}
+  .marquee span:nth-child(even){color:transparent;-webkit-text-stroke:1px var(--on-mut)}
+  @keyframes scroll{to{transform:translateX(-50%)}}
+
+  /* ---- section scaffold ---- */
+  section{position:relative;z-index:2;padding-block:clamp(72px,12vw,150px)}
+  .lab{font-size:12px;letter-spacing:.2em;text-transform:uppercase;color:var(--verde);
+      display:flex;align-items:center;gap:12px;margin-bottom:26px}
+  .lab::before{content:"";width:8px;height:8px;background:var(--verde);border-radius:50%}
+  .big-h{font-size:clamp(2.2rem,7vw,6rem);letter-spacing:-.02em;text-transform:uppercase}
+
+  /* manifesto */
+  .mani .txt{font-family:"Archivo",sans-serif;font-weight:800;text-transform:uppercase;
+      font-size:clamp(1.6rem,5.2vw,4.2rem);line-height:1.02;letter-spacing:-.01em;max-width:20ch}
+  .mani .txt em{font-style:normal;color:var(--verde)}
+  .mani .foot{display:flex;flex-wrap:wrap;gap:20px 60px;margin-top:clamp(34px,5vw,60px);
+      color:var(--on-mut);font-size:14px;max-width:70ch}
+
+  /* servicios — lista interactiva */
+  .srv{border-top:1px solid rgba(255,255,255,.14)}
+  .srv-row{display:grid;grid-template-columns:auto 1fr auto;gap:20px;align-items:center;
+      padding:clamp(20px,3vw,34px) 0;border-bottom:1px solid rgba(255,255,255,.14);
+      position:relative;transition:padding .4s var(--ease)}
+  .srv-row .ix{font-family:"JetBrains Mono",monospace;font-size:13px;color:var(--verde)}
+  .srv-row h3{font-size:clamp(1.6rem,5vw,3.4rem);text-transform:uppercase;letter-spacing:-.01em;
+      transition:transform .4s var(--ease),color .3s}
+  .srv-row .desc{grid-column:2;font-size:14px;color:var(--on-mut);max-height:0;opacity:0;overflow:hidden;
+      transition:max-height .45s var(--ease),opacity .35s,margin .45s var(--ease)}
+  .srv-row .go{font-family:"Archivo",sans-serif;font-weight:900;font-size:22px;color:var(--on-mut);
+      transition:.4s var(--ease);transform:rotate(0)}
+  .srv-row:hover{padding-left:clamp(8px,1.6vw,26px)}
+  .srv-row:hover h3{transform:translateX(6px);color:var(--verde)}
+  .srv-row:hover .go{color:var(--verde);transform:rotate(45deg)}
+  .srv-row:hover .desc{max-height:80px;opacity:1;margin-top:12px}
+
+  /* trabajos — riel */
+  .rail{display:flex;gap:18px;overflow-x:auto;scroll-snap-type:x mandatory;padding-block:8px;
+      margin-top:clamp(30px,4vw,50px);-webkit-overflow-scrolling:touch;scrollbar-width:none}
+  .rail::-webkit-scrollbar{display:none}
+  .tile{scroll-snap-align:start;flex:0 0 clamp(240px,42vw,420px);aspect-ratio:4/5;border-radius:14px;
+      position:relative;overflow:hidden;isolation:isolate;display:flex;align-items:flex-end;padding:18px}
+  .tile .g{position:absolute;inset:0;z-index:-2;transition:transform .6s var(--ease)}
+  .tile:hover .g{transform:scale(1.07)}
+  .tile::after{content:"";position:absolute;inset:0;z-index:-1;
+      background:linear-gradient(180deg,transparent 45%,rgba(8,4,15,.85))}
+  .tile .cap{font-family:"Archivo",sans-serif;font-weight:800;text-transform:uppercase;font-size:14px;letter-spacing:.04em}
+  .tile .cap small{display:block;font-family:"JetBrains Mono",monospace;font-weight:400;
+      color:var(--verde);font-size:11px;letter-spacing:.1em;margin-bottom:4px}
+  .tile:nth-child(3n) .g{background:linear-gradient(150deg,#1a0e2e,#5a27b0 50%,var(--verde))}
+  .tile:nth-child(3n+1) .g{background:linear-gradient(150deg,#241338,var(--violeta) 60%,var(--violeta-claro))}
+  .tile:nth-child(3n+2) .g{background:linear-gradient(150deg,#0f0820,#7a6fc4 70%,#c9b6ff)}
+  .rail-hint{margin-top:16px;color:var(--on-mut);font-size:12px;letter-spacing:.14em;text-transform:uppercase}
+
+  /* proceso */
+  .pr-grid{display:grid;grid-template-columns:1fr;gap:0;margin-top:clamp(30px,4vw,50px)}
+  .pr{display:grid;grid-template-columns:auto 1fr;gap:20px;padding:26px 0;
+      border-top:1px solid rgba(255,255,255,.14)}
+  .pr:last-child{border-bottom:1px solid rgba(255,255,255,.14)}
+  .pr .n{font-family:"Archivo",sans-serif;font-weight:900;font-size:clamp(2rem,5vw,3.4rem);color:var(--violeta-claro)}
+  .pr h3{font-size:clamp(1.1rem,2.4vw,1.6rem);text-transform:uppercase;letter-spacing:.01em}
+  .pr p{color:var(--on-mut);font-size:14px;margin-top:8px;max-width:60ch}
+  @media(min-width:760px){.pr{grid-template-columns:90px 1fr;gap:30px;align-items:baseline}}
+
+  /* cta final */
+  .final{text-align:center}
+  .final h2{font-size:clamp(2.4rem,9vw,8rem);text-transform:uppercase;letter-spacing:-.02em;max-width:14ch;margin-inline:auto}
+  .final h2 em{font-style:normal;color:var(--verde)}
+  .final .magnet{margin-top:clamp(28px,4vw,44px)}
+
+  /* footer */
+  footer{position:relative;z-index:2;border-top:1px solid rgba(255,255,255,.14);
+      padding-block:clamp(40px,6vw,64px)}
+  .f-grid{display:grid;grid-template-columns:1fr;gap:28px}
+  @media(min-width:720px){.f-grid{grid-template-columns:1.4fr 1fr 1fr}}
+  .f-grid h4{font-size:11px;letter-spacing:.18em;text-transform:uppercase;color:var(--verde);margin:0 0 14px}
+  .f-grid a,.f-grid span{display:block;color:var(--on-mut);font-size:14px;margin-bottom:9px;transition:color .2s}
+  .f-grid a:hover{color:var(--verde)}
+  .f-big{font-family:"Archivo",sans-serif;font-weight:900;font-size:clamp(2.4rem,10vw,7rem);
+      text-transform:uppercase;letter-spacing:-.03em;line-height:.85;margin-top:clamp(30px,5vw,60px);
+      color:transparent;-webkit-text-stroke:1px rgba(255,255,255,.25)}
+  .f-bottom{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;margin-top:30px;
+      color:var(--on-mut);font-size:12px;letter-spacing:.08em}
+
+  .reveal{opacity:0;transform:translateY(30px);transition:opacity .8s var(--ease),transform .8s var(--ease)}
+  .reveal.in{opacity:1;transform:none}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important;transition-duration:.001s !important}
+    #intro{display:none}
+    .reveal{opacity:1;transform:none}
+    #field{opacity:.5}
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-grad"></div>
+<canvas id="field"></canvas>
+
+<div class="cursor" id="cur"></div>
+<div class="cursor-dot" id="curd"></div>
+
+<div id="intro"><div class="n mono">BIO<b>·</b><span id="pct">00</span></div></div>
+
+<div class="content">
+<!-- NAV -->
+<nav class="top">
+  <div class="wrap nav-in">
+    <a class="logo" href="#top" data-c><span class="o"></span> BIOMARKETING</a>
+    <div class="nav-menu">
+      <a href="#manifiesto" data-c>Manifiesto</a>
+      <a href="#servicios" data-c>Servicios</a>
+      <a href="#trabajos" data-c>Trabajos</a>
+      <a href="#proceso" data-c>Proceso</a>
+    </div>
+    <a class="nav-cta" href="https://wa.me/2236346417" target="_blank" rel="noopener" data-c>Agendar ↗</a>
+  </div>
+</nav>
+
+<!-- HERO -->
+<header class="hero" id="top">
+  <div class="wrap">
+    <div class="kicker"><span data-scramble>Agencia de comunicación consciente · Mar del Plata</span></div>
+    <h1 class="word" id="word" aria-label="Biomarketing"></h1>
+    <div class="sub">
+      <p class="claim">Cada marca tiene una historia que <b>merece ser contada.</b> No hacemos publicidad: construimos marcas vivas que la gente elige.</p>
+      <a class="magnet" href="https://wa.me/2236346417" target="_blank" rel="noopener" data-c data-magnet>
+        Empecemos <span class="arw">↗</span>
+      </a>
+    </div>
+  </div>
+</header>
+</div>
+
+<!-- MARQUEE -->
+<div class="marquee" aria-hidden="true">
+  <div class="track" id="track">
+    <span>Branding<span class="dot"> · </span></span><span>Web<span class="dot"> · </span></span><span>Audiovisual<span class="dot"> · </span></span><span>Estrategia<span class="dot"> · </span></span><span>Contenido<span class="dot"> · </span></span>
+    <span>Branding<span class="dot"> · </span></span><span>Web<span class="dot"> · </span></span><span>Audiovisual<span class="dot"> · </span></span><span>Estrategia<span class="dot"> · </span></span><span>Contenido<span class="dot"> · </span></span>
+  </div>
+</div>
+
+<div class="content">
+<!-- MANIFIESTO -->
+<section class="mani" id="manifiesto">
+  <div class="wrap">
+    <div class="lab reveal"><span data-scramble>Manifiesto</span></div>
+    <h2 class="txt reveal">Somos una agencia <em>consciente</em> en Mar del Plata. Conectamos primero, creamos después.</h2>
+    <div class="foot reveal">
+      <p>Escuchamos antes de proponer. Entendemos tu marca, tu público y a dónde querés llegar — recién ahí construimos algo que trasciende.</p>
+      <p>Marcas humanas. Historias que conectan. Resultados que se miden.</p>
+    </div>
+  </div>
+</section>
+
+<!-- SERVICIOS -->
+<section id="servicios">
+  <div class="wrap">
+    <div class="lab reveal"><span data-scramble>Qué hacemos</span></div>
+    <div class="srv">
+      <a class="srv-row" href="https://wa.me/2236346417" target="_blank" rel="noopener" data-c>
+        <span class="ix">01</span><h3>Branding</h3><span class="go">↗</span>
+        <p class="desc">Identidad de marca que siente, comunica y evoluciona.</p>
+      </a>
+      <a class="srv-row" href="https://wa.me/2236346417" target="_blank" rel="noopener" data-c>
+        <span class="ix">02</span><h3>Páginas Web</h3><span class="go">↗</span>
+        <p class="desc">Espacios digitales vivos y funcionales.</p>
+      </a>
+      <a class="srv-row" href="https://wa.me/2236346417" target="_blank" rel="noopener" data-c>
+        <span class="ix">03</span><h3>Audiovisual</h3><span class="go">↗</span>
+        <p class="desc">Historias que conectan e inspiran — fotografía, spots, contenido.</p>
+      </a>
+      <a class="srv-row" href="https://wa.me/2236346417" target="_blank" rel="noopener" data-c>
+        <span class="ix">04</span><h3>Estrategia</h3><span class="go">↗</span>
+        <p class="desc">Posicionamos marcas que impactan y trascienden.</p>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- TRABAJOS -->
+<section id="trabajos">
+  <div class="wrap">
+    <div class="lab reveal"><span data-scramble>Portfolio</span></div>
+    <h2 class="big-h reveal">Algunos trabajos</h2>
+  </div>
+  <div class="wrap">
+    <div class="rail reveal">
+      <div class="tile" data-c><span class="g"></span><span class="cap"><small>Spot</small>Marca deportiva</span></div>
+      <div class="tile" data-c><span class="g"></span><span class="cap"><small>Fotografía</small>Producto</span></div>
+      <div class="tile" data-c><span class="g"></span><span class="cap"><small>Reel</small>Gastronomía</span></div>
+      <div class="tile" data-c><span class="g"></span><span class="cap"><small>Branding</small>Inmobiliaria</span></div>
+      <div class="tile" data-c><span class="g"></span><span class="cap"><small>Campaña</small>Fitness</span></div>
+      <div class="tile" data-c><span class="g"></span><span class="cap"><small>Editorial</small>Moda</span></div>
+    </div>
+    <p class="rail-hint">← Arrastrá para explorar · placeholders (van tus piezas reales) →</p>
+  </div>
+</section>
+
+<!-- PROCESO -->
+<section id="proceso">
+  <div class="wrap">
+    <div class="lab reveal"><span data-scramble>Cómo trabajamos</span></div>
+    <h2 class="big-h reveal">Conectamos primero,<br>creamos después</h2>
+    <div class="pr-grid">
+      <div class="pr reveal"><div class="n">01</div><div><h3>Primera reunión</h3><p>Nos encontramos para conocer tu marca, tu historia y qué querés lograr.</p></div></div>
+      <div class="pr reveal"><div class="n">02</div><div><h3>Asesoramiento personalizado</h3><p>Analizamos tu situación y diseñamos un camino a medida, con prioridades claras.</p></div></div>
+      <div class="pr reveal"><div class="n">03</div><div><h3>Segunda reunión</h3><p>Nos volvemos a encontrar para poner todo en marcha y construir juntos.</p></div></div>
+    </div>
+  </div>
+</section>
+
+<!-- CTA FINAL -->
+<section class="final">
+  <div class="wrap">
+    <div class="lab reveal" style="justify-content:center"><span data-scramble>Empecemos</span></div>
+    <h2 class="reveal">¿Listos para <em>trascender?</em></h2>
+    <a class="magnet" href="https://wa.me/2236346417" target="_blank" rel="noopener" data-c data-magnet>
+      Agendar reunión <span class="arw">↗</span>
+    </a>
+  </div>
+</section>
+</div>
+
+<!-- FOOTER -->
+<footer>
+  <div class="wrap">
+    <div class="f-grid">
+      <div>
+        <a class="logo" href="#top" data-c style="margin-bottom:14px"><span class="o"></span> BIOMARKETING</a>
+        <p style="color:var(--on-mut);max-width:32ch;font-size:14px">Comunicación consciente. Marcas humanas, historias que trascienden.</p>
+      </div>
+      <div>
+        <h4>Contacto</h4>
+        <span>Catamarca 2978, Mar del Plata</span>
+        <a href="tel:+542236346417" data-c>223 634 6417</a>
+        <a href="mailto:info@biomarketing.net" data-c>info@biomarketing.net</a>
+      </div>
+      <div>
+        <h4>Redes</h4>
+        <a href="https://wa.me/2236346417" target="_blank" rel="noopener" data-c>WhatsApp</a>
+        <a href="https://instagram.com/biomarketing.arg" target="_blank" rel="noopener" data-c>Instagram</a>
+        <a href="https://tiktok.com/@biomarketing_" target="_blank" rel="noopener" data-c>TikTok</a>
+      </div>
+    </div>
+    <div class="f-big" aria-hidden="true">Biomarketing</div>
+    <div class="f-bottom"><span>© 2026 · Comunicación y publicidad</span><span>Mar del Plata, ARG</span></div>
+  </div>
+</footer>
+
+<script>
+(function(){
+  var reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var fine = matchMedia('(hover:hover) and (pointer:fine)').matches;
+  var pointer = {x: innerWidth/2, y: innerHeight/2, tx: innerWidth/2, ty: innerHeight/2};
+
+  /* ---------- build hero wordmark letters ---------- */
+  var word = document.getElementById('word');
+  'BIOMARKETING'.split('').forEach(function(ch){
+    var s = document.createElement('span'); s.className='l'; s.textContent=ch; word.appendChild(s);
+  });
+  var letters = [].slice.call(word.querySelectorAll('.l'));
+
+  /* ---------- pointer tracking ---------- */
+  addEventListener('pointermove', function(e){ pointer.tx=e.clientX; pointer.ty=e.clientY; }, {passive:true});
+
+  /* ---------- custom cursor ---------- */
+  if(fine && !reduce){
+    document.body.classList.add('hascursor');
+    var cur=document.getElementById('cur'), curd=document.getElementById('curd');
+    var cx=pointer.tx, cy=pointer.ty;
+    document.querySelectorAll('[data-c]').forEach(function(el){
+      el.addEventListener('pointerenter',function(){cur.classList.add('big')});
+      el.addEventListener('pointerleave',function(){cur.classList.remove('big')});
+    });
+    (function loop(){
+      cx+=(pointer.tx-cx)*.18; cy+=(pointer.ty-cy)*.18;
+      cur.style.transform='translate('+cx+'px,'+cy+'px) translate(-50%,-50%)';
+      curd.style.transform='translate('+pointer.tx+'px,'+pointer.ty+'px) translate(-50%,-50%)';
+      requestAnimationFrame(loop);
+    })();
+  } else { document.getElementById('cur').style.display='none'; document.getElementById('curd').style.display='none'; }
+
+  /* ---------- magnetic buttons ---------- */
+  if(fine && !reduce){
+    document.querySelectorAll('[data-magnet]').forEach(function(el){
+      el.addEventListener('pointermove',function(e){
+        var r=el.getBoundingClientRect();
+        var mx=e.clientX-(r.left+r.width/2), my=e.clientY-(r.top+r.height/2);
+        el.style.transform='translate('+mx*.3+'px,'+my*.4+'px)';
+      });
+      el.addEventListener('pointerleave',function(){el.style.transform='';});
+    });
+  }
+
+  /* ---------- reactive letters + particle field ---------- */
+  var canvas=document.getElementById('field'), ctx=canvas.getContext('2d');
+  var W,H,DPR,parts=[];
+  function hexlerp(t){ // violeta -> verde
+    var a=[120,56,229], b=[166,224,75];
+    return 'rgb('+Math.round(a[0]+(b[0]-a[0])*t)+','+Math.round(a[1]+(b[1]-a[1])*t)+','+Math.round(a[2]+(b[2]-a[2])*t)+')';
+  }
+  function resize(){
+    DPR=Math.min(devicePixelRatio||1,2); W=innerWidth; H=innerHeight;
+    canvas.width=W*DPR; canvas.height=H*DPR; canvas.style.width=W+'px'; canvas.style.height=H+'px';
+    ctx.setTransform(DPR,0,0,DPR,0,0);
+    var target=Math.round(Math.min(90, W*H/16000));
+    parts=[]; for(var i=0;i<target;i++){
+      parts.push({x:Math.random()*W,y:Math.random()*H,vx:(Math.random()-.5)*.4,vy:(Math.random()-.5)*.4,t:Math.random()});
+    }
+  }
+  resize(); addEventListener('resize',resize);
+
+  var letterCache=[], cacheT=0;
+  function refreshLetterRects(){ letterCache=letters.map(function(l){var r=l.getBoundingClientRect();return{cx:r.left+r.width/2,cy:r.top+r.height/2,el:l};}); }
+
+  function frame(now){
+    pointer.x+=(pointer.tx-pointer.x)*.12; pointer.y+=(pointer.ty-pointer.y)*.12;
+    // particles
+    ctx.clearRect(0,0,W,H);
+    for(var i=0;i<parts.length;i++){
+      var p=parts[i];
+      var dx=p.x-pointer.x, dy=p.y-pointer.y, d=Math.hypot(dx,dy);
+      if(d<140){ var f=(140-d)/140*1.4; p.vx+=dx/d*f*.15; p.vy+=dy/d*f*.15; }
+      p.vx*=.96; p.vy*=.96; p.x+=p.vx; p.y+=p.vy;
+      if(p.x<0||p.x>W)p.vx*=-1; if(p.y<0||p.y>H)p.vy*=-1;
+      p.x=Math.max(0,Math.min(W,p.x)); p.y=Math.max(0,Math.min(H,p.y));
+      for(var j=i+1;j<parts.length;j++){
+        var q=parts[j], ddx=p.x-q.x, ddy=p.y-q.y, dd=ddx*ddx+ddy*ddy;
+        if(dd<15000){ var a=1-dd/15000; ctx.strokeStyle='rgba(150,120,220,'+(a*.28)+')'; ctx.lineWidth=1;
+          ctx.beginPath();ctx.moveTo(p.x,p.y);ctx.lineTo(q.x,q.y);ctx.stroke(); }
+      }
+      ctx.fillStyle=hexlerp(p.t); ctx.globalAlpha=.9;
+      ctx.beginPath();ctx.arc(p.x,p.y,1.6,0,6.28);ctx.fill();ctx.globalAlpha=1;
+    }
+    // reactive letters
+    if(fine){
+      if(now-cacheT>250){refreshLetterRects();cacheT=now;}
+      var R=170;
+      for(var k=0;k<letterCache.length;k++){
+        var lc=letterCache[k], lx=lc.cx-pointer.x, ly=lc.cy-pointer.y, ld=Math.hypot(lx,ly);
+        if(ld<R){ var s=(1-ld/R); var px=(lx/ld)*s*46||0, py=(ly/ld)*s*46||0;
+          lc.el.style.transform='translate('+px+'px,'+py+'px)'; lc.el.style.color=hexlerp(s);
+        } else { lc.el.style.transform=''; lc.el.style.color=''; }
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+  if(!reduce){ requestAnimationFrame(frame); }
+  else { // static particle draw
+    resize(); ctx.clearRect(0,0,W,H);
+    for(var i=0;i<parts.length;i++){var p=parts[i];ctx.fillStyle=hexlerp(p.t);ctx.beginPath();ctx.arc(p.x,p.y,1.6,0,6.28);ctx.fill();}
+  }
+
+  /* ---------- scramble text on reveal ---------- */
+  var glyphs='ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789#%&/·';
+  function scramble(el){
+    if(reduce)return;
+    var final=el.dataset.done||el.textContent; el.dataset.done=final;
+    var len=final.length, frame=0;
+    var iv=setInterval(function(){
+      var out=''; for(var i=0;i<len;i++){
+        if(i< frame/2){ out+=final[i]; }
+        else if(final[i]===' '){ out+=' '; }
+        else { out+=glyphs[Math.floor(Math.random()*glyphs.length)]; }
+      }
+      el.textContent=out; frame++;
+      if(frame/2>=len){ clearInterval(iv); el.textContent=final; }
+    },28);
+  }
+
+  /* ---------- reveal + scramble observers ---------- */
+  if('IntersectionObserver' in window){
+    var io=new IntersectionObserver(function(es){es.forEach(function(en){
+      if(en.isIntersecting){ en.target.classList.add('in');
+        var sc=en.target.querySelector? en.target.querySelector('[data-scramble]'):null;
+        io.unobserve(en.target);
+      }});},{threshold:.18,rootMargin:'0px 0px -8% 0px'});
+    document.querySelectorAll('.reveal').forEach(function(el){io.observe(el)});
+    // scramble elements independently
+    var io2=new IntersectionObserver(function(es){es.forEach(function(en){
+      if(en.isIntersecting){ scramble(en.target); io2.unobserve(en.target); }});},{threshold:.6});
+    document.querySelectorAll('[data-scramble]').forEach(function(el){io2.observe(el)});
+  } else { document.querySelectorAll('.reveal').forEach(function(el){el.classList.add('in')}); }
+
+  /* ---------- intro loader ---------- */
+  var intro=document.getElementById('intro'), pct=document.getElementById('pct');
+  if(reduce){ if(intro)intro.style.display='none'; }
+  else {
+    var v=0; var iv=setInterval(function(){
+      v+=Math.random()*16+6; if(v>=100){v=100;clearInterval(iv);
+        setTimeout(function(){intro.classList.add('done');},260);
+      } pct.textContent=('0'+Math.floor(v)).slice(-2);
+    },95);
+  }
+})();
+</script>
+</body>
+</html>
