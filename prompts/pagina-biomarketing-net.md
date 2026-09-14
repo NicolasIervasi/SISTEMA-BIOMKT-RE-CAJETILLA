@@ -13,8 +13,8 @@
 - **Público:** dueños de marcas/PYMES que quieren crecer con branding, web, audiovisual y estrategia.
 - **Acción principal (UN CTA):** **Agendar reunión** → WhatsApp `wa.me/2236346417`. Todos los CTA llevan acá.
 - **Tono:** humano, consciente, aspiracional. Nada frío. "acompañamos", "juntos", "marcas humanas".
-- **Stack de salida:** `[? HTML standalone (Tailwind CDN)  ·  React 18 + Vite ]`  ← a definir
-- **Skill de ejecución:** `[? Artifact directo · web-artifacts-builder ]`
+- **Stack de salida:** **HTML standalone (Tailwind CDN)**. Framer Motion → CSS/JS (IntersectionObserver).
+- **Skill de ejecución:** Artifact directo.
 - **Entrega:** Artifact + (opcional) deploy real.
 
 ---
@@ -38,8 +38,9 @@
 
 ## 3. FONDO / ATMÓSFERA
 
-- **Hero:** **[MEJORA]** fondo `[? video full-screen reel de trabajos · imagen · degradé violeta ]`.
-  - Si video: `absolute inset-0 object-cover`, `muted loop autoplay playsinline`, overlay para legibilidad.
+- **Hero:** estilo *motionsite* → **video reel full-screen** de fondo (`absolute inset-0 object-cover`,
+  `muted loop autoplay playsinline`), texto uppercase encima, acento violeta, título grande apilado con clip-reveal.
+  Video real de Biomarketing pendiente → usar placeholder marcado hasta tenerlo.
 - **Resto del sitio:** fondo blanco, secciones separadas por aire (no líneas duras).
 
 ---
@@ -48,8 +49,8 @@
 
 - Contenedor `flex column`. Padding horizontal `px-5 sm:px-8 md:px-12`.
 - **Orden de secciones:**
-  `Nav · Hero · About · Servicios(4) · Portfolio · Proceso(3 pasos) · Stats · Clientes(logos) · Compromiso · Reflexiones · CTA final · Footer`
-  - **[MEJORA]** Subí **Servicios** y **Stats** más arriba (hoy el mensaje de valor tarda en aparecer).
+  `Nav · Hero · About · Servicios(4) · Portfolio · Proceso(3 pasos) · Clientes(logos) · Compromiso · Reflexiones · CTA final · Footer`
+  - **[MEJORA]** Subí **Servicios** más arriba (hoy el mensaje de valor tarda en aparecer). Stats eliminada.
 
 ---
 
@@ -90,13 +91,9 @@
 2. **Asesoramiento personalizado** — "Analizamos tu situación actual…"
 3. **Segunda reunión** — "Nos volvemos a encontrar…"
 
-### 7 — STATS  ← **[MEJORA importante]**
-- Titular: "Nuestros números hablan."
-- **Hoy la sección existe pero NO tiene números.** Cargar 3 métricas reales (estilo +NNN, "+" en violeta):
-  - `[? +NN ]` MARCAS ACOMPAÑADAS
-  - `[? +NN ]` PROYECTOS AUDIOVISUALES
-  - `[? +NN años ]` DE EXPERIENCIA
-- Número negro, "+" violeta 0.5em, label uppercase tracking.
+### 7 — STATS  ← **ELIMINADA**
+- Se saca la sección "Nuestros números hablan": hoy está vacía y sin métricas reales queda débil.
+- Si más adelante hay números, se re-agrega con el estilo +NNN (número negro, "+" violeta).
 
 ### 8 — CLIENTES (logos)
 - Titular: "confiaron en nosotros". 13 logos en escala de grises, color al hover.
@@ -133,7 +130,6 @@
 
 ## 9. CHECKLIST DE ACEPTACIÓN
 - [ ] Un solo destino de CTA (WhatsApp agendar).
-- [ ] Stats con números reales cargados.
 - [ ] Nav ampliada + overlay mobile.
 - [ ] Datos de contacto y redes correctos.
 - [ ] Sin scroll horizontal en ~400px.

@@ -1,0 +1,655 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Biomarketing</title>
+<meta name="description" content="Agencia de comunicación y marketing consciente en Mar del Plata. Branding, web, audiovisual y estrategia para marcas que trascienden.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&family=Figtree:wght@300;400;500;600;700&display=swap">
+<style>
+  /* ============ TOKENS — diseño comprometido: cuerpo claro editorial + hero cine oscuro ============ */
+  :root{
+    --violeta:#635BA7;
+    --violeta-claro:#8A84BF;
+    --violeta-tinte:#EEECF6;   /* neutro con sesgo violeta */
+    --ink:#1C1A22;             /* casi-negro con leve sesgo violeta */
+    --muted:#6B6774;           /* gris violeta */
+    --line:#E4E1EC;
+    --paper:#FFFFFF;
+    --paper-2:#F7F6FB;         /* off-white sesgado al acento */
+    --dark:#0E0C14;            /* ground del hero */
+    --dark-2:#171325;
+    --on-dark:#F4F2FA;
+    --on-dark-muted:#B7B2C9;
+    --ease:cubic-bezier(.22,1,.36,1);
+    --gutter:clamp(20px,5vw,72px);
+    --maxw:1240px;
+  }
+  *{box-sizing:border-box}
+  html{-webkit-text-size-adjust:100%}
+  body{
+    margin:0;background:var(--paper);color:var(--ink);
+    font-family:"Figtree","Helvetica Neue",Arial,sans-serif;
+    font-weight:400;line-height:1.5;font-size:17px;
+    -webkit-font-smoothing:antialiased;text-rendering:optimizeLegibility;
+    overflow-x:hidden;
+  }
+  img{max-width:100%;display:block}
+  a{color:inherit;text-decoration:none}
+  h1,h2,h3{font-family:"Archivo","Figtree",sans-serif;margin:0;text-wrap:balance;line-height:1}
+  p{margin:0}
+  .wrap{max-width:var(--maxw);margin-inline:auto;padding-inline:var(--gutter)}
+  .eyebrow{font-family:"Archivo",sans-serif;font-weight:700;font-size:12px;letter-spacing:.18em;text-transform:uppercase}
+  .u{text-transform:uppercase;letter-spacing:.14em}
+  :focus-visible{outline:2px solid var(--violeta);outline-offset:3px;border-radius:3px}
+
+  /* ============ CTA ============ */
+  .cta{
+    display:inline-flex;align-items:center;gap:.55em;font-family:"Archivo",sans-serif;
+    font-weight:700;letter-spacing:.02em;line-height:1;border-radius:999px;
+    padding:.85em 1.35em;background:var(--violeta);color:#fff;
+    transition:transform .3s var(--ease),background .3s var(--ease),box-shadow .3s var(--ease);
+    box-shadow:0 8px 24px -12px rgba(99,91,167,.7);
+  }
+  .cta:hover{background:#54499c;transform:translateY(-2px)}
+  .cta .arw{transition:transform .3s var(--ease)}
+  .cta:hover .arw{transform:translate(3px,-3px)}
+  .cta.ghost{background:transparent;color:var(--violeta);box-shadow:inset 0 0 0 1.5px var(--violeta)}
+  .cta.ghost:hover{background:var(--violeta);color:#fff}
+  .cta.on-dark{background:#fff;color:var(--dark)}
+  .cta.on-dark:hover{background:var(--violeta-claro);color:#fff}
+
+  /* ============ NAV ============ */
+  header.nav{position:absolute;top:0;left:0;right:0;z-index:30}
+  .nav-in{display:flex;align-items:center;justify-content:space-between;gap:24px;
+          padding-top:clamp(18px,3vw,30px);color:var(--on-dark)}
+  .brand{display:flex;align-items:center;gap:11px;font-family:"Archivo",sans-serif;
+         font-weight:800;letter-spacing:.02em;font-size:20px}
+  .brand .dot{width:30px;height:30px;border-radius:50%;border:2px solid var(--violeta-claro);
+              display:grid;place-items:center;flex:none}
+  .brand .dot i{width:10px;height:10px;border-radius:50%;background:var(--violeta-claro);display:block}
+  .nav-links{display:none;gap:34px;font-family:"Archivo",sans-serif;font-weight:600;
+             font-size:14px;letter-spacing:.12em;text-transform:uppercase}
+  .nav-links a{position:relative;padding:4px 0;opacity:.9;transition:opacity .2s}
+  .nav-links a::after{content:"";position:absolute;left:0;bottom:0;height:1.5px;width:0;
+                      background:var(--violeta-claro);transition:width .3s var(--ease)}
+  .nav-links a:hover{opacity:1}
+  .nav-links a:hover::after{width:100%}
+  .nav-right{display:flex;align-items:center;gap:14px}
+  .nav-cta{display:none}
+  .burger{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.12);
+          border:1px solid rgba(255,255,255,.25);backdrop-filter:blur(6px);
+          display:grid;place-items:center;gap:5px;cursor:pointer;flex:none}
+  .burger span{width:18px;height:2px;background:#fff;border-radius:2px;display:block}
+  @media(min-width:920px){
+    .nav-links{display:flex}
+    .nav-cta{display:inline-flex}
+    .burger{display:none}
+  }
+
+  /* mobile overlay */
+  .mobile{position:fixed;inset:0;z-index:60;background:var(--dark);color:var(--on-dark);
+          display:flex;flex-direction:column;padding:26px var(--gutter) 40px;
+          transform:translateY(-100%);transition:transform .5s var(--ease);visibility:hidden}
+  .mobile.open{transform:none;visibility:visible}
+  .mobile-top{display:flex;align-items:center;justify-content:space-between}
+  .mobile .close{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.12);
+                 border:1px solid rgba(255,255,255,.25);display:grid;place-items:center;cursor:pointer;color:#fff}
+  .mobile nav{display:flex;flex-direction:column;gap:14px;margin-top:min(12vh,90px)}
+  .mobile nav a{font-family:"Archivo",sans-serif;font-weight:800;font-size:clamp(32px,10vw,52px);
+                text-transform:uppercase;letter-spacing:.01em;line-height:1.02}
+  .mobile .m-foot{margin-top:auto;display:flex;flex-direction:column;gap:8px;
+                  color:var(--on-dark-muted);font-size:14px}
+  .mobile .m-foot a.big{font-family:"Archivo",sans-serif;font-weight:700;font-size:22px;
+                        color:var(--violeta-claro);text-transform:none;letter-spacing:0}
+
+  /* ============ HERO ============ */
+  .hero{position:relative;min-height:100svh;background:var(--dark);color:var(--on-dark);
+        display:flex;flex-direction:column;overflow:hidden;isolation:isolate}
+  /* fondo cinemático animado — placeholder del reel de video */
+  .hero .stage{position:absolute;inset:0;z-index:-2;
+    background:
+      radial-gradient(120% 90% at 78% 8%, rgba(138,132,191,.55), transparent 55%),
+      radial-gradient(120% 120% at 8% 100%, rgba(99,91,167,.55), transparent 52%),
+      linear-gradient(160deg,#171226 0%,#0E0C14 55%,#0B0910 100%);}
+  .hero .stage::before,.hero .stage::after{content:"";position:absolute;border-radius:50%;filter:blur(60px);opacity:.55}
+  .hero .stage::before{width:52vw;height:52vw;left:-8vw;top:-6vw;
+    background:radial-gradient(circle,rgba(124,110,196,.9),transparent 62%);
+    animation:drift1 22s var(--ease) infinite alternate}
+  .hero .stage::after{width:46vw;height:46vw;right:-6vw;bottom:-10vw;
+    background:radial-gradient(circle,rgba(99,91,167,.85),transparent 62%);
+    animation:drift2 26s var(--ease) infinite alternate}
+  @keyframes drift1{to{transform:translate(10vw,8vh) scale(1.15)}}
+  @keyframes drift2{to{transform:translate(-8vw,-6vh) scale(1.2)}}
+  .hero .grain{position:absolute;inset:0;z-index:-1;opacity:.5;mix-blend-mode:overlay;pointer-events:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='120' height='120'><filter id='n'><feTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2'/></filter><rect width='100%25' height='100%25' filter='url(%23n)' opacity='.5'/></svg>")}
+  .hero .veil{position:absolute;inset:0;z-index:-1;
+    background:linear-gradient(180deg,rgba(14,12,20,.55) 0%,rgba(14,12,20,.15) 32%,rgba(14,12,20,.55) 100%)}
+  .hero-mid{flex:1;min-height:0;display:flex;align-items:flex-start}
+  .hero-mid .wrap{width:100%;padding-top:clamp(84px,12vh,116px)}
+  .hero-eyebrow{color:var(--violeta-claro);display:inline-flex;align-items:center;gap:12px}
+  .hero-eyebrow::before{content:"";width:34px;height:1.5px;background:var(--violeta-claro);display:block}
+  .hero-bottom{padding-bottom:clamp(28px,5vh,56px)}
+  .hero-bottom .wrap{display:flex;flex-direction:column;gap:clamp(22px,4vw,40px)}
+  .lead-row{display:flex;flex-wrap:wrap;align-items:flex-end;justify-content:space-between;gap:22px}
+  .stack{font-weight:900;text-transform:uppercase;letter-spacing:-.02em;
+         font-size:clamp(2.3rem,9vw,7rem);line-height:.88}
+  .stack .ln{display:block;overflow:hidden}
+  .stack .ln > span{display:block;will-change:transform}
+  .stack .em{color:var(--violeta-claro)}
+  .hero-tag{max-width:34ch;color:var(--on-dark-muted);font-size:clamp(15px,1.4vw,18px);line-height:1.45}
+  .hero-tag b{color:#fff;font-weight:600}
+  .hero-note{display:flex;flex-wrap:wrap;align-items:center;gap:18px}
+
+  /* ============ SECTION SCAFFOLD ============ */
+  section{padding-block:clamp(64px,10vw,128px)}
+  .sec-head{display:flex;flex-direction:column;gap:16px;max-width:60ch}
+  .sec-head .eyebrow{color:var(--violeta)}
+  .sec-title{font-weight:800;text-transform:uppercase;letter-spacing:-.005em;
+             font-size:clamp(2rem,5.2vw,3.6rem);line-height:1.02}
+  .sec-sub{color:var(--muted);font-size:clamp(16px,1.5vw,19px);max-width:52ch}
+
+  /* ABOUT */
+  .about{background:var(--paper-2)}
+  .about .grid{display:grid;grid-template-columns:1fr;gap:clamp(28px,4vw,64px);align-items:end}
+  .about .lede{font-family:"Archivo",sans-serif;font-weight:600;letter-spacing:-.01em;
+               font-size:clamp(1.7rem,3.6vw,2.7rem);line-height:1.08}
+  .about .lede em{font-style:normal;color:var(--violeta)}
+  .about .body{color:var(--muted);font-size:18px;display:flex;flex-direction:column;gap:20px;align-items:flex-start}
+  @media(min-width:860px){.about .grid{grid-template-columns:1.35fr .9fr}}
+
+  /* SERVICIOS */
+  .cards{display:grid;grid-template-columns:1fr;gap:18px;margin-top:clamp(36px,5vw,60px)}
+  @media(min-width:640px){.cards{grid-template-columns:1fr 1fr}}
+  @media(min-width:1040px){.cards{grid-template-columns:repeat(4,1fr)}}
+  .card{position:relative;border:1px solid var(--line);border-radius:20px;padding:26px 24px 22px;
+        background:var(--paper);display:flex;flex-direction:column;min-height:250px;
+        transition:transform .35s var(--ease),border-color .35s var(--ease),box-shadow .35s var(--ease)}
+  .card:hover{transform:translateY(-4px);border-color:var(--violeta-claro);
+              box-shadow:0 26px 50px -30px rgba(99,91,167,.55)}
+  .card .idx{font-family:"Archivo",sans-serif;font-weight:800;font-size:13px;color:var(--violeta);letter-spacing:.1em}
+  .card h3{font-weight:800;text-transform:uppercase;font-size:19px;letter-spacing:.01em;line-height:1.12;margin-top:14px}
+  .card p{color:var(--muted);font-size:15.5px;margin-top:10px}
+  .card .go{margin-top:auto;padding-top:20px;display:inline-flex;align-items:center;gap:8px;
+            font-family:"Archivo",sans-serif;font-weight:700;font-size:14px;color:var(--violeta)}
+  .card .go .arw{transition:transform .3s var(--ease)}
+  .card:hover .go .arw{transform:translate(3px,-3px)}
+
+  /* PORTFOLIO */
+  .pf-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:clamp(36px,5vw,56px)}
+  @media(min-width:720px){.pf-grid{grid-template-columns:repeat(3,1fr)}}
+  @media(min-width:1040px){.pf-grid{grid-template-columns:repeat(4,1fr)}}
+  .pf{position:relative;aspect-ratio:4/5;border-radius:14px;overflow:hidden;
+      display:flex;align-items:flex-end;padding:14px;color:#fff;isolation:isolate}
+  .pf::after{content:"";position:absolute;inset:0;z-index:-1;
+             background:linear-gradient(180deg,transparent 40%,rgba(14,12,20,.72))}
+  .pf .ph{position:absolute;inset:0;z-index:-2;transition:transform .6s var(--ease)}
+  .pf:hover .ph{transform:scale(1.06)}
+  .pf .tag{font-family:"Archivo",sans-serif;font-weight:700;font-size:12px;letter-spacing:.1em;
+           text-transform:uppercase;transform:translateY(6px);opacity:0;transition:.35s var(--ease)}
+  .pf:hover .tag{transform:none;opacity:1}
+  .pf-note{margin-top:16px;color:var(--muted);font-size:13px}
+
+  /* PROCESO */
+  .proceso{background:var(--dark);color:var(--on-dark)}
+  .proceso .sec-head .eyebrow{color:var(--violeta-claro)}
+  .proceso .sec-sub{color:var(--on-dark-muted)}
+  .steps{display:grid;grid-template-columns:1fr;gap:0;margin-top:clamp(34px,5vw,56px)}
+  .step{display:grid;grid-template-columns:auto 1fr;gap:22px;padding:30px 0;
+        border-top:1px solid rgba(255,255,255,.14)}
+  .step:last-child{border-bottom:1px solid rgba(255,255,255,.14)}
+  .step .n{font-family:"Archivo",sans-serif;font-weight:800;font-size:clamp(2.4rem,6vw,4rem);
+           line-height:.9;color:var(--violeta-claro);font-variant-numeric:tabular-nums}
+  .step h3{font-weight:800;text-transform:uppercase;font-size:clamp(1.15rem,2.4vw,1.55rem);letter-spacing:.01em}
+  .step p{color:var(--on-dark-muted);font-size:16.5px;margin-top:10px;max-width:60ch}
+  @media(min-width:760px){.step{grid-template-columns:120px 1fr;gap:34px;align-items:baseline}}
+
+  /* CLIENTES */
+  .clientes{background:var(--paper-2)}
+  .logos{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin-top:clamp(30px,4vw,48px)}
+  @media(min-width:560px){.logos{grid-template-columns:repeat(3,1fr)}}
+  @media(min-width:900px){.logos{grid-template-columns:repeat(5,1fr)}}
+  .logo{aspect-ratio:2.4/1;border:1px solid var(--line);border-radius:12px;background:var(--paper);
+        display:grid;place-items:center;color:var(--muted);font-family:"Archivo",sans-serif;
+        font-weight:700;font-size:13px;letter-spacing:.06em;text-transform:uppercase;
+        filter:grayscale(1);opacity:.72;transition:.3s var(--ease)}
+  .logo:hover{filter:none;opacity:1;color:var(--violeta);border-color:var(--violeta-claro)}
+
+  /* COMPROMISO */
+  .comp .grid{display:grid;grid-template-columns:1fr;gap:clamp(26px,4vw,52px);align-items:center}
+  @media(min-width:860px){.comp .grid{grid-template-columns:1fr 1fr}}
+  .comp .imgs{display:grid;grid-template-columns:1fr 1fr;grid-auto-rows:1fr;gap:10px}
+  .comp .imgs .ph{border-radius:14px;aspect-ratio:1;min-height:88px}
+  .comp .imgs .ph:first-child{grid-column:1/-1;aspect-ratio:2.1/1}
+  .comp .body{color:var(--muted);font-size:18px;display:flex;flex-direction:column;gap:20px;align-items:flex-start}
+
+  /* REFLEXIONES */
+  .posts{display:grid;grid-template-columns:1fr;gap:16px;margin-top:clamp(34px,5vw,54px)}
+  @media(min-width:680px){.posts{grid-template-columns:1fr 1fr}}
+  @media(min-width:1040px){.posts{grid-template-columns:repeat(3,1fr)}}
+  .post{border:1px solid var(--line);border-radius:18px;overflow:hidden;background:var(--paper);
+        display:flex;flex-direction:column;transition:transform .35s var(--ease),box-shadow .35s var(--ease)}
+  .post:hover{transform:translateY(-4px);box-shadow:0 26px 50px -32px rgba(28,26,34,.4)}
+  .post .ph{aspect-ratio:16/10}
+  .post .txt{padding:22px 22px 24px;display:flex;flex-direction:column;gap:12px;flex:1}
+  .post .date{font-family:"Archivo",sans-serif;font-weight:700;font-size:12px;letter-spacing:.1em;
+              text-transform:uppercase;color:var(--violeta)}
+  .post h3{font-family:"Figtree",sans-serif;font-weight:600;font-size:19px;line-height:1.22;letter-spacing:-.01em}
+  .post .go{margin-top:auto;font-family:"Archivo",sans-serif;font-weight:700;font-size:13px;
+            letter-spacing:.08em;text-transform:uppercase;color:var(--violeta);display:inline-flex;gap:7px;align-items:center}
+
+  /* CTA FINAL */
+  .final{background:var(--dark);color:var(--on-dark);text-align:center;position:relative;overflow:hidden}
+  .final::before{content:"";position:absolute;inset:0;z-index:0;
+    background:radial-gradient(70% 120% at 50% 0%,rgba(99,91,167,.5),transparent 60%)}
+  .final .wrap{position:relative;z-index:1;display:flex;flex-direction:column;align-items:center;gap:26px}
+  .final h2{font-weight:900;text-transform:uppercase;letter-spacing:-.01em;
+            font-size:clamp(2.1rem,6vw,4.6rem);line-height:.98;max-width:16ch}
+  .final p{color:var(--on-dark-muted);max-width:48ch;font-size:18px}
+
+  /* FOOTER */
+  footer{background:var(--dark);color:var(--on-dark-muted);border-top:1px solid rgba(255,255,255,.1)}
+  footer .wrap{padding-block:clamp(40px,6vw,72px)}
+  .foot-grid{display:grid;grid-template-columns:1fr;gap:34px}
+  @media(min-width:760px){.foot-grid{grid-template-columns:1.4fr 1fr 1fr}}
+  .foot-brand .brand{color:#fff;margin-bottom:16px}
+  .foot-brand p{max-width:34ch;font-size:15px}
+  .foot-col h4{font-family:"Archivo",sans-serif;font-weight:700;font-size:12px;letter-spacing:.14em;
+               text-transform:uppercase;color:#fff;margin-bottom:14px}
+  .foot-col a,.foot-col span{display:block;font-size:15px;margin-bottom:9px;transition:color .2s}
+  .foot-col a:hover{color:var(--violeta-claro)}
+  .foot-bottom{display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:center;
+               margin-top:40px;padding-top:22px;border-top:1px solid rgba(255,255,255,.1);font-size:13px}
+  .socials{display:flex;gap:10px}
+  .socials a{width:40px;height:40px;border-radius:50%;border:1px solid rgba(255,255,255,.2);
+             display:grid;place-items:center;color:#fff;transition:.25s var(--ease)}
+  .socials a:hover{background:var(--violeta);border-color:var(--violeta);transform:translateY(-2px)}
+
+  /* placeholder fill (imágenes reales pendientes) */
+  .ph{background:
+      linear-gradient(135deg,rgba(99,91,167,.18),rgba(138,132,191,.28)),
+      var(--violeta-tinte);position:relative;overflow:hidden}
+  .ph[data-label]::after{content:attr(data-label);position:absolute;left:12px;bottom:10px;
+      font-family:"Archivo",sans-serif;font-weight:700;font-size:10.5px;letter-spacing:.12em;
+      text-transform:uppercase;color:rgba(99,91,167,.85)}
+  .pf .ph{background:linear-gradient(150deg,#2a2440,#635BA7 60%,#8A84BF)}
+  .pf:nth-child(3n) .ph{background:linear-gradient(150deg,#1d1930,#4b4390 60%,#7a72c0)}
+  .pf:nth-child(3n+1) .ph{background:linear-gradient(150deg,#332b52,#7a6fc4 70%,#a49cd8)}
+
+  /* ============ REVEAL ============ */
+  .rise{opacity:0;transform:translateY(26px);transition:opacity .7s var(--ease),transform .7s var(--ease)}
+  .rise.in{opacity:1;transform:none}
+  [data-d="1"]{transition-delay:.08s}[data-d="2"]{transition-delay:.16s}
+  [data-d="3"]{transition-delay:.24s}[data-d="4"]{transition-delay:.32s}
+  /* hero entra al cargar */
+  .stack .ln > span{transform:translateY(110%);animation:reveal .8s var(--ease) forwards}
+  .stack .ln:nth-child(1) > span{animation-delay:.15s}
+  .stack .ln:nth-child(2) > span{animation-delay:.29s}
+  .stack .ln:nth-child(3) > span{animation-delay:.43s}
+  @keyframes reveal{to{transform:none}}
+  .load{opacity:0;transform:translateY(-14px);animation:down .6s var(--ease) forwards}
+  .load[data-d="1"]{animation-delay:.1s}.load[data-d="2"]{animation-delay:.2s}
+  .load[data-d="3"]{animation-delay:.3s}.load[data-d="4"]{animation-delay:.4s}.load[data-d="5"]{animation-delay:.5s}
+  @keyframes down{to{opacity:1;transform:none}}
+  .fade-up{opacity:0;transform:translateY(22px);animation:fu .7s var(--ease) forwards}
+  .fade-up[data-d="1"]{animation-delay:.55s}.fade-up[data-d="2"]{animation-delay:.68s}.fade-up[data-d="3"]{animation-delay:.8s}
+  @keyframes fu{to{opacity:1;transform:none}}
+
+  @media (prefers-reduced-motion: reduce){
+    *{animation:none !important;transition:none !important}
+    .rise{opacity:1;transform:none}
+    .stack .ln > span{transform:none}
+    .load,.fade-up{opacity:1;transform:none}
+    .hero .stage::before,.hero .stage::after{animation:none}
+  }
+</style>
+</head>
+<body>
+
+<!-- ============ NAV ============ -->
+<header class="nav">
+  <div class="wrap nav-in">
+    <a class="brand load" data-d="1" href="#top" aria-label="Biomarketing inicio">
+      <span class="dot"><i></i></span> biomarketing
+    </a>
+    <nav class="nav-links" aria-label="Principal">
+      <a class="load" data-d="2" href="#servicios">Servicios</a>
+      <a class="load" data-d="3" href="#trabajos">Trabajos</a>
+      <a class="load" data-d="4" href="#proceso">Proceso</a>
+      <a class="load" data-d="5" href="#reflexiones">Reflexiones</a>
+    </nav>
+    <div class="nav-right">
+      <a class="cta on-dark nav-cta load" data-d="5" href="https://wa.me/2236346417" target="_blank" rel="noopener">
+        Agendar reunión <span class="arw">↗</span>
+      </a>
+      <button class="burger load" data-d="5" id="open" aria-label="Abrir menú">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<!-- mobile overlay -->
+<div class="mobile" id="menu" aria-hidden="true">
+  <div class="mobile-top">
+    <span class="brand"><span class="dot"><i></i></span> biomarketing</span>
+    <button class="close" id="close" aria-label="Cerrar menú">✕</button>
+  </div>
+  <nav aria-label="Móvil">
+    <a href="#servicios" data-close>Servicios</a>
+    <a href="#trabajos" data-close>Trabajos</a>
+    <a href="#proceso" data-close>Proceso</a>
+    <a href="#reflexiones" data-close>Reflexiones</a>
+  </nav>
+  <div class="m-foot">
+    <a class="big" href="https://wa.me/2236346417" target="_blank" rel="noopener">Agendar reunión ↗</a>
+    <span>info@biomarketing.net · 223 634 6417</span>
+  </div>
+</div>
+
+<!-- ============ HERO ============ -->
+<main id="top">
+<section class="hero">
+  <div class="stage" aria-hidden="true"></div>
+  <div class="grain" aria-hidden="true"></div>
+  <div class="veil" aria-hidden="true"></div>
+
+  <div class="hero-mid">
+    <div class="wrap">
+      <span class="eyebrow hero-eyebrow load" data-d="2">Agencia de comunicación · Mar del Plata</span>
+    </div>
+  </div>
+
+  <div class="hero-bottom">
+    <div class="wrap">
+      <div class="lead-row">
+        <h1 class="stack">
+          <span class="ln"><span>Marketing</span></span>
+          <span class="ln"><span>Comunicación</span></span>
+          <span class="ln"><span class="em">Publicidad</span></span>
+        </h1>
+        <p class="hero-tag fade-up" data-d="1">
+          Cada marca tiene una historia que <b>merece ser contada.</b>
+          Acompañamos tu crecimiento con estrategia, comunicación y visión.
+        </p>
+      </div>
+      <div class="hero-note fade-up" data-d="2">
+        <a class="cta" href="https://wa.me/2236346417" target="_blank" rel="noopener">
+          Agendar reunión <span class="arw">↗</span>
+        </a>
+        <span class="u" style="font-size:12px;color:var(--on-dark-muted)">Comunicación consciente · marcas humanas</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ ABOUT ============ -->
+<section class="about" id="nosotros">
+  <div class="wrap">
+    <div class="grid">
+      <p class="lede rise">
+        Somos una agencia de comunicación y marketing <em>consciente</em> en Mar del Plata.
+        Acompañamos a marcas humanas a crecer con estrategia, creatividad y sentido.
+      </p>
+      <div class="body rise" data-d="1">
+        <p>Conectamos primero y creamos después. Antes de proponer, escuchamos: entendemos tu
+        marca, tu público y a dónde querés llegar. Recién ahí construimos.</p>
+        <a class="cta ghost" href="https://wa.me/2236346417" target="_blank" rel="noopener">
+          Agendar reunión <span class="arw">↗</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ SERVICIOS ============ -->
+<section id="servicios">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow rise">Qué hacemos</span>
+      <h2 class="sec-title rise" data-d="1">Marcas que impactan y trascienden</h2>
+      <p class="sec-sub rise" data-d="2">Cuatro formas de acompañarte. Una sola conversación para empezar.</p>
+    </div>
+    <div class="cards">
+      <a class="card rise" data-d="1" href="https://wa.me/2236346417" target="_blank" rel="noopener">
+        <span class="idx">01</span>
+        <h3>Branding de marcas</h3>
+        <p>Identidad de marca que siente, comunica y evoluciona.</p>
+        <span class="go">Descubrí tu identidad <span class="arw">↗</span></span>
+      </a>
+      <a class="card rise" data-d="2" href="https://wa.me/2236346417" target="_blank" rel="noopener">
+        <span class="idx">02</span>
+        <h3>Desarrollo de páginas web</h3>
+        <p>Espacios digitales vivos y funcionales.</p>
+        <span class="go">Explorá tu nueva web <span class="arw">↗</span></span>
+      </a>
+      <a class="card rise" data-d="3" href="https://wa.me/2236346417" target="_blank" rel="noopener">
+        <span class="idx">03</span>
+        <h3>Contenido audiovisual</h3>
+        <p>Historias que conectan e inspiran.</p>
+        <span class="go">Conectá con tu público <span class="arw">↗</span></span>
+      </a>
+      <a class="card rise" data-d="4" href="https://wa.me/2236346417" target="_blank" rel="noopener">
+        <span class="idx">04</span>
+        <h3>Posicionamiento estratégico</h3>
+        <p>Posicionamos marcas que impactan y trascienden.</p>
+        <span class="go">Impulsá tu evolución <span class="arw">↗</span></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ TRABAJOS ============ -->
+<section id="trabajos">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow rise">Portfolio</span>
+      <h2 class="sec-title rise" data-d="1">Algunos de nuestros trabajos</h2>
+      <p class="sec-sub rise" data-d="2">Fotografía · Edición · Spots publicitarios</p>
+    </div>
+    <div class="pf-grid">
+      <a class="pf rise" href="https://wa.me/2236346417" target="_blank" rel="noopener"><span class="ph"></span><span class="tag">Spot · Marca deportiva</span></a>
+      <a class="pf rise" data-d="1" href="https://wa.me/2236346417" target="_blank" rel="noopener"><span class="ph"></span><span class="tag">Fotografía · Producto</span></a>
+      <a class="pf rise" data-d="2" href="https://wa.me/2236346417" target="_blank" rel="noopener"><span class="ph"></span><span class="tag">Reel · Gastronomía</span></a>
+      <a class="pf rise" data-d="3" href="https://wa.me/2236346417" target="_blank" rel="noopener"><span class="ph"></span><span class="tag">Branding · Inmobiliaria</span></a>
+      <a class="pf rise" href="https://wa.me/2236346417" target="_blank" rel="noopener"><span class="ph"></span><span class="tag">Campaña · Fitness</span></a>
+      <a class="pf rise" data-d="1" href="https://wa.me/2236346417" target="_blank" rel="noopener"><span class="ph"></span><span class="tag">Spot · Bikes</span></a>
+      <a class="pf rise" data-d="2" href="https://wa.me/2236346417" target="_blank" rel="noopener"><span class="ph"></span><span class="tag">Contenido · Retail</span></a>
+      <a class="pf rise" data-d="3" href="https://wa.me/2236346417" target="_blank" rel="noopener"><span class="ph"></span><span class="tag">Editorial · Moda</span></a>
+    </div>
+    <p class="pf-note">↳ Placeholders: reemplazar por las 12 piezas reales del portfolio (imágenes/video).</p>
+  </div>
+</section>
+
+<!-- ============ PROCESO ============ -->
+<section class="proceso" id="proceso">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow rise">Cómo trabajamos</span>
+      <h2 class="sec-title rise" data-d="1">Conectamos primero, creamos después</h2>
+      <p class="sec-sub rise" data-d="2">Creemos que cada marca merece ser escuchada. Por eso empezamos por vos.</p>
+    </div>
+    <div class="steps">
+      <div class="step rise">
+        <div class="n">01</div>
+        <div>
+          <h3>Primera reunión</h3>
+          <p>Nos encontramos para conocer tu marca, tu historia y qué querés lograr. Sin fórmulas: escuchamos.</p>
+        </div>
+      </div>
+      <div class="step rise" data-d="1">
+        <div class="n">02</div>
+        <div>
+          <h3>Asesoramiento personalizado</h3>
+          <p>Analizamos tu situación actual y diseñamos un camino a medida, con prioridades claras y realistas.</p>
+        </div>
+      </div>
+      <div class="step rise" data-d="2">
+        <div class="n">03</div>
+        <div>
+          <h3>Segunda reunión</h3>
+          <p>Nos volvemos a encontrar para poner todo en marcha y empezar a construir juntos.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CLIENTES ============ -->
+<section class="clientes">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow rise">Confianza</span>
+      <h2 class="sec-title rise" data-d="1">Confiaron en nosotros</h2>
+    </div>
+    <div class="logos">
+      <span class="logo rise">Cliente 01</span>
+      <span class="logo rise" data-d="1">Cliente 02</span>
+      <span class="logo rise" data-d="2">Cliente 03</span>
+      <span class="logo rise" data-d="3">Cliente 04</span>
+      <span class="logo rise" data-d="4">Cliente 05</span>
+      <span class="logo rise">Cliente 06</span>
+      <span class="logo rise" data-d="1">Cliente 07</span>
+      <span class="logo rise" data-d="2">Cliente 08</span>
+      <span class="logo rise" data-d="3">Cliente 09</span>
+      <span class="logo rise" data-d="4">Cliente 10</span>
+    </div>
+    <p class="pf-note">↳ Placeholders: reemplazar por los 13 logos reales (SVG/PNG en escala de grises).</p>
+  </div>
+</section>
+
+<!-- ============ COMPROMISO ============ -->
+<section class="comp">
+  <div class="wrap">
+    <div class="grid">
+      <div class="imgs rise">
+        <span class="ph" data-label="Equipo"></span>
+        <span class="ph" data-label="Rodaje"></span>
+        <span class="ph" data-label="Detrás"></span>
+      </div>
+      <div class="body rise" data-d="1">
+        <span class="eyebrow" style="color:var(--violeta)">Nuestro compromiso</span>
+        <h2 class="sec-title">Comprometidos con tus resultados</h2>
+        <p>No entregamos piezas sueltas: construimos procesos. Medimos, ajustamos y acompañamos
+        para que cada acción tenga impacto real en tu marca y en tus ventas.</p>
+        <a class="cta" href="https://wa.me/2236346417" target="_blank" rel="noopener">
+          Agendar reunión <span class="arw">↗</span>
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ============ REFLEXIONES ============ -->
+<section id="reflexiones">
+  <div class="wrap">
+    <div class="sec-head">
+      <span class="eyebrow rise">Blog</span>
+      <h2 class="sec-title rise" data-d="1">Reflexiones</h2>
+      <p class="sec-sub rise" data-d="2">Ideas sobre marca, contenido y crecimiento.</p>
+    </div>
+    <div class="posts">
+      <a class="post rise" href="https://wa.me/2236346417" target="_blank" rel="noopener">
+        <span class="ph" data-label="Nota"></span>
+        <div class="txt">
+          <span class="date">21 · 09 · 2025</span>
+          <h3>Empresas emergentes: ¿cómo llegué a ser líder de empresas?</h3>
+          <span class="go">Saber más ↗</span>
+        </div>
+      </a>
+      <a class="post rise" data-d="1" href="https://wa.me/2236346417" target="_blank" rel="noopener">
+        <span class="ph" data-label="Nota"></span>
+        <div class="txt">
+          <span class="date">14 · 08 · 2025</span>
+          <h3>Cómo conocer a tu cliente ideal y hablarle de verdad</h3>
+          <span class="go">Saber más ↗</span>
+        </div>
+      </a>
+      <a class="post rise" data-d="2" href="https://wa.me/2236346417" target="_blank" rel="noopener">
+        <span class="ph" data-label="Nota"></span>
+        <div class="txt">
+          <span class="date">13 · 08 · 2025</span>
+          <h3>La importancia de crear contenido con intención</h3>
+          <span class="go">Saber más ↗</span>
+        </div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- ============ CTA FINAL ============ -->
+<section class="final">
+  <div class="wrap">
+    <span class="eyebrow rise" style="color:var(--violeta-claro)">Empecemos</span>
+    <h2 class="rise" data-d="1">¿Querés empezar a vender más de manera digital?</h2>
+    <p class="rise" data-d="2">Contanos dónde está tu marca hoy. Nosotros te mostramos hasta dónde puede llegar.</p>
+    <a class="cta on-dark rise" data-d="3" href="https://wa.me/2236346417" target="_blank" rel="noopener">
+      Agendar reunión <span class="arw">↗</span>
+    </a>
+  </div>
+</section>
+</main>
+
+<!-- ============ FOOTER ============ -->
+<footer>
+  <div class="wrap">
+    <div class="foot-grid">
+      <div class="foot-brand">
+        <span class="brand"><span class="dot"><i></i></span> biomarketing</span>
+        <p>Agencia de comunicación y marketing consciente. Marcas humanas, historias que trascienden.</p>
+      </div>
+      <div class="foot-col">
+        <h4>Navegación</h4>
+        <a href="#servicios">Servicios</a>
+        <a href="#trabajos">Trabajos</a>
+        <a href="#proceso">Proceso</a>
+        <a href="#reflexiones">Reflexiones</a>
+      </div>
+      <div class="foot-col">
+        <h4>Contacto</h4>
+        <span>Catamarca 2978, Mar del Plata</span>
+        <a href="tel:+542236346417">223 634 6417</a>
+        <a href="mailto:info@biomarketing.net">info@biomarketing.net</a>
+      </div>
+    </div>
+    <div class="foot-bottom">
+      <span>© 2026 Biomarketing · Comunicación y publicidad</span>
+      <div class="socials">
+        <a href="https://wa.me/2236346417" target="_blank" rel="noopener" aria-label="WhatsApp">✆</a>
+        <a href="https://facebook.com" target="_blank" rel="noopener" aria-label="Facebook">f</a>
+        <a href="https://instagram.com/biomarketing.arg" target="_blank" rel="noopener" aria-label="Instagram">◎</a>
+        <a href="https://tiktok.com/@biomarketing_" target="_blank" rel="noopener" aria-label="TikTok">♪</a>
+      </div>
+    </div>
+  </div>
+</footer>
+
+<script>
+  // Mobile menu
+  var menu=document.getElementById('menu');
+  function setMenu(open){
+    menu.classList.toggle('open',open);
+    menu.setAttribute('aria-hidden',open?'false':'true');
+    document.body.style.overflow=open?'hidden':'';
+  }
+  document.getElementById('open').addEventListener('click',function(){setMenu(true)});
+  document.getElementById('close').addEventListener('click',function(){setMenu(false)});
+  Array.prototype.forEach.call(document.querySelectorAll('[data-close]'),function(a){
+    a.addEventListener('click',function(){setMenu(false)});
+  });
+  document.addEventListener('keydown',function(e){if(e.key==='Escape')setMenu(false)});
+
+  // Scroll reveal (fallback: todo visible si no hay IO)
+  if('IntersectionObserver' in window){
+    var io=new IntersectionObserver(function(entries){
+      entries.forEach(function(en){ if(en.isIntersecting){en.target.classList.add('in');io.unobserve(en.target);} });
+    },{rootMargin:'0px 0px -8% 0px',threshold:.12});
+    Array.prototype.forEach.call(document.querySelectorAll('.rise'),function(el){io.observe(el)});
+  } else {
+    Array.prototype.forEach.call(document.querySelectorAll('.rise'),function(el){el.classList.add('in')});
+  }
+</script>
+</body>
+</html>
