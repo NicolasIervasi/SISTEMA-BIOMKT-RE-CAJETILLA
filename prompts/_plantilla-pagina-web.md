@@ -120,3 +120,19 @@
 - [ ] Todas las secciones del orden (sección 4) presentes.
 - [ ] Animaciones respetan `prefers-reduced-motion`.
 - [ ] Publicado como Artifact y link entregado.
+
+## 10. NO PARECER VIBECODEADO  *(evitar estos 20 clichés de "hecho por IA")*
+
+Si la página cae en varios de estos, se nota que la escupió una IA. Evitarlos a propósito:
+
+1. Gradiente violeta→azul. 2. Texto del hero con gradiente. 3. Emojis en los títulos.
+4. Fuente Inter en todo. 5. Cards con borde de color. 6. Cards glassmorphism (vidrio esmerilado).
+7. Dark mode de bajo contraste. 8. Tres cajitas con ícono en fila. 9. Badge/etiqueta arriba del titular.
+10. Íconos Lucide por todos lados. 11. UI de shadcn sin tocar. 12. Fade-in al hacer scroll.
+13. Haz/beam que sigue el cursor. 14. Botones que se desvanecen (opacidad) al hover.
+15. Espaciado inconsistente. 16. Em dashes (—) por todos lados. 17. Copy con buzzwords genéricos.
+18. Itálicas serif de acento. 19. Space Grotesk + Instrument Serif. 20. Grano sobre un gradiente.
+
+> **En su lugar:** decisiones específicas del sujeto. Tipografía elegida (no la "segura"), color
+> plano y con intención, espaciado con una escala consistente, copy concreto y humano, hover crudo
+> (swap de color, no fade), contenido visible en reposo (sin depender de animación).
