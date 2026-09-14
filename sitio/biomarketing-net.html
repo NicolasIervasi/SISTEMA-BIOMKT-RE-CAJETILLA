@@ -142,7 +142,7 @@
          font-size:clamp(2.3rem,9vw,7rem);line-height:.88}
   .stack .ln{display:block;overflow:hidden}
   .stack .ln > span{display:block;will-change:transform}
-  .stack .em{color:var(--verde)}
+  .stack .em{color:var(--on-dark)}
   .hero-tag{max-width:34ch;color:var(--on-dark-muted);font-size:clamp(15px,1.4vw,18px);line-height:1.45}
   .hero-tag b{color:#fff;font-weight:600}
   .hero-note{display:flex;flex-wrap:wrap;align-items:center;gap:18px}
@@ -160,7 +160,9 @@
   .about .grid{display:grid;grid-template-columns:1fr;gap:clamp(28px,4vw,64px);align-items:end}
   .about .lede{font-family:"Archivo",sans-serif;font-weight:600;letter-spacing:-.01em;
                font-size:clamp(1.7rem,3.6vw,2.7rem);line-height:1.08}
-  .about .lede em{font-style:normal;color:var(--violeta)}
+  .about .lede em{font-style:normal;color:var(--ink);padding:0 .08em;border-radius:3px;
+       background:linear-gradient(var(--verde),var(--verde)) no-repeat;
+       background-size:100% .42em;background-position:0 82%}
   .about .body{color:var(--muted);font-size:18px;display:flex;flex-direction:column;gap:20px;align-items:flex-start}
   @media(min-width:860px){.about .grid{grid-template-columns:1.35fr .9fr}}
 
@@ -171,6 +173,10 @@
   .card{position:relative;border:1px solid var(--line);border-radius:20px;padding:26px 24px 22px;
         background:var(--paper);display:flex;flex-direction:column;min-height:250px;
         transition:transform .35s var(--ease),border-color .35s var(--ease),box-shadow .35s var(--ease)}
+  .card::before{content:"";position:absolute;left:24px;right:24px;top:0;height:3px;
+                background:var(--verde);border-radius:0 0 4px 4px;
+                transform:scaleX(0);transform-origin:left;transition:transform .35s var(--ease)}
+  .card:hover::before{transform:scaleX(1)}
   .card:hover{transform:translateY(-4px);border-color:var(--violeta-claro);
               box-shadow:0 26px 50px -30px rgba(120,56,229,.5)}
   .card .idx{font-family:"Archivo",sans-serif;font-weight:800;font-size:13px;color:var(--violeta);letter-spacing:.1em}
@@ -198,14 +204,16 @@
 
   /* PROCESO */
   .proceso{background:var(--dark);color:var(--on-dark)}
-  .proceso .sec-head .eyebrow{color:var(--verde)}
+  .proceso .sec-head .eyebrow{color:var(--violeta-claro)}
   .proceso .sec-sub{color:var(--on-dark-muted)}
   .steps{display:grid;grid-template-columns:1fr;gap:0;margin-top:clamp(34px,5vw,56px)}
   .step{display:grid;grid-template-columns:auto 1fr;gap:22px;padding:30px 0;
         border-top:1px solid rgba(255,255,255,.14)}
   .step:last-child{border-bottom:1px solid rgba(255,255,255,.14)}
-  .step .n{font-family:"Archivo",sans-serif;font-weight:800;font-size:clamp(2.4rem,6vw,4rem);
-           line-height:.9;color:var(--verde);font-variant-numeric:tabular-nums}
+  .step .n{position:relative;font-family:"Archivo",sans-serif;font-weight:800;font-size:clamp(2.4rem,6vw,4rem);
+           line-height:.9;color:var(--on-dark);font-variant-numeric:tabular-nums;padding-top:16px}
+  .step .n::before{content:"";position:absolute;left:2px;top:0;width:26px;height:4px;
+           background:var(--verde);border-radius:99px}
   .step h3{font-weight:800;text-transform:uppercase;font-size:clamp(1.15rem,2.4vw,1.55rem);letter-spacing:.01em}
   .step p{color:var(--on-dark-muted);font-size:16.5px;margin-top:10px;max-width:60ch}
   @media(min-width:760px){.step{grid-template-columns:120px 1fr;gap:34px;align-items:baseline}}
@@ -588,7 +596,7 @@
 <!-- ============ CTA FINAL ============ -->
 <section class="final">
   <div class="wrap">
-    <span class="eyebrow rise" style="color:var(--verde)">Empecemos</span>
+    <span class="eyebrow rise" style="color:var(--violeta-claro)">Empecemos</span>
     <h2 class="rise" data-d="1">¿Querés empezar a vender más de manera digital?</h2>
     <p class="rise" data-d="2">Contanos dónde está tu marca hoy. Nosotros te mostramos hasta dónde puede llegar.</p>
     <a class="cta on-dark rise" data-d="3" href="https://wa.me/2236346417" target="_blank" rel="noopener">
