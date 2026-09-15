@@ -103,9 +103,15 @@
 
   /* clientes */
   .clients{border-bottom:1px solid var(--line);background:var(--bg)}
-  .clients .wrap{padding-block:34px;display:flex;flex-wrap:wrap;align-items:center;gap:18px 34px;justify-content:center}
-  .clients .lbl{font-family:"Montserrat",sans-serif;font-weight:600;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
-  .clients .logo{font-family:"Montserrat",sans-serif;font-weight:700;font-size:15px;color:#8f8e99;letter-spacing:.02em}
+  .clients .wrap{padding-block:clamp(30px,4vw,48px);display:flex;flex-direction:column;align-items:center;gap:24px}
+  .clients .lbl{font-family:"Montserrat",sans-serif;font-weight:600;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.14em}
+  .clients .row{display:flex;flex-wrap:wrap;justify-content:center;gap:14px}
+  .clients .chip{background:#f5f4f1;border-radius:14px;height:66px;padding:0 24px;display:grid;place-items:center;
+                 min-width:120px;transition:transform .25s var(--ease)}
+  .clients .chip:hover{transform:translateY(-3px)}
+  .clients .chip img{max-height:36px;max-width:130px;width:auto;object-fit:contain;
+                     filter:grayscale(1);opacity:.85;transition:.25s var(--ease)}
+  .clients .chip:hover img{filter:none;opacity:1}
 
   /* section base */
   section .wrap{padding-block:clamp(56px,8vw,104px)}
@@ -146,7 +152,7 @@
   @media(min-width:1000px){.work{grid-template-columns:repeat(3,1fr)}}
   .tile{position:relative;aspect-ratio:4/3;border-radius:16px;overflow:hidden;border:1px solid var(--line);
         display:flex;align-items:flex-end;padding:18px;isolation:isolate;background:var(--bg-2)}
-  .tile .g{position:absolute;inset:0;z-index:-2;transition:transform .5s var(--ease)}
+  .tile .g{position:absolute;inset:0;z-index:-2;width:100%;height:100%;object-fit:cover;transition:transform .5s var(--ease)}
   .tile:hover .g{transform:scale(1.04)}
   .tile::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,transparent 40%,rgba(21,20,28,.55))}
   .tile .cap{color:#fff;font-family:"Montserrat",sans-serif;font-weight:600;font-size:15px}
@@ -242,8 +248,14 @@
 <div class="clients">
   <div class="wrap">
     <span class="lbl">Confiaron en nosotros</span>
-    <span class="logo">Cliente 01</span><span class="logo">Cliente 02</span><span class="logo">Cliente 03</span>
-    <span class="logo">Cliente 04</span><span class="logo">Cliente 05</span><span class="logo">Cliente 06</span>
+    <div class="row">
+      <span class="chip"><img src="assets/logos/bendito_futbol_gris_web.png" alt="Bendito Fútbol"></span>
+      <span class="chip"><img src="assets/logos/bikes_asaro_gris_web.png" alt="Bikes Asaro"></span>
+      <span class="chip"><img src="assets/logos/hasrun_gris_web.png" alt="Hasrun"></span>
+      <span class="chip"><img src="assets/logos/las_gironas_gris_web.png" alt="Las Gironas"></span>
+      <span class="chip"><img src="assets/logos/cahuma-1024x685.png" alt="Cahuma"></span>
+      <span class="chip"><img src="assets/logos/SAUCE-PROPIEDADES.png" alt="Sauce Propiedades"></span>
+    </div>
   </div>
 </div>
 
@@ -299,12 +311,12 @@
       <h2>Algunas marcas que acompañamos</h2>
     </div>
     <div class="work">
-      <div class="tile rev"><span class="g"></span><span class="cap"><small>Spot</small>Marca deportiva</span></div>
-      <div class="tile rev d1"><span class="g"></span><span class="cap"><small>Fotografía</small>Producto</span></div>
-      <div class="tile rev d2"><span class="g"></span><span class="cap"><small>Reel</small>Gastronomía</span></div>
-      <div class="tile rev"><span class="g"></span><span class="cap"><small>Branding</small>Inmobiliaria</span></div>
-      <div class="tile rev d1"><span class="g"></span><span class="cap"><small>Campaña</small>Fitness</span></div>
-      <div class="tile rev d2"><span class="g"></span><span class="cap"><small>Editorial</small>Moda</span></div>
+      <div class="tile rev"><img class="g" src="assets/fotos/BIO2301-683x1024.jpg" alt="Producción de marca"><span class="cap"><small>Fotografía</small>Producción de marca</span></div>
+      <div class="tile rev d1"><img class="g" src="assets/fotos/BIO3463-696x1024.jpg" alt="Sesión de producto"><span class="cap"><small>Fotografía</small>Sesión de producto</span></div>
+      <div class="tile rev d2"><img class="g" src="assets/fotos/BIO3923-683x1024.jpg" alt="Contenido para redes"><span class="cap"><small>Contenido</small>Contenido para redes</span></div>
+      <div class="tile rev"><img class="g" src="assets/fotos/BIO3468-683x1024.jpg" alt="Dirección de arte"><span class="cap"><small>Producción</small>Dirección de arte</span></div>
+      <div class="tile rev d1"><img class="g" src="assets/fotos/BIO3562-683x1024.jpg" alt="Campaña editorial"><span class="cap"><small>Campaña</small>Editorial de marca</span></div>
+      <div class="tile rev d2"><img class="g" src="assets/fotos/BIO0300-1-1024x683.jpg" alt="Detrás de escena"><span class="cap"><small>Producción</small>Detrás de escena</span></div>
     </div>
   </div>
 </section>
