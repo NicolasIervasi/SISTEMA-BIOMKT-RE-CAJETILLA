@@ -12,9 +12,10 @@
   :root{
     --bg:#0b0b0e;
     --bg-2:#141419;
-    --ink:#f3f3f0;
-    --muted:#9a99a4;
-    --line:rgba(243,243,240,.13);
+    --ink:#f4f4f1;
+    --muted:#bcbbc6;
+    --violeta-light:#b39dff;
+    --line:rgba(243,243,240,.15);
     --violeta:#8a5cf0;
     --violeta-2:#7838e5;
     --violeta-soft:rgba(138,92,240,.16);
@@ -37,7 +38,7 @@
   ::selection{background:var(--violeta);color:#fff}
   .wrap{max-width:var(--maxw);margin-inline:auto;padding-inline:var(--gutter)}
   .eyebrow{font-family:"Montserrat",sans-serif;font-weight:600;font-size:12px;letter-spacing:.14em;
-           text-transform:uppercase;color:var(--violeta)}
+           text-transform:uppercase;color:var(--violeta-light)}
   :focus-visible{outline:2px solid var(--violeta);outline-offset:3px}
 
   /* buttons */
@@ -47,7 +48,7 @@
        box-shadow:0 10px 30px -12px rgba(122,69,224,.7),inset 0 1px 0 rgba(255,255,255,.25);
        transition:transform .2s var(--ease),box-shadow .2s var(--ease),filter .2s var(--ease)}
   .btn:hover{transform:translateY(-2px);filter:brightness(1.08);box-shadow:0 16px 38px -14px rgba(122,69,224,.8),inset 0 1px 0 rgba(255,255,255,.3)}
-  .btn.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1.5px var(--line)}
+  .btn.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1.5px rgba(243,243,240,.32)}
   .btn.ghost:hover{box-shadow:inset 0 0 0 1.5px var(--violeta);color:#fff;background:var(--violeta)}
   .btn.sm{padding:10px 20px;font-size:14px}
 
@@ -104,7 +105,7 @@
   .clients{border-bottom:1px solid var(--line);background:var(--bg)}
   .clients .wrap{padding-block:34px;display:flex;flex-wrap:wrap;align-items:center;gap:18px 34px;justify-content:center}
   .clients .lbl{font-family:"Montserrat",sans-serif;font-weight:600;font-size:13px;color:var(--muted);text-transform:uppercase;letter-spacing:.1em}
-  .clients .logo{font-family:"Montserrat",sans-serif;font-weight:700;font-size:15px;color:#6b6a75;letter-spacing:.02em}
+  .clients .logo{font-family:"Montserrat",sans-serif;font-weight:700;font-size:15px;color:#8f8e99;letter-spacing:.02em}
 
   /* section base */
   section .wrap{padding-block:clamp(56px,8vw,104px)}
