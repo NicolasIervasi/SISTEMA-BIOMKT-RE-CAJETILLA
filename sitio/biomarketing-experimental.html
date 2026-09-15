@@ -219,6 +219,36 @@
   .spot video{width:100%;height:100%;object-fit:cover;display:block;background:#0d0b16}
   .spots-note{margin-top:22px;color:var(--muted);font-size:12px;letter-spacing:.04em}
 
+  /* galeria de trabajos en movimiento */
+  .gal{display:flex;flex-direction:column;gap:16px;margin-top:clamp(32px,4.5vw,52px);overflow:hidden;
+       -webkit-mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent);
+       mask-image:linear-gradient(90deg,transparent,#000 6%,#000 94%,transparent)}
+  .gal .row2{display:flex;gap:16px;width:max-content;will-change:transform}
+  .gal .row2.l{animation:galL 48s linear infinite}
+  .gal .row2.r{animation:galR 54s linear infinite}
+  .gal:hover .row2{animation-play-state:paused}
+  .gitem{flex:0 0 auto;width:clamp(200px,23vw,290px);aspect-ratio:4/5;border-radius:16px;overflow:hidden;
+         position:relative;border:1px solid var(--line);isolation:isolate;background:#0d0b16}
+  .gitem img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s var(--ease)}
+  .gitem:hover img{transform:scale(1.06)}
+  .gitem::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%,rgba(8,7,12,.72))}
+  .gitem .tag{position:absolute;left:14px;bottom:13px;z-index:1;font-family:"Montserrat",sans-serif;
+              font-weight:600;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#fff}
+  @keyframes galL{to{transform:translateX(-50%)}}
+  @keyframes galR{from{transform:translateX(-50%)}to{transform:translateX(0)}}
+
+  /* clientes en carrusel */
+  .creel{width:100%;overflow:hidden;margin-top:22px;
+         -webkit-mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent);
+         mask-image:linear-gradient(90deg,transparent,#000 8%,#000 92%,transparent)}
+  .ctrack{display:flex;gap:14px;width:max-content;animation:galL 40s linear infinite}
+  .clients:hover .ctrack{animation-play-state:paused}
+
+  @media (prefers-reduced-motion:reduce){
+    .gal .row2,.ctrack{animation:none}
+    .gal{overflow-x:auto}.gal .row2{width:auto}
+  }
+
   .rev{opacity:0;transform:translateY(16px);transition:opacity .6s var(--ease),transform .6s var(--ease)}
   .rev.in{opacity:1;transform:none}
   .rev.d1{transition-delay:.06s}.rev.d2{transition-delay:.12s}.rev.d3{transition-delay:.18s}
@@ -287,17 +317,8 @@
 
 <!-- CLIENTES -->
 <div class="clients">
-  <div class="wrap">
-    <span class="lbl">Confiaron en nosotros</span>
-    <div class="row">
-      <span class="chip"><img src="assets/logos/bendito_futbol_gris_web.png" alt="Bendito Fútbol"></span>
-      <span class="chip"><img src="assets/logos/bikes_asaro_gris_web.png" alt="Bikes Asaro"></span>
-      <span class="chip"><img src="assets/logos/hasrun_gris_web.png" alt="Hasrun"></span>
-      <span class="chip"><img src="assets/logos/las_gironas_gris_web.png" alt="Las Gironas"></span>
-      <span class="chip"><img src="assets/logos/cahuma-1024x685.png" alt="Cahuma"></span>
-      <span class="chip"><img src="assets/logos/SAUCE-PROPIEDADES.png" alt="Sauce Propiedades"></span>
-    </div>
-  </div>
+  <div class="wrap"><span class="lbl">Confiaron en nosotros</span></div>
+  <div class="creel"><div class="ctrack"><span class="chip"><img src="assets/logos/bendito_futbol_gris_web.png" alt="Bendito Fútbol"></span><span class="chip"><img src="assets/logos/bikes_asaro_gris_web.png" alt="Bikes Asaro"></span><span class="chip"><img src="assets/logos/hasrun_gris_web.png" alt="Hasrun"></span><span class="chip"><img src="assets/logos/las_gironas_gris_web.png" alt="Las Gironas"></span><span class="chip"><img src="assets/logos/cahuma-1024x685.png" alt="Cahuma"></span><span class="chip"><img src="assets/logos/SAUCE-PROPIEDADES.png" alt="Sauce Propiedades"></span><span class="chip"><img src="assets/logos/bendito_futbol_gris_web.png" alt="Bendito Fútbol"></span><span class="chip"><img src="assets/logos/bikes_asaro_gris_web.png" alt="Bikes Asaro"></span><span class="chip"><img src="assets/logos/hasrun_gris_web.png" alt="Hasrun"></span><span class="chip"><img src="assets/logos/las_gironas_gris_web.png" alt="Las Gironas"></span><span class="chip"><img src="assets/logos/cahuma-1024x685.png" alt="Cahuma"></span><span class="chip"><img src="assets/logos/SAUCE-PROPIEDADES.png" alt="Sauce Propiedades"></span></div></div>
 </div>
 
 <!-- ESTUDIO -->
@@ -351,13 +372,9 @@
       <span class="eyebrow">Trabajos</span>
       <h2>Algunas marcas que acompañamos</h2>
     </div>
-    <div class="work">
-      <div class="tile rev"><img class="g" src="assets/fotos/BIO2301-683x1024.jpg" alt="Producción de marca"><span class="cap"><small>Fotografía</small>Producción de marca</span></div>
-      <div class="tile rev d1"><img class="g" src="assets/fotos/BIO3463-696x1024.jpg" alt="Sesión de producto"><span class="cap"><small>Fotografía</small>Sesión de producto</span></div>
-      <div class="tile rev d2"><img class="g" src="assets/fotos/BIO3923-683x1024.jpg" alt="Contenido para redes"><span class="cap"><small>Contenido</small>Contenido para redes</span></div>
-      <div class="tile rev"><img class="g" src="assets/fotos/BIO3468-683x1024.jpg" alt="Dirección de arte"><span class="cap"><small>Producción</small>Dirección de arte</span></div>
-      <div class="tile rev d1"><img class="g" src="assets/fotos/BIO3562-683x1024.jpg" alt="Campaña editorial"><span class="cap"><small>Campaña</small>Editorial de marca</span></div>
-      <div class="tile rev d2"><img class="g" src="assets/fotos/BIO0300-1-1024x683.jpg" alt="Detrás de escena"><span class="cap"><small>Producción</small>Detrás de escena</span></div>
+    <div class="gal">
+      <div class="row2 l"><div class="gitem"><img src="assets/fotos/BIO2301-683x1024.jpg" alt="Fotografía" loading="lazy"><span class="tag">Fotografía</span></div><div class="gitem"><img src="assets/fotos/BIO3463-696x1024.jpg" alt="Producto" loading="lazy"><span class="tag">Producto</span></div><div class="gitem"><img src="assets/fotos/BIO3923-683x1024.jpg" alt="Contenido" loading="lazy"><span class="tag">Contenido</span></div><div class="gitem"><img src="assets/fotos/BIO3468-683x1024.jpg" alt="Dirección de arte" loading="lazy"><span class="tag">Dirección de arte</span></div><div class="gitem"><img src="assets/fotos/IMG_2125-768x1024.jpg" alt="Producción" loading="lazy"><span class="tag">Producción</span></div><div class="gitem"><img src="assets/fotos/BIO2301-683x1024.jpg" alt="Fotografía" loading="lazy"><span class="tag">Fotografía</span></div><div class="gitem"><img src="assets/fotos/BIO3463-696x1024.jpg" alt="Producto" loading="lazy"><span class="tag">Producto</span></div><div class="gitem"><img src="assets/fotos/BIO3923-683x1024.jpg" alt="Contenido" loading="lazy"><span class="tag">Contenido</span></div><div class="gitem"><img src="assets/fotos/BIO3468-683x1024.jpg" alt="Dirección de arte" loading="lazy"><span class="tag">Dirección de arte</span></div><div class="gitem"><img src="assets/fotos/IMG_2125-768x1024.jpg" alt="Producción" loading="lazy"><span class="tag">Producción</span></div></div>
+      <div class="row2 r"><div class="gitem"><img src="assets/fotos/BIO3562-683x1024.jpg" alt="Editorial" loading="lazy"><span class="tag">Editorial</span></div><div class="gitem"><img src="assets/fotos/BIO0300-1-1024x683.jpg" alt="Detrás de escena" loading="lazy"><span class="tag">Detrás de escena</span></div><div class="gitem"><img src="assets/fotos/BIO2702-819x1024.png" alt="Producción" loading="lazy"><span class="tag">Producción</span></div><div class="gitem"><img src="assets/fotos/IMG_0908-768x1024.jpg" alt="Making of" loading="lazy"><span class="tag">Making of</span></div><div class="gitem"><img src="assets/fotos/20240918_212151-2-940x1024.jpg" alt="Rodaje" loading="lazy"><span class="tag">Rodaje</span></div><div class="gitem"><img src="assets/fotos/BIO3562-683x1024.jpg" alt="Editorial" loading="lazy"><span class="tag">Editorial</span></div><div class="gitem"><img src="assets/fotos/BIO0300-1-1024x683.jpg" alt="Detrás de escena" loading="lazy"><span class="tag">Detrás de escena</span></div><div class="gitem"><img src="assets/fotos/BIO2702-819x1024.png" alt="Producción" loading="lazy"><span class="tag">Producción</span></div><div class="gitem"><img src="assets/fotos/IMG_0908-768x1024.jpg" alt="Making of" loading="lazy"><span class="tag">Making of</span></div><div class="gitem"><img src="assets/fotos/20240918_212151-2-940x1024.jpg" alt="Rodaje" loading="lazy"><span class="tag">Rodaje</span></div></div>
     </div>
   </div>
 </section>
