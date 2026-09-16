@@ -90,9 +90,15 @@
   .hero .topline .dot i{width:9px;height:9px;border-radius:50%;background:var(--verde);display:block}
   .hero h1{font-size:clamp(3rem,8.6vw,7rem);font-weight:900;text-transform:uppercase;
            letter-spacing:-.035em;line-height:.88;margin-top:clamp(26px,4vw,44px)}
-  .hero h1 .hl{color:#a98bff;padding-bottom:.04em;
+  .hero h1 .ln{display:block;overflow:hidden;padding-bottom:.16em;margin-bottom:-.1em}
+  .hero h1 .ln>span{display:inline-block;transform:translateY(115%);animation:lineUp .95s var(--ease) forwards}
+  .hero h1 .ln:nth-child(1)>span{animation-delay:.12s}
+  .hero h1 .ln:nth-child(2)>span{animation-delay:.24s}
+  .hero h1 .ln:nth-child(3)>span{animation-delay:.36s}
+  @keyframes lineUp{to{transform:translateY(0)}}
+  .hero h1 .ln>span.hl{color:#a98bff;padding-bottom:.05em;
                background:linear-gradient(var(--verde),var(--verde)) no-repeat left 100% / 0 .09em;
-               animation:swipe 1s var(--ease) .5s forwards}
+               animation:lineUp .95s var(--ease) .36s forwards, swipe .9s var(--ease) 1.15s forwards}
   @keyframes swipe{to{background-size:100% .09em}}
   .hero .under{display:grid;grid-template-columns:1fr;gap:26px;align-items:end;
                margin-top:clamp(30px,4vw,46px);padding-top:clamp(24px,3vw,32px);border-top:1px solid var(--line)}
@@ -202,13 +208,33 @@
 
   /* movimiento sutil */
   /* marquesina */
-  .marq{overflow:hidden;white-space:nowrap;border-bottom:1px solid var(--line);background:var(--bg-2)}
-  .marq .track{display:inline-flex;align-items:center;animation:mv 34s linear infinite}
+  .marq{overflow:hidden;border-block:1px solid var(--line);background:var(--bg-2);padding:4px 0}
+  .marq .track{display:flex;align-items:center;white-space:nowrap;width:max-content;
+               animation:mv 36s linear infinite;will-change:transform}
+  .marq .track.r{animation:mvr 44s linear infinite}
   .marq:hover .track{animation-play-state:paused}
-  .marq b{font-family:"Archivo",sans-serif;font-weight:800;font-size:clamp(1.3rem,3vw,2.4rem);
-          padding:16px 28px;color:var(--ink);letter-spacing:-.02em;text-transform:uppercase}
-  .marq .x{color:var(--verde);font-size:1.3rem;padding:0}
+  .marq b{font-family:"Archivo",sans-serif;font-weight:900;font-size:clamp(1.4rem,3.6vw,2.9rem);
+          padding:10px 24px;color:var(--ink);letter-spacing:-.025em;text-transform:uppercase}
+  .marq b.out{color:transparent;-webkit-text-stroke:1.3px rgba(243,243,240,.5);text-stroke:1.3px rgba(243,243,240,.5)}
+  .marq .x{color:var(--verde);font-size:1rem;padding:0 2px}
   @keyframes mv{to{transform:translateX(-50%)}}
+  @keyframes mvr{from{transform:translateX(-50%)}to{transform:translateX(0)}}
+
+  /* banda manifiesto (rompe el negro) */
+  .mani{background:
+        radial-gradient(80% 120% at 100% 0%, rgba(166,224,75,.28), transparent 55%),
+        linear-gradient(135deg,#7838e5,#5a1fc0);color:#fff;overflow:hidden;position:relative;
+        border-block:1px solid rgba(255,255,255,.14)}
+  .mani .wrap{padding-block:clamp(52px,9vw,116px);position:relative;z-index:1}
+  .mani .k{font-family:"Archivo",sans-serif;font-weight:700;font-size:12px;letter-spacing:.2em;
+           text-transform:uppercase;color:rgba(255,255,255,.7);margin-bottom:22px}
+  .mani p{font-family:"Archivo",sans-serif;font-weight:900;text-transform:uppercase;letter-spacing:-.03em;
+          line-height:.94;font-size:clamp(2.1rem,6.4vw,5rem);max-width:15ch}
+  .mani p .u{color:#fff;
+             background:linear-gradient(rgba(166,224,75,1),rgba(166,224,75,1)) no-repeat left 100% / 100% .11em}
+  .mani .ghost{position:absolute;right:-4vw;bottom:-8vw;font-family:"Archivo",sans-serif;font-weight:900;
+               font-size:clamp(10rem,34vw,30rem);line-height:.7;color:rgba(255,255,255,.06);
+               letter-spacing:-.05em;pointer-events:none;z-index:0}
 
   /* testimonios */
   .tst .grid{display:grid;grid-template-columns:1fr;gap:16px;margin-top:clamp(36px,5vw,56px)}
@@ -260,8 +286,10 @@
   .clients:hover .ctrack{animation-play-state:paused}
 
   @media (prefers-reduced-motion:reduce){
-    .gal .row2,.ctrack{animation:none}
+    .gal .row2,.ctrack,.marq .track{animation:none}
     .gal{overflow-x:auto}.gal .row2{width:auto}
+    .hero h1 .ln>span{transform:none;animation:none}
+    .hero h1 .ln>span.hl{background-size:100% .09em}
   }
 
   .rev{opacity:0;transform:translateY(16px);transition:opacity .6s var(--ease),transform .6s var(--ease)}
@@ -305,7 +333,7 @@
       <span class="dot"><i></i> Comunicación &amp; publicidad</span>
       <span>Mar del Plata, AR</span>
     </div>
-    <h1 class="rev d1">Marcas que<br>comunican<br><span class="hl">de verdad</span></h1>
+    <h1 class="reveal"><span class="ln"><span>Marcas que</span></span><span class="ln"><span>comunican</span></span><span class="ln"><span class="hl">de verdad</span></span></h1>
     <div class="under">
       <p class="sub rev d2"><b>Branding, páginas web, audiovisual y estrategia.</b> Escuchamos tu marca antes de proponer y armamos un plan claro para que vendas más.</p>
       <div class="actions rev d2">
@@ -332,6 +360,10 @@
     <b>Estrategia</b><b class="x">✦</b><b>Branding</b><b class="x">✦</b><b>Audiovisual</b><b class="x">✦</b><b>Páginas web</b><b class="x">✦</b><b>Contenido</b><b class="x">✦</b>
     <b>Estrategia</b><b class="x">✦</b><b>Branding</b><b class="x">✦</b><b>Audiovisual</b><b class="x">✦</b><b>Páginas web</b><b class="x">✦</b><b>Contenido</b><b class="x">✦</b>
   </div>
+  <div class="track r">
+    <b class="out">Publicidad</b><b class="x">✦</b><b class="out">Identidad</b><b class="x">✦</b><b class="out">Reels</b><b class="x">✦</b><b class="out">Spots</b><b class="x">✦</b><b class="out">Campañas</b><b class="x">✦</b>
+    <b class="out">Publicidad</b><b class="x">✦</b><b class="out">Identidad</b><b class="x">✦</b><b class="out">Reels</b><b class="x">✦</b><b class="out">Spots</b><b class="x">✦</b><b class="out">Campañas</b><b class="x">✦</b>
+  </div>
 </div>
 
 <!-- CLIENTES -->
@@ -339,6 +371,15 @@
   <div class="wrap"><span class="lbl">Confiaron en nosotros</span></div>
   <div class="creel"><div class="ctrack"><span class="chip"><img src="assets/logos/bendito_futbol_gris_web.png" alt="Bendito Fútbol"></span><span class="chip"><img src="assets/logos/bikes_asaro_gris_web.png" alt="Bikes Asaro"></span><span class="chip"><img src="assets/logos/hasrun_gris_web.png" alt="Hasrun"></span><span class="chip"><img src="assets/logos/las_gironas_gris_web.png" alt="Las Gironas"></span><span class="chip"><img src="assets/logos/cahuma-1024x685.png" alt="Cahuma"></span><span class="chip"><img src="assets/logos/SAUCE-PROPIEDADES.png" alt="Sauce Propiedades"></span><span class="chip"><img src="assets/logos/bendito_futbol_gris_web.png" alt="Bendito Fútbol"></span><span class="chip"><img src="assets/logos/bikes_asaro_gris_web.png" alt="Bikes Asaro"></span><span class="chip"><img src="assets/logos/hasrun_gris_web.png" alt="Hasrun"></span><span class="chip"><img src="assets/logos/las_gironas_gris_web.png" alt="Las Gironas"></span><span class="chip"><img src="assets/logos/cahuma-1024x685.png" alt="Cahuma"></span><span class="chip"><img src="assets/logos/SAUCE-PROPIEDADES.png" alt="Sauce Propiedades"></span></div></div>
 </div>
+
+<!-- MANIFIESTO -->
+<section class="mani">
+  <span class="ghost" aria-hidden="true">BIO</span>
+  <div class="wrap">
+    <p class="k rev">Nuestra forma de trabajar</p>
+    <p class="rev d1">No hacemos ruido.<br>Hacemos que <span class="u">te elijan</span>.</p>
+  </div>
+</section>
 
 <!-- ESTUDIO -->
 <section id="estudio">
