@@ -7,7 +7,7 @@
 <meta name="description" content="Agencia de comunicación y publicidad en Mar del Plata. Branding, web, audiovisual y estrategia. Escuchamos tu marca antes de proponer.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,500;9..144,600&family=Montserrat:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;0,800;1,400;1,500;1,600&family=Montserrat:wght@400;500;600;700&display=swap">
 <style>
   :root{
     --bg:#0b0b0e;
@@ -33,7 +33,7 @@
        -webkit-font-smoothing:antialiased}
   a{color:inherit;text-decoration:none}
   p{margin:0}
-  h1,h2,h3{margin:0;font-family:"Fraunces","Georgia",serif;font-weight:500;line-height:1.05;letter-spacing:-.01em}
+  h1,h2,h3{margin:0;font-family:"Playfair Display","Georgia",serif;font-weight:500;line-height:1.05;letter-spacing:-.01em}
   img{max-width:100%;display:block}
   ::selection{background:var(--violeta);color:#fff}
   .wrap{max-width:var(--maxw);margin-inline:auto;padding-inline:var(--gutter)}
@@ -87,8 +87,12 @@
   .hero .badge{display:inline-flex;align-items:center;gap:8px;background:var(--bg-2);border:1px solid var(--line);
                border-radius:999px;padding:7px 14px;font-size:13px;font-weight:500;color:var(--muted);width:fit-content}
   .hero .badge i{width:8px;height:8px;border-radius:50%;background:var(--verde);display:block}
-  .hero h1{font-size:clamp(2.5rem,5.8vw,4.5rem);font-weight:400;margin-top:22px;letter-spacing:-.015em}
-  .hero h1 .hl{font-style:italic;font-weight:400;color:#a98bff}
+  .hero h1{font-size:clamp(2.9rem,7vw,6rem);font-weight:600;margin-top:24px;letter-spacing:-.022em;line-height:.98}
+  .hero h1 .hl{font-style:italic;font-weight:500;color:#a98bff;position:relative;white-space:nowrap}
+  .hero h1 .hl::after{content:"";position:absolute;left:0;right:0;bottom:.06em;height:.12em;
+                      background:var(--verde);border-radius:2px;transform:scaleX(0);transform-origin:left;
+                      animation:swipe 1s var(--ease) .5s forwards}
+  @keyframes swipe{to{transform:scaleX(1)}}
   .hero .sub{color:var(--muted);font-size:clamp(16px,1.6vw,19px);line-height:1.6;max-width:52ch;margin-top:20px}
   .hero .actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px}
   .hero .side{background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,0)),var(--bg-2);
@@ -116,7 +120,7 @@
   /* section base */
   section .wrap{padding-block:clamp(56px,8vw,104px)}
   .shead{max-width:62ch;margin-bottom:clamp(36px,5vw,56px)}
-  .shead h2{font-size:clamp(2rem,4.6vw,3.3rem);margin-top:16px;font-weight:400;letter-spacing:-.015em}
+  .shead h2{font-size:clamp(2.1rem,5vw,3.7rem);margin-top:16px;font-weight:600;letter-spacing:-.02em}
   .shead p{color:var(--muted);margin-top:14px;font-size:17px}
   .alt{background:var(--bg-2);border-block:1px solid var(--line)}
 
@@ -131,7 +135,7 @@
   .card:hover{transform:translateY(-5px);box-shadow:0 30px 54px -30px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.1);border-color:rgba(138,92,240,.5)}
   .card .ic{width:46px;height:46px;border-radius:13px;color:#fff;
             background:linear-gradient(135deg,#8a5cf0,#6f43d6);box-shadow:0 8px 20px -10px rgba(122,69,224,.8);
-            display:grid;place-items:center;font-size:19px;font-weight:600;font-family:"Fraunces",serif}
+            display:grid;place-items:center;font-size:19px;font-weight:600;font-family:"Playfair Display",serif}
   .card h3{font-size:19px;margin-top:16px}
   .card p{color:var(--muted);font-size:15px;margin-top:9px}
 
@@ -140,7 +144,7 @@
   @media(min-width:820px){.steps{grid-template-columns:repeat(3,1fr)}}
   .stp{background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,0)),var(--bg-2);
        border:1px solid var(--line);border-radius:18px;padding:28px;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
-  .stp .n{font-family:"Fraunces",serif;font-weight:500;font-size:16px;color:#fff;
+  .stp .n{font-family:"Playfair Display",serif;font-weight:500;font-size:16px;color:#fff;
           background:linear-gradient(135deg,#8a5cf0,#6f43d6);box-shadow:0 8px 18px -8px rgba(122,69,224,.8);
           width:38px;height:38px;border-radius:50%;display:grid;place-items:center}
   .stp h3{font-size:20px;margin-top:18px;font-weight:500}
@@ -169,7 +173,7 @@
               background:radial-gradient(circle,rgba(166,224,75,.4),transparent 70%);right:-90px;top:-140px}
   .final .box::before{content:"";position:absolute;width:300px;height:300px;border-radius:50%;
               background:radial-gradient(circle,rgba(169,139,255,.5),transparent 70%);left:-100px;bottom:-160px}
-  .final h2{font-size:clamp(2.1rem,5.2vw,3.6rem);font-weight:400;position:relative;z-index:1;max-width:18ch;margin-inline:auto;letter-spacing:-.015em}
+  .final h2{font-size:clamp(2.2rem,5.6vw,4rem);font-weight:600;position:relative;z-index:1;max-width:18ch;margin-inline:auto;letter-spacing:-.02em}
   .final p{color:rgba(255,255,255,.88);margin-top:18px;position:relative;z-index:1;max-width:46ch;margin-inline:auto}
   .final .btn{background:#fff;color:#5a1fc0;margin-top:30px;position:relative;z-index:1;box-shadow:0 14px 34px -16px rgba(0,0,0,.6)}
   .final .btn:hover{background:var(--verde);color:#0b0b0e}
@@ -190,7 +194,7 @@
   .marq{overflow:hidden;white-space:nowrap;border-bottom:1px solid var(--line);background:var(--bg-2)}
   .marq .track{display:inline-flex;align-items:center;animation:mv 34s linear infinite}
   .marq:hover .track{animation-play-state:paused}
-  .marq b{font-family:"Fraunces",serif;font-weight:400;font-size:clamp(1.5rem,3.4vw,2.8rem);
+  .marq b{font-family:"Playfair Display",serif;font-weight:400;font-size:clamp(1.5rem,3.4vw,2.8rem);
           padding:18px 30px;color:var(--ink);letter-spacing:-.01em}
   .marq .x{color:var(--verde);font-size:1.3rem;padding:0}
   @keyframes mv{to{transform:translateX(-50%)}}
@@ -201,11 +205,11 @@
   .tst .q{position:relative;display:flex;flex-direction:column;gap:16px;
           background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,0)),var(--bg-2);
           border:1px solid var(--line);border-radius:18px;padding:28px;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
-  .tst .q .mk{font-family:"Fraunces",serif;font-size:46px;line-height:.5;color:var(--violeta-light);height:24px}
-  .tst blockquote{margin:0;font-family:"Fraunces",serif;font-weight:400;font-size:19px;line-height:1.42;color:var(--ink)}
+  .tst .q .mk{font-family:"Playfair Display",serif;font-size:46px;line-height:.5;color:var(--violeta-light);height:24px}
+  .tst blockquote{margin:0;font-family:"Playfair Display",serif;font-weight:400;font-size:19px;line-height:1.42;color:var(--ink)}
   .tst .who{display:flex;align-items:center;gap:12px;margin-top:auto}
   .tst .who .av{width:42px;height:42px;border-radius:50%;flex:none;display:grid;place-items:center;
-                background:linear-gradient(135deg,#8a5cf0,#6f43d6);color:#fff;font-family:"Fraunces",serif;font-size:17px}
+                background:linear-gradient(135deg,#8a5cf0,#6f43d6);color:#fff;font-family:"Playfair Display",serif;font-size:17px}
   .tst .who .nm{font-size:14px;font-weight:600}
   .tst .who .nm span{display:block;color:var(--muted);font-weight:400;font-size:13px;margin-top:2px}
   .tst .note{margin-top:22px;color:var(--muted);font-size:12px;letter-spacing:.04em}
