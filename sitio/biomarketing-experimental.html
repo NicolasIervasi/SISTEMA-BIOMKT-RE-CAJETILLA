@@ -77,29 +77,27 @@
   .mmenu a:last-of-type{border-bottom:0}
   .mmenu .btn{margin-top:12px;justify-content:center}
 
-  /* ---------- HERO (compacto) ---------- */
-  .hero{background:
-      radial-gradient(55% 65% at 92% 0%, rgba(138,92,240,.22), transparent 60%),
-      radial-gradient(40% 55% at 0% 100%, rgba(166,224,75,.10), transparent 60%), var(--bg);
-      border-bottom:1px solid var(--line)}
-  .hero .wrap{display:grid;grid-template-columns:1fr;gap:clamp(30px,5vw,56px);align-items:center;
-              padding-block:clamp(48px,7vw,84px)}
-  .hero .badge{display:inline-flex;align-items:center;gap:8px;background:var(--bg-2);border:1px solid var(--line);
-               border-radius:999px;padding:7px 14px;font-size:13px;font-weight:500;color:var(--muted);width:fit-content}
+  /* ---------- HERO inmersivo (foto real de fondo) ---------- */
+  .hero{position:relative;min-height:clamp(560px,88vh,860px);display:flex;align-items:flex-end;
+        overflow:hidden;isolation:isolate;border-bottom:1px solid var(--line)}
+  .hero .bgm{position:absolute;inset:0;z-index:-2;display:grid;grid-template-columns:repeat(3,1fr)}
+  .hero .bgm img{width:100%;height:100%;object-fit:cover;display:block;animation:kb 24s ease-in-out infinite alternate}
+  .hero .bgm img:nth-child(2){animation-delay:-8s}
+  .hero .bgm img:nth-child(3){animation-delay:-16s}
+  @keyframes kb{to{transform:scale(1.08)}}
+  .hero .scrim{position:absolute;inset:0;z-index:-1;
+      background:linear-gradient(180deg,rgba(9,8,13,.6) 0%,rgba(9,8,13,.4) 38%,rgba(9,8,13,.95) 100%),
+                radial-gradient(70% 60% at 10% 100%, rgba(120,56,229,.34), transparent 60%)}
+  .hero .wrap{position:relative;padding-block:clamp(120px,16vh,160px) clamp(40px,6vh,64px);color:#fff}
+  .hero .badge{display:inline-flex;align-items:center;gap:8px;background:rgba(255,255,255,.08);
+               border:1px solid rgba(255,255,255,.22);backdrop-filter:blur(6px);border-radius:999px;
+               padding:7px 14px;font-size:13px;font-weight:500;color:#efeef2;width:fit-content}
   .hero .badge i{width:8px;height:8px;border-radius:50%;background:var(--verde);display:block}
-  .hero h1{font-size:clamp(2.5rem,5.8vw,4.5rem);font-weight:400;margin-top:22px;letter-spacing:-.015em}
-  .hero h1 .hl{font-style:italic;font-weight:400;color:#a98bff}
-  .hero .sub{color:var(--muted);font-size:clamp(16px,1.6vw,19px);line-height:1.6;max-width:52ch;margin-top:20px}
-  .hero .actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:30px}
-  .hero .side{background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,0)),var(--bg-2);
-              border:1px solid var(--line);border-radius:20px;padding:28px;
-              box-shadow:0 40px 80px -40px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.08)}
-  .hero .side h3{font-size:20px;margin-bottom:16px;font-weight:500}
-  .hero .side ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:12px}
-  .hero .side li{display:flex;gap:11px;align-items:flex-start;font-size:15px;color:var(--muted)}
-  .hero .side li .ck{width:20px;height:20px;border-radius:50%;background:var(--verde-soft);color:var(--verde-ink);
-                     display:grid;place-items:center;font-size:12px;font-weight:700;flex:none;margin-top:1px}
-  @media(min-width:900px){.hero .wrap{grid-template-columns:1.35fr .9fr}}
+  .hero h1{font-size:clamp(2.6rem,7vw,5.6rem);font-weight:400;margin-top:22px;letter-spacing:-.02em;max-width:16ch;color:#fff}
+  .hero h1 .hl{font-style:italic;font-weight:400;color:#c9b6ff}
+  .hero .sub{color:#d8d6e0;font-size:clamp(16px,1.6vw,19px);line-height:1.6;max-width:48ch;margin-top:20px}
+  .hero .actions{display:flex;flex-wrap:wrap;gap:12px;margin-top:32px}
+  @media (prefers-reduced-motion:reduce){.hero .bgm img{animation:none}}
 
   /* clientes */
   .clients{border-bottom:1px solid var(--line);background:var(--bg)}
@@ -285,24 +283,19 @@
 
 <!-- HERO -->
 <section class="hero" id="top">
+  <div class="bgm" aria-hidden="true">
+    <img src="assets/fotos/BIO3463-696x1024.jpg" alt="" loading="eager">
+    <img src="assets/fotos/BIO4679-E-scaled.jpg" alt="" loading="eager">
+    <img src="assets/fotos/BIO3923-683x1024.jpg" alt="" loading="eager">
+  </div>
+  <div class="scrim" aria-hidden="true"></div>
   <div class="wrap">
-    <div class="rev">
-      <span class="badge"><i></i> Agencia de comunicación y publicidad · Mar del Plata</span>
-      <h1>Hacemos crecer tu marca con <span class="hl">comunicación real.</span></h1>
-      <p class="sub">Branding, páginas web, audiovisual y estrategia. Escuchamos tu marca antes de proponer y armamos un plan claro para que vendas más.</p>
-      <div class="actions">
-        <a class="btn" href="https://wa.me/2236346417" target="_blank" rel="noopener">Agendar reunión</a>
-        <a class="btn ghost" href="#servicios">Ver servicios</a>
-      </div>
-    </div>
-    <div class="side rev d1">
-      <h3>En qué te ayudamos</h3>
-      <ul>
-        <li><span class="ck">✓</span> Identidad de marca clara y coherente</li>
-        <li><span class="ck">✓</span> Un sitio que convierte visitas en mensajes</li>
-        <li><span class="ck">✓</span> Contenido audiovisual para redes y campañas</li>
-        <li><span class="ck">✓</span> Un plan con fechas, no ideas sueltas</li>
-      </ul>
+    <span class="badge"><i></i> Agencia de comunicación y publicidad · Mar del Plata</span>
+    <h1>Hacemos crecer tu marca con <span class="hl">comunicación real.</span></h1>
+    <p class="sub">Branding, páginas web, audiovisual y estrategia. Escuchamos tu marca antes de proponer y armamos un plan claro para que vendas más.</p>
+    <div class="actions">
+      <a class="btn" href="https://wa.me/2236346417" target="_blank" rel="noopener">Agendar reunión</a>
+      <a class="btn ghost" href="#servicios">Ver servicios</a>
     </div>
   </div>
 </section>
