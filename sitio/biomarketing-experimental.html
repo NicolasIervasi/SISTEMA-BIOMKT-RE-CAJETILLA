@@ -220,19 +220,6 @@
   @keyframes mv{to{transform:translateX(-50%)}}
   @keyframes mvr{from{transform:translateX(-50%)}to{transform:translateX(0)}}
 
-  /* banda manifiesto (rompe el negro) */
-  .mani{background:linear-gradient(115deg,#7838e5 0%,#5a1fc0 100%);color:#fff;
-        border-block:1px solid rgba(255,255,255,.14)}
-  .mani .wrap{padding-block:clamp(54px,8vw,104px);display:grid;gap:clamp(20px,3vw,28px)}
-  .mani .k{font-family:"Archivo",sans-serif;font-weight:700;font-size:12px;letter-spacing:.2em;
-           text-transform:uppercase;color:rgba(255,255,255,.72);display:flex;align-items:center;gap:10px}
-  .mani .k::before{content:"";width:26px;height:2px;background:var(--verde);display:block}
-  .mani h2{font-family:"Archivo",sans-serif;font-weight:800;letter-spacing:-.02em;line-height:1.04;
-           font-size:clamp(1.9rem,4.4vw,3.4rem);max-width:20ch;color:#fff}
-  .mani h2 .u{white-space:nowrap;padding-bottom:.03em;
-              background:linear-gradient(var(--verde),var(--verde)) no-repeat left 100% / 100% .085em}
-  .mani .tagm{color:rgba(255,255,255,.86);font-size:clamp(15px,1.5vw,18px);line-height:1.55;max-width:56ch}
-
   /* testimonios */
   .tst .grid{display:grid;grid-template-columns:1fr;gap:16px;margin-top:clamp(36px,5vw,56px)}
   @media(min-width:820px){.tst .grid{grid-template-columns:repeat(3,1fr)}}
@@ -368,15 +355,6 @@
   <div class="wrap"><span class="lbl">Confiaron en nosotros</span></div>
   <div class="creel"><div class="ctrack"><span class="chip"><img src="assets/logos/bendito_futbol_gris_web.png" alt="Bendito Fútbol"></span><span class="chip"><img src="assets/logos/bikes_asaro_gris_web.png" alt="Bikes Asaro"></span><span class="chip"><img src="assets/logos/hasrun_gris_web.png" alt="Hasrun"></span><span class="chip"><img src="assets/logos/las_gironas_gris_web.png" alt="Las Gironas"></span><span class="chip"><img src="assets/logos/cahuma-1024x685.png" alt="Cahuma"></span><span class="chip"><img src="assets/logos/SAUCE-PROPIEDADES.png" alt="Sauce Propiedades"></span><span class="chip"><img src="assets/logos/bendito_futbol_gris_web.png" alt="Bendito Fútbol"></span><span class="chip"><img src="assets/logos/bikes_asaro_gris_web.png" alt="Bikes Asaro"></span><span class="chip"><img src="assets/logos/hasrun_gris_web.png" alt="Hasrun"></span><span class="chip"><img src="assets/logos/las_gironas_gris_web.png" alt="Las Gironas"></span><span class="chip"><img src="assets/logos/cahuma-1024x685.png" alt="Cahuma"></span><span class="chip"><img src="assets/logos/SAUCE-PROPIEDADES.png" alt="Sauce Propiedades"></span></div></div>
 </div>
-
-<!-- MANIFIESTO -->
-<section class="mani">
-  <div class="wrap">
-    <span class="k rev">Nuestra forma de trabajar</span>
-    <h2 class="rev d1">No hacemos ruido. Hacemos que <span class="u">te elijan</span>.</h2>
-    <p class="tagm rev d2">Menos postureo y más resultados: estrategia, contenido y una marca que la gente reconoce y elige.</p>
-  </div>
-</section>
 
 <!-- ESTUDIO -->
 <section id="estudio">
