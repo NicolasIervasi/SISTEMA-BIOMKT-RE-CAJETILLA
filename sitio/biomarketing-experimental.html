@@ -28,6 +28,8 @@
   }
   *{box-sizing:border-box}
   html{-webkit-text-size-adjust:100%;scroll-behavior:smooth}
+  section,#top{scroll-margin-top:88px}
+  a,button,.btn{touch-action:manipulation}
   body{margin:0;background:var(--bg);color:var(--ink);overflow-x:hidden;
        font-family:"Archivo","Helvetica Neue",Arial,sans-serif;font-weight:400;line-height:1.6;font-size:16px;
        -webkit-font-smoothing:antialiased}
@@ -137,7 +139,7 @@
   /* section base */
   section .wrap{padding-block:clamp(56px,8vw,104px)}
   .shead{max-width:62ch;margin-bottom:clamp(36px,5vw,56px)}
-  .shead h2{font-size:clamp(2rem,4.8vw,3.4rem);margin-top:16px;font-weight:800;letter-spacing:-.028em;text-transform:uppercase;line-height:.98}
+  .shead h2{font-size:clamp(2rem,4.8vw,3.4rem);margin-top:16px;font-weight:800;letter-spacing:-.028em;text-transform:uppercase;line-height:.98;text-wrap:balance}
   .shead p{color:var(--muted);margin-top:14px;font-size:17px}
   .alt{background:var(--bg-2);border-block:1px solid var(--line)}
 
@@ -203,6 +205,7 @@
   .final p{color:rgba(255,255,255,.88);margin-top:18px;position:relative;z-index:1;max-width:46ch;margin-inline:auto}
   .final .btn{background:#fff;color:#5a1fc0;margin-top:30px;position:relative;z-index:1;box-shadow:0 14px 34px -16px rgba(0,0,0,.6)}
   .final .btn:hover{background:var(--verde);color:#0b0b0e}
+  .final .reassure{color:rgba(255,255,255,.82);font-size:13px;margin-top:14px;position:relative;z-index:1}
 
   /* footer */
   footer{background:var(--bg);border-top:1px solid var(--line)}
@@ -418,15 +421,15 @@
       <h2>Algunas marcas que acompañamos</h2>
     </div>
     <div class="work">
-      <div class="tile rev"><img class="g" src="assets/fotos/BIO4679-E-scaled.jpg" alt="Producción gastronómica" loading="lazy"><span class="cap">Gastronomía</span></div>
-      <div class="tile rev"><img class="g" src="assets/fotos/BIO3463-696x1024.jpg" alt="Fotografía de producto" loading="lazy"><span class="cap">Producto</span></div>
-      <div class="tile rev"><img class="g" src="assets/fotos/BIO3923-683x1024.jpg" alt="Contenido para redes" loading="lazy"><span class="cap">Contenido</span></div>
-      <div class="tile rev"><img class="g" src="assets/fotos/CJB6099-scaled.jpg" alt="Producción gastronómica" loading="lazy"><span class="cap">Gastronomía</span></div>
-      <div class="tile rev"><img class="g" src="assets/fotos/BIO3468-683x1024.jpg" alt="Dirección de arte" loading="lazy"><span class="cap">Dirección de arte</span></div>
-      <div class="tile rev"><img class="g" src="assets/fotos/asaro-bikes.webp" alt="Asaro Bikes" loading="lazy"><span class="cap">Asaro Bikes</span></div>
-      <div class="tile rev"><img class="g" src="assets/fotos/BIO2301-683x1024.jpg" alt="Sesión de fotografía" loading="lazy"><span class="cap">Fotografía</span></div>
-      <div class="tile rev"><img class="g" src="assets/fotos/11-ESPECIAL-scaled.jpg" alt="Producción de campaña" loading="lazy"><span class="cap">Producción</span></div>
-      <div class="tile rev"><img class="g" src="assets/fotos/bois-cafe.jpg" alt="Café Bois" loading="lazy"><span class="cap">Café Bois</span></div>
+      <div class="tile rev"><img class="g" src="assets/fotos/BIO4679-E-scaled.jpg" width="1707" height="2560" alt="Producción gastronómica" loading="lazy"><span class="cap">Gastronomía</span></div>
+      <div class="tile rev"><img class="g" src="assets/fotos/BIO3463-696x1024.jpg" width="696" height="1024" alt="Fotografía de producto" loading="lazy"><span class="cap">Producto</span></div>
+      <div class="tile rev"><img class="g" src="assets/fotos/BIO3923-683x1024.jpg" width="683" height="1024" alt="Contenido para redes" loading="lazy"><span class="cap">Contenido</span></div>
+      <div class="tile rev"><img class="g" src="assets/fotos/CJB6099-scaled.jpg" width="2560" height="1709" alt="Producción gastronómica" loading="lazy"><span class="cap">Gastronomía</span></div>
+      <div class="tile rev"><img class="g" src="assets/fotos/BIO3468-683x1024.jpg" width="683" height="1024" alt="Dirección de arte" loading="lazy"><span class="cap">Dirección de arte</span></div>
+      <div class="tile rev"><img class="g" src="assets/fotos/asaro-bikes.webp" width="1023" height="1537" alt="Asaro Bikes" loading="lazy"><span class="cap">Asaro Bikes</span></div>
+      <div class="tile rev"><img class="g" src="assets/fotos/BIO2301-683x1024.jpg" width="683" height="1024" alt="Sesión de fotografía" loading="lazy"><span class="cap">Fotografía</span></div>
+      <div class="tile rev"><img class="g" src="assets/fotos/11-ESPECIAL-scaled.jpg" width="2268" height="2560" alt="Producción de campaña" loading="lazy"><span class="cap">Producción</span></div>
+      <div class="tile rev"><img class="g" src="assets/fotos/bois-cafe.jpg" width="2000" height="1688" alt="Café Bois" loading="lazy"><span class="cap">Café Bois</span></div>
     </div>
   </div>
 </section>
@@ -451,34 +454,6 @@
   </div>
 </section>
 
-<!-- TESTIMONIOS -->
-<section class="tst solid pad">
-  <div class="wrap">
-    <div class="shead rev">
-      <span class="eyebrow">Testimonios</span>
-      <h2>Lo que dicen las marcas que acompañamos</h2>
-    </div>
-    <div class="grid">
-      <div class="q rev">
-        <span class="mk">&ldquo;</span>
-        <blockquote>Acá va una frase real de un cliente sobre cómo trabajaron juntos y qué resultado consiguió.</blockquote>
-        <div class="who"><span class="av">·</span><span class="nm">Nombre del cliente<span>Marca · rubro</span></span></div>
-      </div>
-      <div class="q rev d1">
-        <span class="mk">&ldquo;</span>
-        <blockquote>Otro testimonio breve y concreto: qué necesitaba, qué hicieron y qué cambió para su negocio.</blockquote>
-        <div class="who"><span class="av">·</span><span class="nm">Nombre del cliente<span>Marca · rubro</span></span></div>
-      </div>
-      <div class="q rev d2">
-        <span class="mk">&ldquo;</span>
-        <blockquote>Un tercer testimonio corto, con una cifra o un antes y después si lo tenés (suma mucho).</blockquote>
-        <div class="who"><span class="av">·</span><span class="nm">Nombre del cliente<span>Marca · rubro</span></span></div>
-      </div>
-    </div>
-    <p class="note">↳ Plantilla — reemplazar por testimonios reales de tus clientes (con su ok). Pasámelos y los cargo con su nombre.</p>
-  </div>
-</section>
-
 <!-- CTA FINAL -->
 <section class="final">
   <div class="wrap">
@@ -486,6 +461,7 @@
       <h2>Contanos qué necesita tu marca</h2>
       <p>Coordinamos una reunión, entendemos tu situación y te decimos por dónde empezar.</p>
       <a class="btn" href="https://wa.me/2236346417" target="_blank" rel="noopener">Agendar reunión</a>
+      <p class="reassure">Sin compromiso · Te respondemos por WhatsApp</p>
     </div>
   </div>
 </section>
