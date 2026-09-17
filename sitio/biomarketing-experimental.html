@@ -141,19 +141,27 @@
   .shead p{color:var(--muted);margin-top:14px;font-size:17px}
   .alt{background:var(--bg-2);border-block:1px solid var(--line)}
 
-  /* servicios */
-  .cards{display:grid;grid-template-columns:1fr;gap:16px}
+  /* servicios — doble bisel (carcasa + núcleo) */
+  .cards{display:grid;grid-template-columns:1fr;gap:18px}
   @media(min-width:640px){.cards{grid-template-columns:1fr 1fr}}
   @media(min-width:1000px){.cards{grid-template-columns:repeat(4,1fr)}}
-  .card{position:relative;background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,0)),var(--bg-2);
-        border:1px solid var(--line);border-radius:18px;padding:26px;
-        box-shadow:inset 0 1px 0 rgba(255,255,255,.06);
-        transition:transform .25s var(--ease),box-shadow .25s var(--ease),border-color .25s var(--ease)}
-  .card:hover{transform:translateY(-5px);box-shadow:0 30px 54px -30px rgba(0,0,0,.8),inset 0 1px 0 rgba(255,255,255,.1);border-color:rgba(138,92,240,.5)}
-  .card .ic{width:46px;height:46px;border-radius:13px;color:#fff;
-            background:linear-gradient(135deg,#8a5cf0,#6f43d6);box-shadow:0 8px 20px -10px rgba(122,69,224,.8);
+  .card{position:relative;background:rgba(255,255,255,.045);border:1px solid rgba(255,255,255,.08);
+        border-radius:26px;padding:6px;
+        transition:transform .55s cubic-bezier(.32,.72,0,1),border-color .55s cubic-bezier(.32,.72,0,1)}
+  .card:hover{transform:translateY(-6px);border-color:rgba(138,92,240,.42)}
+  .card .core{position:relative;overflow:hidden;border-radius:20px;padding:26px 24px 30px;
+        background:linear-gradient(180deg,rgba(255,255,255,.05),rgba(255,255,255,0)),#101016;
+        box-shadow:inset 0 1px 0 rgba(255,255,255,.09),0 22px 44px -32px rgba(0,0,0,.9)}
+  .card .core::before{content:"";position:absolute;inset:0;border-radius:inherit;z-index:0;opacity:0;
+        transition:opacity .4s ease;
+        background:radial-gradient(340px circle at var(--mx,50%) var(--my,50%),rgba(138,92,240,.22),transparent 62%)}
+  .card:hover .core::before{opacity:1}
+  .card .core>*{position:relative;z-index:1}
+  .card .ic{width:48px;height:48px;border-radius:14px;color:#fff;
+            background:linear-gradient(135deg,#9a6cff,#6f43d6);
+            box-shadow:0 10px 22px -10px rgba(122,69,224,.9),inset 0 1px 0 rgba(255,255,255,.28);
             display:grid;place-items:center;font-size:19px;font-weight:600;font-family:"Archivo",sans-serif}
-  .card h3{font-size:19px;margin-top:16px}
+  .card h3{font-size:19px;margin-top:18px;font-weight:700}
   .card p{color:var(--muted);font-size:15px;margin-top:9px}
 
   /* proceso */
@@ -276,10 +284,11 @@
     .hero h1 .ln>span.hl{background-size:100% .09em}
   }
 
-  .rev{opacity:0;transform:translateY(16px);transition:opacity .6s var(--ease),transform .6s var(--ease)}
-  .rev.in{opacity:1;transform:none}
+  .rev{opacity:0;transform:translateY(20px);filter:blur(6px);
+       transition:opacity .7s var(--ease),transform .7s var(--ease),filter .7s var(--ease)}
+  .rev.in{opacity:1;transform:none;filter:blur(0)}
   .rev.d1{transition-delay:.06s}.rev.d2{transition-delay:.12s}.rev.d3{transition-delay:.18s}
-  @media (prefers-reduced-motion: reduce){*{transition:none!important;scroll-behavior:auto}.rev{opacity:1;transform:none}}
+  @media (prefers-reduced-motion: reduce){*{transition:none!important;scroll-behavior:auto}.rev{opacity:1;transform:none;filter:none}}
 </style>
 </head>
 <body>
@@ -376,10 +385,10 @@
       <p>Todo lo que tu marca necesita para comunicar mejor, en un solo lugar.</p>
     </div>
     <div class="cards">
-      <div class="card rev"><span class="ic">B</span><h3>Branding</h3><p>Logo, identidad visual y el manual para usarla igual en todos lados.</p></div>
-      <div class="card rev d1"><span class="ic">W</span><h3>Páginas web</h3><p>Sitios que cargan rápido y llevan a la gente a escribirte.</p></div>
-      <div class="card rev d2"><span class="ic">A</span><h3>Audiovisual</h3><p>Fotografía, reels y spots para redes y campañas.</p></div>
-      <div class="card rev d3"><span class="ic">E</span><h3>Estrategia</h3><p>Un plan de contenido con fechas y temas, no ideas sueltas.</p></div>
+      <div class="card rev"><div class="core"><span class="ic">B</span><h3>Branding</h3><p>Logo, identidad visual y el manual para usarla igual en todos lados.</p></div></div>
+      <div class="card rev d1"><div class="core"><span class="ic">W</span><h3>Páginas web</h3><p>Sitios que cargan rápido y llevan a la gente a escribirte.</p></div></div>
+      <div class="card rev d2"><div class="core"><span class="ic">A</span><h3>Audiovisual</h3><p>Fotografía, reels y spots para redes y campañas.</p></div></div>
+      <div class="card rev d3"><div class="core"><span class="ic">E</span><h3>Estrategia</h3><p>Un plan de contenido con fechas y temas, no ideas sueltas.</p></div></div>
     </div>
   </div>
 </section>
@@ -512,6 +521,17 @@
     burger.setAttribute('aria-expanded',open?'true':'false');
   });
   mmenu.querySelectorAll('a').forEach(function(a){a.addEventListener('click',function(){mmenu.classList.remove('open');burger.setAttribute('aria-expanded','false');});});
+
+  // spotlight que sigue al cursor en las tarjetas de servicios
+  if(window.matchMedia && !window.matchMedia('(hover:none)').matches){
+    document.querySelectorAll('.card').forEach(function(c){
+      c.addEventListener('pointermove',function(e){
+        var r=c.getBoundingClientRect();
+        c.style.setProperty('--mx',(e.clientX-r.left)+'px');
+        c.style.setProperty('--my',(e.clientY-r.top)+'px');
+      });
+    });
+  }
 
   if('IntersectionObserver' in window){
     var io=new IntersectionObserver(function(es){es.forEach(function(en){
