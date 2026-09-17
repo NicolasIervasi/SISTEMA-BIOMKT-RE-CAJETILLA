@@ -194,6 +194,22 @@
     .pstep.s2{margin-top:120px}
     .pstep.s3{margin-top:20px}
   }
+  /* animación: la curva se dibuja y los nodos aparecen en secuencia */
+  .pline path{stroke-dasharray:1;stroke-dashoffset:1}
+  .pstep .dot{transform:scale(.15);opacity:0;transition:transform .55s var(--ease),opacity .4s var(--ease)}
+  .pcurve.draw .pline path{animation:pdraw 1.8s var(--ease) forwards}
+  .pcurve.draw .pstep .dot{transform:scale(1);opacity:1}
+  .pcurve.draw .pstep.s1 .dot{transition-delay:.45s}
+  .pcurve.draw .pstep.s2 .dot{transition-delay:1s}
+  .pcurve.draw .pstep.s3 .dot{transition-delay:1.5s}
+  .pcurve.draw .pstep.s3 .dot{animation:pnode 2.6s ease-in-out 1.9s infinite}
+  @keyframes pdraw{to{stroke-dashoffset:0}}
+  @keyframes pnode{0%,100%{box-shadow:0 0 0 6px rgba(166,224,75,.16)}50%{box-shadow:0 0 0 13px rgba(166,224,75,.04)}}
+  @media (prefers-reduced-motion:reduce){
+    .pline path{stroke-dashoffset:0}
+    .pstep .dot{transform:none;opacity:1;transition:none}
+    .pcurve.draw .pstep.s3 .dot{animation:none}
+  }
 
   /* trabajos — carrusel centrado con profundidad (ref. Muta) */
   .carousel{margin-top:clamp(28px,4vw,48px)}
@@ -432,7 +448,7 @@
       <svg class="pline" viewBox="0 0 1000 400" preserveAspectRatio="none" aria-hidden="true">
         <defs><linearGradient id="pg" x1="0" y1="1" x2="1" y2="0">
           <stop offset="0" stop-color="#8a5cf0" stop-opacity=".22"/><stop offset="1" stop-color="#b39dff"/></linearGradient></defs>
-        <path d="M40,300 C160,256 150,236 260,232 C360,228 380,150 500,128 C640,102 700,46 833,30 C900,22 940,16 975,12"
+        <path pathLength="1" d="M40,300 C160,256 150,236 260,232 C360,228 380,150 500,128 C640,102 700,46 833,30 C900,22 940,16 975,12"
               fill="none" stroke="url(#pg)" stroke-width="2.5" stroke-linecap="round"/>
       </svg>
       <div class="psteps">
@@ -571,6 +587,16 @@
         if(e.isIntersecting){ if(!raf) raf=requestAnimationFrame(loop); }
         else if(raf){ cancelAnimationFrame(raf); raf=0; } }); }).observe(hero);
     } else { raf=requestAnimationFrame(loop); }
+  })();
+
+  // proceso: dibujar la curva al entrar en pantalla
+  (function(){
+    var pc=document.querySelector('.pcurve'); if(!pc) return;
+    if('IntersectionObserver' in window){
+      var io=new IntersectionObserver(function(es){es.forEach(function(e){
+        if(e.isIntersecting){pc.classList.add('draw');io.unobserve(pc);}});},{threshold:.35});
+      io.observe(pc);
+    } else { pc.classList.add('draw'); }
   })();
 
   // carrusel de trabajos (centro enfocado, laterales atenuados)
