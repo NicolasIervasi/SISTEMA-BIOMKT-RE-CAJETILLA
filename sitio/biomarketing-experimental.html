@@ -3,8 +3,28 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Biomarketing</title>
-<meta name="description" content="Agencia de comunicación y publicidad en Mar del Plata. Branding, web, audiovisual y estrategia. Escuchamos tu marca antes de proponer.">
+<title>Biomarketing — Agencia de comunicación y publicidad en Mar del Plata</title>
+<meta name="description" content="Agencia de comunicación y publicidad en Mar del Plata. Branding, páginas web, audiovisual y estrategia. Escuchamos tu marca antes de proponer y armamos un plan claro para que vendas más.">
+<meta name="robots" content="index, follow">
+<meta name="theme-color" content="#08070c">
+<meta name="author" content="Biomarketing">
+<link rel="canonical" href="https://biomarketing.net/">
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Ccircle cx='14' cy='14' r='11' fill='%238a5cf0'/%3E%3Ccircle cx='24' cy='24' r='5' fill='%23a6e04b'/%3E%3C/svg%3E">
+<!-- Open Graph -->
+<meta property="og:type" content="website">
+<meta property="og:locale" content="es_AR">
+<meta property="og:site_name" content="Biomarketing">
+<meta property="og:title" content="Biomarketing — Agencia de comunicación y publicidad en Mar del Plata">
+<meta property="og:description" content="Branding, páginas web, audiovisual y estrategia. Escuchamos tu marca antes de proponer y armamos un plan claro para que vendas más.">
+<meta property="og:url" content="https://biomarketing.net/">
+<meta property="og:image" content="https://biomarketing.net/assets/fotos/CJB6099-scaled.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<meta name="twitter:title" content="Biomarketing — Comunicación y publicidad en Mar del Plata">
+<meta name="twitter:description" content="Branding, páginas web, audiovisual y estrategia. Un plan claro para que tu marca venda más.">
+<meta name="twitter:image" content="https://biomarketing.net/assets/fotos/CJB6099-scaled.jpg">
+<script type="application/ld+json">
+{"@context":"https://schema.org","@type":"ProfessionalService","name":"Biomarketing","description":"Agencia de comunicación y publicidad en Mar del Plata. Branding, páginas web, audiovisual y estrategia.","url":"https://biomarketing.net/","telephone":"+54-223-634-6417","email":"info@biomarketing.net","priceRange":"$$","address":{"@type":"PostalAddress","streetAddress":"Catamarca 2978","addressLocality":"Mar del Plata","addressRegion":"Buenos Aires","postalCode":"7600","addressCountry":"AR"},"areaServed":"Mar del Plata","sameAs":["https://instagram.com/biomarketing.arg","https://tiktok.com/@biomarketing_"]}
+</script>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Archivo:wght@400;500;600;700;800;900&display=swap">
@@ -43,6 +63,9 @@
            font-size:12px;letter-spacing:.14em;text-transform:uppercase;color:var(--muted)}
   .eyebrow::before{content:"";width:8px;height:8px;background:var(--verde);display:block;flex:none}
   :focus-visible{outline:2px solid var(--violeta);outline-offset:3px}
+  .skip{position:absolute;left:-9999px;top:0;z-index:100;background:var(--violeta);color:#fff;
+        padding:10px 16px;border-radius:8px;font-family:"Archivo",sans-serif;font-weight:600;font-size:14px}
+  .skip:focus{left:12px;top:12px}
 
   /* buttons */
   .btn{display:inline-flex;align-items:center;gap:9px;font-family:"Archivo",sans-serif;font-weight:600;
@@ -254,20 +277,6 @@
   @keyframes mv{to{transform:translateX(-50%)}}
   @keyframes mvr{from{transform:translateX(-50%)}to{transform:translateX(0)}}
 
-  /* testimonios */
-  .tst .grid{display:grid;grid-template-columns:1fr;gap:16px;margin-top:clamp(36px,5vw,56px)}
-  @media(min-width:820px){.tst .grid{grid-template-columns:repeat(3,1fr)}}
-  .tst .q{position:relative;display:flex;flex-direction:column;gap:16px;
-          background:linear-gradient(180deg,rgba(255,255,255,.035),rgba(255,255,255,0)),var(--bg-2);
-          border:1px solid var(--line);border-radius:18px;padding:28px;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
-  .tst .q .mk{font-family:"Archivo",sans-serif;font-size:46px;line-height:.5;color:var(--violeta-light);height:24px}
-  .tst blockquote{margin:0;font-family:"Archivo",sans-serif;font-weight:400;font-size:19px;line-height:1.42;color:var(--ink)}
-  .tst .who{display:flex;align-items:center;gap:12px;margin-top:auto}
-  .tst .who .av{width:42px;height:42px;border-radius:50%;flex:none;display:grid;place-items:center;
-                background:linear-gradient(135deg,#8a5cf0,#6f43d6);color:#fff;font-family:"Archivo",sans-serif;font-size:17px}
-  .tst .who .nm{font-size:14px;font-weight:600}
-  .tst .who .nm span{display:block;color:var(--muted);font-weight:400;font-size:13px;margin-top:2px}
-  .tst .note{margin-top:22px;color:var(--muted);font-size:12px;letter-spacing:.04em}
 
   /* spots / reels */
   .spots{display:grid;grid-template-columns:1fr;gap:16px;margin-top:clamp(36px,5vw,56px)}
@@ -278,23 +287,7 @@
   .spot video{width:100%;height:100%;object-fit:cover;display:block;background:#0d0b16}
   .spots-note{margin-top:22px;color:var(--muted);font-size:12px;letter-spacing:.04em}
 
-  /* galeria de trabajos en movimiento */
-  .gal{display:flex;flex-direction:column;gap:16px;margin-top:clamp(32px,4.5vw,52px);overflow:hidden;
-       -webkit-mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent);
-       mask-image:linear-gradient(90deg,transparent,#000 5%,#000 95%,transparent)}
-  .gal .row2{display:flex;gap:16px;width:max-content;will-change:transform}
-  .gal .row2.l{animation:galL 90s linear infinite}
-  .gal .row2.r{animation:galR 54s linear infinite}
-  .gal:hover .row2{animation-play-state:paused}
-  .gitem{flex:0 0 auto;width:clamp(240px,27vw,350px);aspect-ratio:4/5;border-radius:16px;overflow:hidden;
-         position:relative;border:1px solid var(--line);isolation:isolate;background:#0d0b16}
-  .gitem img{width:100%;height:100%;object-fit:cover;display:block;transition:transform .6s var(--ease)}
-  .gitem:hover img{transform:scale(1.06)}
-  .gitem::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,transparent 55%,rgba(8,7,12,.72))}
-  .gitem .tag{position:absolute;left:14px;bottom:13px;z-index:1;font-family:"Archivo",sans-serif;
-              font-weight:600;font-size:11px;letter-spacing:.14em;text-transform:uppercase;color:#fff}
   @keyframes galL{to{transform:translateX(-50%)}}
-  @keyframes galR{from{transform:translateX(-50%)}to{transform:translateX(0)}}
 
   /* clientes en carrusel */
   .creel{width:100%;overflow:hidden;margin-top:22px;
@@ -304,10 +297,9 @@
   .clients:hover .ctrack{animation-play-state:paused}
 
   @media (prefers-reduced-motion:reduce){
-    .gal .row2,.ctrack,.marq .track{animation:none}
-    .gal{overflow-x:auto}.gal .row2{width:auto}
+    .ctrack,.marq .track{animation:none}
     .hero h1 .ln>span{transform:none;animation:none}
-    .hero h1 .ln>span.hl{background-size:100% .09em}
+    .hero .life{opacity:1}
   }
 
   .rev{opacity:0;transform:translateY(20px);filter:blur(6px);
@@ -318,6 +310,7 @@
 </style>
 </head>
 <body>
+<a class="skip" href="#main">Saltar al contenido</a>
 
 <!-- NAV -->
 <header>
@@ -345,6 +338,7 @@
   </div>
 </header>
 
+<main id="main">
 <!-- HERO -->
 <section class="hero" id="top">
   <canvas class="life" aria-hidden="true"></canvas>
@@ -389,7 +383,7 @@
 <!-- CLIENTES -->
 <div class="clients">
   <div class="wrap"><span class="lbl">Confiaron en nosotros</span></div>
-  <div class="creel"><div class="ctrack"><span class="chip"><img src="assets/logos/bendito_futbol_gris_web.png" alt="Bendito Fútbol"></span><span class="chip"><img src="assets/logos/bikes_asaro_gris_web.png" alt="Bikes Asaro"></span><span class="chip"><img src="assets/logos/hasrun_gris_web.png" alt="Hasrun"></span><span class="chip"><img src="assets/logos/las_gironas_gris_web.png" alt="Las Gironas"></span><span class="chip"><img src="assets/logos/cahuma-1024x685.png" alt="Cahuma"></span><span class="chip"><img src="assets/logos/SAUCE-PROPIEDADES.png" alt="Sauce Propiedades"></span><span class="chip"><img src="assets/logos/bendito_futbol_gris_web.png" alt="Bendito Fútbol"></span><span class="chip"><img src="assets/logos/bikes_asaro_gris_web.png" alt="Bikes Asaro"></span><span class="chip"><img src="assets/logos/hasrun_gris_web.png" alt="Hasrun"></span><span class="chip"><img src="assets/logos/las_gironas_gris_web.png" alt="Las Gironas"></span><span class="chip"><img src="assets/logos/cahuma-1024x685.png" alt="Cahuma"></span><span class="chip"><img src="assets/logos/SAUCE-PROPIEDADES.png" alt="Sauce Propiedades"></span></div></div>
+  <div class="creel"><div class="ctrack"><span class="chip"><img src="assets/logos/bendito_futbol_gris_web.png" width="1024" height="1024" loading="lazy" decoding="async" alt="Bendito Fútbol"></span><span class="chip"><img src="assets/logos/bikes_asaro_gris_web.png" width="1536" height="1024" loading="lazy" decoding="async" alt="Bikes Asaro"></span><span class="chip"><img src="assets/logos/hasrun_gris_web.png" width="1080" height="1080" loading="lazy" decoding="async" alt="Hasrun"></span><span class="chip"><img src="assets/logos/las_gironas_gris_web.png" width="632" height="214" loading="lazy" decoding="async" alt="Las Gironas"></span><span class="chip"><img src="assets/logos/cahuma-1024x685.png" width="1024" height="685" loading="lazy" decoding="async" alt="Cahuma"></span><span class="chip"><img src="assets/logos/SAUCE-PROPIEDADES.png" width="1024" height="1024" loading="lazy" decoding="async" alt="Sauce Propiedades"></span><span class="chip"><img src="assets/logos/bendito_futbol_gris_web.png" width="1024" height="1024" loading="lazy" decoding="async" alt="Bendito Fútbol"></span><span class="chip"><img src="assets/logos/bikes_asaro_gris_web.png" width="1536" height="1024" loading="lazy" decoding="async" alt="Bikes Asaro"></span><span class="chip"><img src="assets/logos/hasrun_gris_web.png" width="1080" height="1080" loading="lazy" decoding="async" alt="Hasrun"></span><span class="chip"><img src="assets/logos/las_gironas_gris_web.png" width="632" height="214" loading="lazy" decoding="async" alt="Las Gironas"></span><span class="chip"><img src="assets/logos/cahuma-1024x685.png" width="1024" height="685" loading="lazy" decoding="async" alt="Cahuma"></span><span class="chip"><img src="assets/logos/SAUCE-PROPIEDADES.png" width="1024" height="1024" loading="lazy" decoding="async" alt="Sauce Propiedades"></span></div></div>
 </div>
 
 <!-- ESTUDIO -->
@@ -494,6 +488,8 @@
     </div>
   </div>
 </section>
+
+</main>
 
 <!-- FOOTER -->
 <footer>
