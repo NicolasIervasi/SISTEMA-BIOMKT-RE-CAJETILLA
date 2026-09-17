@@ -144,6 +144,13 @@
   .shead p{color:var(--muted);margin-top:14px;font-size:17px}
   .alt{background:var(--bg-2);border-block:1px solid var(--line)}
 
+  /* agencia — declaración */
+  .statement .wrap{padding-block:clamp(60px,9vw,120px)}
+  .statement .eyebrow{margin-bottom:clamp(26px,4vw,44px)}
+  .statement .big{font-family:"Archivo",sans-serif;font-weight:600;letter-spacing:-.02em;line-height:1.14;
+        font-size:clamp(1.6rem,3.8vw,3rem);max-width:22ch;color:var(--muted);text-wrap:balance}
+  .statement .big b{color:var(--ink);font-weight:800}
+
   /* servicios — lista editorial (el verde es marcador, no subrayado) */
   .slist{border-top:1px solid var(--line);margin-top:clamp(20px,3vw,34px)}
   .srow{position:relative;display:grid;grid-template-columns:14px 1fr;gap:clamp(16px,2.5vw,32px);
@@ -194,19 +201,20 @@
         transition:opacity .4s var(--ease),transform .4s var(--ease)}
   .tile:hover .cap{opacity:1;transform:none}
 
-  /* CTA final */
-  .final .box{background:linear-gradient(150deg,#7a45e0,#4f22b0);color:#fff;border-radius:28px;padding:clamp(38px,6vw,80px);
-              text-align:center;position:relative;overflow:hidden;
-              box-shadow:0 50px 90px -50px rgba(122,69,224,.9),inset 0 1px 0 rgba(255,255,255,.18)}
-  .final .box::after{content:"";position:absolute;width:380px;height:380px;border-radius:50%;
-              background:radial-gradient(circle,rgba(166,224,75,.4),transparent 70%);right:-90px;top:-140px}
-  .final .box::before{content:"";position:absolute;width:300px;height:300px;border-radius:50%;
-              background:radial-gradient(circle,rgba(169,139,255,.5),transparent 70%);left:-100px;bottom:-160px}
-  .final h2{font-size:clamp(2.1rem,5.4vw,3.8rem);font-weight:800;position:relative;z-index:1;max-width:16ch;margin-inline:auto;letter-spacing:-.028em;text-transform:uppercase;line-height:.98}
-  .final p{color:rgba(255,255,255,.88);margin-top:18px;position:relative;z-index:1;max-width:46ch;margin-inline:auto}
-  .final .btn{background:#fff;color:#5a1fc0;margin-top:30px;position:relative;z-index:1;box-shadow:0 14px 34px -16px rgba(0,0,0,.6)}
-  .final .btn:hover{background:var(--verde);color:#0b0b0e}
-  .final .reassure{color:rgba(255,255,255,.82);font-size:13px;margin-top:14px;position:relative;z-index:1}
+  /* CTA final — panel oscuro con acento (no blob violeta) */
+  .final .box{position:relative;overflow:hidden;text-align:center;border-radius:24px;padding:clamp(44px,6vw,88px);
+              background:linear-gradient(180deg,rgba(255,255,255,.045),rgba(255,255,255,0)),var(--bg-2);
+              border:1px solid var(--line);
+              box-shadow:0 40px 90px -50px rgba(0,0,0,.9),inset 0 1px 0 rgba(255,255,255,.06)}
+  .final .box::after{content:"";position:absolute;width:560px;height:560px;border-radius:50%;pointer-events:none;
+              background:radial-gradient(circle,rgba(138,92,240,.30),transparent 68%);right:-180px;top:-240px}
+  .final .box::before{content:"";position:absolute;width:380px;height:380px;border-radius:50%;pointer-events:none;
+              background:radial-gradient(circle,rgba(166,224,75,.09),transparent 70%);left:-150px;bottom:-210px}
+  .final h2{font-size:clamp(2.1rem,5.4vw,3.8rem);font-weight:800;position:relative;z-index:1;max-width:16ch;margin-inline:auto;letter-spacing:-.028em;text-transform:uppercase;line-height:.98;color:var(--ink)}
+  .final p{color:var(--muted);margin-top:18px;position:relative;z-index:1;max-width:46ch;margin-inline:auto}
+  .final .btn{margin-top:30px;position:relative;z-index:1}
+  .final .reassure{color:var(--muted);font-size:13px;margin-top:14px;position:relative;z-index:1;display:flex;align-items:center;gap:8px;justify-content:center}
+  .final .reassure::before{content:"";width:7px;height:7px;background:var(--verde);display:block;flex:none}
 
   /* footer */
   footer{background:var(--bg);border-top:1px solid var(--line)}
@@ -252,7 +260,7 @@
   .spots{display:grid;grid-template-columns:1fr;gap:16px;margin-top:clamp(36px,5vw,56px)}
   @media(min-width:640px){.spots{grid-template-columns:1fr 1fr}}
   @media(min-width:1000px){.spots{grid-template-columns:repeat(3,1fr)}}
-  .spot{position:relative;aspect-ratio:16/9;border-radius:16px;overflow:hidden;border:1px solid var(--line);
+  .spot{position:relative;aspect-ratio:16/9;border-radius:12px;overflow:hidden;border:1px solid var(--line);
         background:#0d0b16;box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
   .spot video{width:100%;height:100%;object-fit:cover;display:block;background:#0d0b16}
   .spots-note{margin-top:22px;color:var(--muted);font-size:12px;letter-spacing:.04em}
@@ -372,13 +380,10 @@
 </div>
 
 <!-- ESTUDIO -->
-<section id="estudio">
+<section class="statement" id="estudio">
   <div class="wrap">
-    <div class="shead rev">
-      <span class="eyebrow">Agencia</span>
-      <h2>Una agencia de comunicación y publicidad en Mar del Plata</h2>
-      <p>Antes de proponer un logo o una campaña, nos sentamos a entender tu marca: tu público, tu historia y qué querés vender. La mitad del trabajo pasa en esa primera charla.</p>
-    </div>
+    <span class="eyebrow rev">Agencia</span>
+    <p class="big rev d1">Comunicación y publicidad en Mar del Plata. Antes de proponer un logo o una campaña, <b>escuchamos tu marca</b>: tu público, tu historia y qué querés vender. <b>La mitad del trabajo pasa en esa primera charla.</b></p>
   </div>
 </section>
 
