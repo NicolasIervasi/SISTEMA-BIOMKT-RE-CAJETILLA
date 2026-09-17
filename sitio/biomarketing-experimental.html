@@ -175,20 +175,21 @@
   .stp h3{font-size:20px;margin-top:18px;font-weight:500}
   .stp p{color:var(--muted);font-size:15px;margin-top:8px}
 
-  /* trabajos */
-  .work{display:grid;grid-template-columns:1fr;gap:14px}
-  @media(min-width:600px){.work{grid-template-columns:1fr 1fr}}
-  @media(min-width:1000px){.work{grid-template-columns:repeat(3,1fr)}}
-  .tile{position:relative;aspect-ratio:4/3;border-radius:16px;overflow:hidden;border:1px solid var(--line);
-        display:flex;align-items:flex-end;padding:18px;isolation:isolate;background:var(--bg-2)}
-  .tile .g{position:absolute;inset:0;z-index:-2;width:100%;height:100%;object-fit:cover;transition:transform .5s var(--ease)}
-  .tile:hover .g{transform:scale(1.04)}
-  .tile::after{content:"";position:absolute;inset:0;z-index:-1;background:linear-gradient(180deg,transparent 40%,rgba(21,20,28,.55))}
-  .tile .cap{color:#fff;font-family:"Archivo",sans-serif;font-weight:600;font-size:15px}
-  .tile .cap small{display:block;font-weight:500;font-family:"Archivo";font-size:12px;color:#e6e2f4;opacity:.9}
-  .tile .g{background:linear-gradient(140deg,#6a2bd6,#9a6cf0)}
-  .tile:nth-child(3n) .g{background:linear-gradient(140deg,#4c8a11,#7ed321)}
-  .tile:nth-child(3n+1) .g{background:linear-gradient(140deg,#3a1a86,#7838e5)}
+  /* trabajos — galería editorial (masonry, la foto lidera) */
+  .work{columns:1;column-gap:14px}
+  @media(min-width:620px){.work{columns:2}}
+  @media(min-width:1000px){.work{columns:3}}
+  .tile{position:relative;break-inside:avoid;margin-bottom:14px;border-radius:12px;overflow:hidden;
+        display:block;background:var(--bg-2);isolation:isolate}
+  .tile .g{display:block;width:100%;height:auto;transition:transform .6s var(--ease),filter .6s var(--ease);filter:saturate(.9)}
+  .tile:hover .g{transform:scale(1.03);filter:saturate(1.06)}
+  .tile::after{content:"";position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .4s var(--ease);
+        background:linear-gradient(180deg,transparent 50%,rgba(8,7,12,.82))}
+  .tile:hover::after{opacity:1}
+  .tile .cap{position:absolute;left:16px;bottom:14px;z-index:1;color:#fff;font-family:"Archivo",sans-serif;
+        font-weight:600;font-size:14px;letter-spacing:-.01em;opacity:0;transform:translateY(6px);
+        transition:opacity .4s var(--ease),transform .4s var(--ease)}
+  .tile:hover .cap{opacity:1;transform:none}
 
   /* CTA final */
   .final .box{background:linear-gradient(150deg,#7a45e0,#4f22b0);color:#fff;border-radius:28px;padding:clamp(38px,6vw,80px);
@@ -417,15 +418,15 @@
       <h2>Algunas marcas que acompañamos</h2>
     </div>
     <div class="work">
-      <div class="tile rev"><img class="g" src="assets/fotos/BIO4679-E-scaled.jpg" alt="Gastronomía" loading="lazy"><span class="cap"><small>Gastronomía</small></span></div>
-      <div class="tile rev"><img class="g" src="assets/fotos/BIO3463-696x1024.jpg" alt="Producto" loading="lazy"><span class="cap"><small>Producto</small></span></div>
-      <div class="tile rev"><img class="g" src="assets/fotos/BIO3923-683x1024.jpg" alt="Contenido" loading="lazy"><span class="cap"><small>Contenido</small></span></div>
-      <div class="tile rev"><img class="g" src="assets/fotos/CJB6099-scaled.jpg" alt="Gastronomía" loading="lazy"><span class="cap"><small>Gastronomía</small></span></div>
-      <div class="tile rev"><img class="g" src="assets/fotos/BIO3468-683x1024.jpg" alt="Dirección de arte" loading="lazy"><span class="cap"><small>Dirección de arte</small></span></div>
-      <div class="tile rev"><img class="g" src="assets/fotos/asaro-bikes.webp" alt="Asaro Bikes" loading="lazy"><span class="cap"><small>Asaro Bikes</small></span></div>
-      <div class="tile rev"><img class="g" src="assets/fotos/BIO2301-683x1024.jpg" alt="Fotografía" loading="lazy"><span class="cap"><small>Fotografía</small></span></div>
-      <div class="tile rev"><img class="g" src="assets/fotos/11-ESPECIAL-scaled.jpg" alt="Producción" loading="lazy"><span class="cap"><small>Producción</small></span></div>
-      <div class="tile rev"><img class="g" src="assets/fotos/bois-cafe.jpg" alt="Café Bois" loading="lazy"><span class="cap"><small>Café Bois</small></span></div>
+      <div class="tile rev"><img class="g" src="assets/fotos/BIO4679-E-scaled.jpg" alt="Producción gastronómica" loading="lazy"><span class="cap">Gastronomía</span></div>
+      <div class="tile rev"><img class="g" src="assets/fotos/BIO3463-696x1024.jpg" alt="Fotografía de producto" loading="lazy"><span class="cap">Producto</span></div>
+      <div class="tile rev"><img class="g" src="assets/fotos/BIO3923-683x1024.jpg" alt="Contenido para redes" loading="lazy"><span class="cap">Contenido</span></div>
+      <div class="tile rev"><img class="g" src="assets/fotos/CJB6099-scaled.jpg" alt="Producción gastronómica" loading="lazy"><span class="cap">Gastronomía</span></div>
+      <div class="tile rev"><img class="g" src="assets/fotos/BIO3468-683x1024.jpg" alt="Dirección de arte" loading="lazy"><span class="cap">Dirección de arte</span></div>
+      <div class="tile rev"><img class="g" src="assets/fotos/asaro-bikes.webp" alt="Asaro Bikes" loading="lazy"><span class="cap">Asaro Bikes</span></div>
+      <div class="tile rev"><img class="g" src="assets/fotos/BIO2301-683x1024.jpg" alt="Sesión de fotografía" loading="lazy"><span class="cap">Fotografía</span></div>
+      <div class="tile rev"><img class="g" src="assets/fotos/11-ESPECIAL-scaled.jpg" alt="Producción de campaña" loading="lazy"><span class="cap">Producción</span></div>
+      <div class="tile rev"><img class="g" src="assets/fotos/bois-cafe.jpg" alt="Café Bois" loading="lazy"><span class="cap">Café Bois</span></div>
     </div>
   </div>
 </section>
