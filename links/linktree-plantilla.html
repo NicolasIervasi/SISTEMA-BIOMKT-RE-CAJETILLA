@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Nombre del Cliente</title>
+<meta name="description" content="Todos los links en un solo lugar.">
+
+<!-- ============================================================
+     OPEN GRAPH — lo que se ve cuando se comparte el link
+     Cambiar url e image por las definitivas al publicar.
+     ============================================================ -->
+<meta property="og:type" content="website">
+<meta property="og:title" content="Nombre del Cliente">
+<meta property="og:description" content="Todos los links en un solo lugar.">
+<meta property="og:image" content="">
+<meta name="theme-color" content="#635BA7">
+
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+<style>
+/* ============================================================
+   1. MARCA — tocar SOLO estos valores para cambiar el look
+   ============================================================ */
+:root{
+  --brand:        #635BA7;   /* color principal: botones, acentos */
+  --brand-oscuro: #4A4380;   /* variante para hover/degradé */
+  --fondo:        #0E0C18;   /* fondo de la página */
+  --fondo-2:      #191430;   /* segundo tono del degradé de fondo */
+  --tarjeta:      rgba(255,255,255,.07);
+  --borde:        rgba(255,255,255,.12);
+  --texto:        #F6F4FF;
+  --texto-suave:  rgba(246,244,255,.62);
+  --radio:        16px;
+  --ancho:        420px;
+}
+
+*{box-sizing:border-box;margin:0;padding:0}
+
+body{
+  font-family:'Inter',-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;
+  background:var(--fondo);
+  background-image:
+    radial-gradient(900px 500px at 50% -10%, var(--brand) 0%, transparent 60%),
+    linear-gradient(180deg, var(--fondo-2) 0%, var(--fondo) 55%);
+  background-attachment:fixed;
+  color:var(--texto);
+  min-height:100vh;
+  display:flex;
+  justify-content:center;
+  padding:56px 20px 40px;
+  -webkit-font-smoothing:antialiased;
+}
+
+.contenedor{width:100%;max-width:var(--ancho)}
+
+/* ============================================================
+   2. CABECERA — foto, nombre, rubro, bio
+   ============================================================ */
+.foto{
+  width:104px;height:104px;border-radius:50%;
+  margin:0 auto 18px;display:block;
+  object-fit:cover;
+  border:3px solid rgba(255,255,255,.22);
+  box-shadow:0 10px 30px rgba(0,0,0,.35);
+  background:linear-gradient(135deg,var(--brand),var(--brand-oscuro));
+}
+/* Fallback con iniciales si todavía no hay foto */
+.foto-iniciales{
+  width:104px;height:104px;border-radius:50%;
+  margin:0 auto 18px;display:flex;align-items:center;justify-content:center;
+  font-size:38px;font-weight:700;letter-spacing:-1px;
+  background:linear-gradient(135deg,var(--brand),var(--brand-oscuro));
+  border:3px solid rgba(255,255,255,.22);
+  box-shadow:0 10px 30px rgba(0,0,0,.35);
+}
+.nombre{font-size:23px;font-weight:700;text-align:center;letter-spacing:-.3px}
+.rubro{
+  text-align:center;margin-top:7px;font-size:12px;font-weight:600;
+  letter-spacing:1.3px;text-transform:uppercase;color:var(--texto-suave);
+}
+.bio{
+  text-align:center;margin:14px auto 0;max-width:330px;
+  font-size:14.5px;line-height:1.55;color:var(--texto-suave);
+}
+
+/* ============================================================
+   3. BOTONES DE LINKS
+   ============================================================ */
+.links{margin-top:30px;display:flex;flex-direction:column;gap:12px}
+
+.link{
+  display:flex;align-items:center;gap:13px;
+  padding:16px 18px;
+  background:var(--tarjeta);
+  border:1px solid var(--borde);
+  border-radius:var(--radio);
+  color:var(--texto);text-decoration:none;
+  font-size:15px;font-weight:600;
+  backdrop-filter:blur(12px);
+  transition:transform .18s ease, background .18s ease, border-color .18s ease;
+}
+.link:hover{transform:translateY(-2px);background:rgba(255,255,255,.13);border-color:rgba(255,255,255,.28)}
+.link:active{transform:translateY(0)}
+
+/* Botón destacado: el CTA principal (turnos, comprar, reservar) */
+.link.destacado{
+  background:linear-gradient(135deg,var(--brand),var(--brand-oscuro));
+  border-color:transparent;
+  box-shadow:0 8px 24px rgba(99,91,167,.42);
+}
+.link.destacado:hover{background:linear-gradient(135deg,var(--brand),var(--brand))}
+
+.icono{
+  width:36px;height:36px;flex-shrink:0;
+  display:flex;align-items:center;justify-content:center;
+  border-radius:10px;background:rgba(255,255,255,.1);
+}
+.icono svg{width:19px;height:19px;fill:currentColor}
+.texto-link{flex:1;min-width:0}
+.texto-link .titulo{display:block}
+.texto-link .sub{
+  display:block;margin-top:2px;font-size:12.5px;font-weight:400;
+  color:var(--texto-suave);
+}
+.link.destacado .texto-link .sub{color:rgba(255,255,255,.78)}
+.flecha{opacity:.4;flex-shrink:0}
+
+/* ============================================================
+   4. REDES (fila de iconos) Y PIE
+   ============================================================ */
+.redes{display:flex;justify-content:center;gap:14px;margin-top:30px}
+.red{
+  width:42px;height:42px;border-radius:50%;
+  display:flex;align-items:center;justify-content:center;
+  background:var(--tarjeta);border:1px solid var(--borde);
+  color:var(--texto);transition:transform .18s ease,background .18s ease;
+}
+.red:hover{transform:translateY(-2px);background:rgba(255,255,255,.15)}
+.red svg{width:18px;height:18px;fill:currentColor}
+
+.pie{
+  margin-top:34px;text-align:center;
+  font-size:11.5px;letter-spacing:.4px;color:rgba(246,244,255,.35);
+}
+.pie a{color:inherit;text-decoration:none;border-bottom:1px solid rgba(246,244,255,.2)}
+
+@media(max-width:400px){
+  body{padding:40px 16px 32px}
+  .nombre{font-size:21px}
+}
+@media(prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+
+<main class="contenedor">
+
+  <!-- FOTO: reemplazar el div por <img class="foto" src="foto.jpg" alt="Nombre"> -->
+  <div class="foto-iniciales">NC</div>
+
+  <h1 class="nombre">Nombre del Cliente</h1>
+  <p class="rubro">Rubro · Ciudad</p>
+  <p class="bio">Una línea corta que diga qué hace y para quién. Máximo dos renglones.</p>
+
+  <!-- ============================================================
+       LINKS — copiar/pegar un bloque <a> por cada botón.
+       El primero lleva class="link destacado" (CTA principal).
+       ============================================================ -->
+  <nav class="links">
+
+    <a class="link destacado" href="https://wa.me/549XXXXXXXXXX" target="_blank" rel="noopener">
+      <span class="icono"><svg viewBox="0 0 24 24"><path d="M17.5 14.4c-.3-.2-1.7-.8-2-.9-.3-.1-.5-.2-.7.1-.2.3-.7.9-.9 1.1-.2.2-.3.2-.6.1-.3-.2-1.3-.5-2.4-1.5-.9-.8-1.5-1.8-1.7-2.1-.2-.3 0-.5.1-.6l.5-.5c.1-.2.2-.3.3-.5.1-.2 0-.4 0-.5l-.9-2.1c-.2-.5-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1c.2.2 2.1 3.2 5.1 4.4.7.3 1.3.5 1.7.6.7.2 1.4.2 1.9.1.6-.1 1.7-.7 2-1.4.2-.7.2-1.2.2-1.4-.1-.1-.3-.2-.6-.3zM12 2C6.5 2 2 6.5 2 12c0 1.8.5 3.4 1.3 4.9L2 22l5.3-1.4c1.4.8 3 1.2 4.7 1.2 5.5 0 10-4.5 10-10S17.5 2 12 2z"/></svg></span>
+      <span class="texto-link">
+        <span class="titulo">Escribinos por WhatsApp</span>
+        <span class="sub">Respuesta en el día</span>
+      </span>
+      <span class="flecha">→</span>
+    </a>
+
+    <a class="link" href="#" target="_blank" rel="noopener">
+      <span class="icono"><svg viewBox="0 0 24 24"><path d="M19 4h-1V2h-2v2H8V2H6v2H5a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2V6a2 2 0 00-2-2zm0 16H5V10h14v10zm0-12H5V6h14v2z"/></svg></span>
+      <span class="texto-link">
+        <span class="titulo">Reservar turno</span>
+        <span class="sub">Agenda online</span>
+      </span>
+      <span class="flecha">→</span>
+    </a>
+
+    <a class="link" href="#" target="_blank" rel="noopener">
+      <span class="icono"><svg viewBox="0 0 24 24"><path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/></svg></span>
+      <span class="texto-link">
+        <span class="titulo">Servicios y precios</span>
+        <span class="sub">Qué incluye cada plan</span>
+      </span>
+      <span class="flecha">→</span>
+    </a>
+
+    <a class="link" href="#" target="_blank" rel="noopener">
+      <span class="icono"><svg viewBox="0 0 24 24"><path d="M12 2a10 10 0 100 20 10 10 0 000-20zm0 18a8 8 0 110-16 8 8 0 010 16zm1-13h-2v6l5 3 1-1.6-4-2.4V7z"/></svg></span>
+      <span class="texto-link">
+        <span class="titulo">Sitio web</span>
+        <span class="sub">Conocé más</span>
+      </span>
+      <span class="flecha">→</span>
+    </a>
+
+  </nav>
+
+  <!-- ============================================================
+       REDES — borrar los que el cliente no use
+       ============================================================ -->
+  <div class="redes">
+    <a class="red" href="#" target="_blank" rel="noopener" aria-label="Instagram">
+      <svg viewBox="0 0 24 24"><path d="M12 2.2c3.2 0 3.6 0 4.9.1 1.2.1 1.8.2 2.2.4.6.2 1 .5 1.4.9.4.4.7.8.9 1.4.2.4.4 1 .4 2.2.1 1.3.1 1.7.1 4.9s0 3.6-.1 4.9c-.1 1.2-.2 1.8-.4 2.2-.2.6-.5 1-.9 1.4-.4.4-.8.7-1.4.9-.4.2-1 .4-2.2.4-1.3.1-1.7.1-4.9.1s-3.6 0-4.9-.1c-1.2-.1-1.8-.2-2.2-.4-.6-.2-1-.5-1.4-.9-.4-.4-.7-.8-.9-1.4-.2-.4-.4-1-.4-2.2-.1-1.3-.1-1.7-.1-4.9s0-3.6.1-4.9c.1-1.2.2-1.8.4-2.2.2-.6.5-1 .9-1.4.4-.4.8-.7 1.4-.9.4-.2 1-.4 2.2-.4 1.3-.1 1.7-.1 4.9-.1zm0 3.3a6.5 6.5 0 100 13 6.5 6.5 0 000-13zm0 10.7a4.2 4.2 0 110-8.4 4.2 4.2 0 010 8.4zm6.8-11a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z"/></svg>
+    </a>
+    <a class="red" href="#" target="_blank" rel="noopener" aria-label="TikTok">
+      <svg viewBox="0 0 24 24"><path d="M16.6 5.8a4.8 4.8 0 01-1.1-3.1h-3.1v12.5a2.6 2.6 0 11-1.8-2.5V9.5a5.7 5.7 0 103.6 5.3V9.2a7.9 7.9 0 004.6 1.5V7.6a4.7 4.7 0 01-2.2-1.8z"/></svg>
+    </a>
+    <a class="red" href="#" target="_blank" rel="noopener" aria-label="Correo">
+      <svg viewBox="0 0 24 24"><path d="M20 4H4a2 2 0 00-2 2v12a2 2 0 002 2h16a2 2 0 002-2V6a2 2 0 00-2-2zm0 4l-8 5-8-5V6l8 5 8-5v2z"/></svg>
+    </a>
+  </div>
+
+  <p class="pie">Hecho por <a href="#" target="_blank" rel="noopener">Biomarketing</a></p>
+
+</main>
+</body>
+</html>
