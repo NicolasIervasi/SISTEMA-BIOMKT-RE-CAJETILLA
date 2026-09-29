@@ -1,0 +1,93 @@
+<title>Bowling de Paso</title>
+<style>
+/* Layout: una sola columna tipo linktree, cabecera con rack de 10 pines, botones como carriles */
+@import url("https://fonts.googleapis.com/css2?family=Bowlby+One&family=DM+Sans:wght@400;500;700&display=swap");
+:root {
+  --bg: #14101f;
+  --lane: #1e1830;
+  --ink: #f6f1e7;
+  --muted: #a99fc0;
+  --hot: #ff4d5e;
+  --cyan: #3fe0d0;
+  --gold: #ffc94a;
+  --display: "Bowlby One", "Arial Black", sans-serif;
+  --body: "DM Sans", system-ui, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 16px;
+  line-height: 1.4;
+  padding-inline: 16px;
+  padding-block: 40px 32px;
+  min-height: 100vh;
+  background-image: radial-gradient(60% 40% at 50% 0%, rgba(255, 77, 94, 0.22), transparent 70%);
+  background-repeat: no-repeat;
+}
+main { max-width: 480px; margin-inline: auto; display: flex; flex-direction: column; gap: 28px; }
+header { display: flex; flex-direction: column; align-items: center; gap: 14px; text-align: center; }
+.rack { display: grid; gap: 6px; justify-items: center; }
+.rack div { display: flex; gap: 6px; }
+.pin { width: 14px; height: 22px; border-radius: 50% 50% 45% 45% / 60% 60% 40% 40%; background: var(--ink); position: relative; }
+.pin::after { content: ""; position: absolute; left: 0; right: 0; top: 6px; height: 3px; background: var(--hot); }
+h1 { font-family: var(--display); font-weight: 400; font-size: clamp(2.2rem, 11vw, 3.2rem); line-height: 1; margin: 0; text-wrap: balance; letter-spacing: 0.01em; }
+h1 span { color: var(--hot); }
+.tag { margin: 0; color: var(--muted); }
+.open { display: inline-flex; align-items: center; gap: 8px; font-size: 0.85rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--cyan); }
+.open::before { content: ""; width: 8px; height: 8px; border-radius: 50%; background: var(--cyan); }
+ul { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 12px; }
+.link {
+  display: flex; align-items: center; justify-content: space-between; gap: 12px;
+  min-height: 60px; padding: 12px 18px; border-radius: 999px;
+  background: var(--lane); color: var(--ink); text-decoration: none;
+  border: 2px solid #3a2f55; font-weight: 700;
+  transition: transform 0.15s ease, border-color 0.15s ease;
+}
+.link small { display: block; font-weight: 400; color: var(--muted); font-size: 0.82rem; }
+.link .arrow { color: var(--muted); font-size: 1.2rem; }
+.link:hover { transform: translateY(-2px); border-color: var(--cyan); }
+.link:focus-visible { outline: 3px solid var(--gold); outline-offset: 3px; }
+.link.primary { background: var(--hot); border-color: var(--hot); color: #1a0a0d; }
+.link.primary small, .link.primary .arrow { color: #3d1219; }
+.link.primary:hover { border-color: var(--gold); }
+.info { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; }
+.info div { border-top: 2px dashed #3a2f55; padding-top: 10px; min-width: 0; }
+.info dt { font-size: 0.75rem; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); }
+.info dd { margin: 2px 0 0; font-weight: 700; }
+footer { text-align: center; color: var(--muted); font-size: 0.8rem; }
+@media (prefers-reduced-motion: reduce) { .link { transition: none; } }
+</style>
+
+<main>
+  <header>
+    <div class="rack" aria-hidden="true">
+      <div><span class="pin"></span><span class="pin"></span><span class="pin"></span><span class="pin"></span></div>
+      <div><span class="pin"></span><span class="pin"></span><span class="pin"></span></div>
+      <div><span class="pin"></span><span class="pin"></span></div>
+      <div><span class="pin"></span></div>
+    </div>
+    <h1>Bowling <span>de Paso</span></h1>
+    <p class="tag">Pistas, comida y cumpleaños. Reservá tu turno.</p>
+    <span class="open">Abierto hoy hasta las 02:00</span>
+  </header>
+
+  <ul>
+    <li><a class="link primary" href="https://wa.me/5490000000000" target="_blank" rel="noopener"><span>Reservar pista<small>Escribinos por WhatsApp</small></span><span class="arrow">→</span></a></li>
+    <li><a class="link" href="https://maps.google.com/?q=Bowling+de+Paso" target="_blank" rel="noopener"><span>Cómo llegar<small>Abrir en Google Maps</small></span><span class="arrow">→</span></a></li>
+    <li><a class="link" href="#" target="_blank" rel="noopener"><span>Promos de la semana<small>Combos y descuentos</small></span><span class="arrow">→</span></a></li>
+    <li><a class="link" href="#" target="_blank" rel="noopener"><span>Carta<small>Comidas y tragos</small></span><span class="arrow">→</span></a></li>
+    <li><a class="link" href="#" target="_blank" rel="noopener"><span>Cumpleaños y eventos<small>Pedí presupuesto</small></span><span class="arrow">→</span></a></li>
+    <li><a class="link" href="https://instagram.com/" target="_blank" rel="noopener"><span>Instagram<small>@bowlingdepaso</small></span><span class="arrow">→</span></a></li>
+    <li><a class="link" href="https://tiktok.com/" target="_blank" rel="noopener"><span>TikTok<small>Los mejores strikes</small></span><span class="arrow">→</span></a></li>
+  </ul>
+
+  <dl class="info">
+    <div><dt>Horarios</dt><dd>Mar a Dom, 18 a 02 h</dd></div>
+    <div><dt>Pistas</dt><dd>8 pistas, hasta 6 por pista</dd></div>
+  </dl>
+
+  <footer>Bowling de Paso</footer>
+</main>
