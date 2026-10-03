@@ -9,6 +9,7 @@ import { etaPlan } from '../js/plan.js';
 import { computeMetrics, rangeFor } from '../js/metrics.js';
 import { decodePayload, encodePayload, buildCourierPayload } from '../js/share.js';
 import { loadDemo } from '../js/demo.js';
+import { acceptPoint, trackKm, thin, mergePoints, validCoords, LIMITS } from '../js/track-math.js';
 
 const { state } = store;
 const rand = seed => () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
@@ -244,4 +245,53 @@ test('lista pegada: formatos de planilla y direcciones con coma', () => {
   ]);
   assert.equal(parseAmount('$ 1.234,00'), 123400);
   assert.deepEqual(parseOrderLines('  \n\n'), []);
+});
+
+// ───────── Track GPS ─────────
+const M = 1 / 111320;                                   // 1 metro en grados de latitud
+const pt = (t, dy = 0, dx = 0, extra = {}) => ({ t, lat: -38.0148 + dy * M, lng: -57.54085 + dx * M / Math.cos(38.0148 * Math.PI / 180), ...extra });
+
+test('track: acceptPoint filtra precisión mala, saltos imposibles y repetidos', () => {
+  assert.ok(acceptPoint(null, pt(1000)), 'el primero se acepta');
+  assert.ok(!acceptPoint(null, pt(1000, 0, 0, { acc: 200 })), 'precisión mala');
+  assert.ok(!acceptPoint(null, { t: 1, lat: 95, lng: 0 }), 'coordenadas inválidas');
+  const a = pt(0);
+  assert.ok(!acceptPoint(a, pt(2000, 5)), '5 m en 2 s: ni se movió ni pasó el tiempo');
+  assert.ok(acceptPoint(a, pt(2000, 20)), '20 m: se movió');
+  assert.ok(acceptPoint(a, pt(9000, 2)), '9 s parado: se manda igual (señal de vida)');
+  assert.ok(!acceptPoint(a, pt(0, 30)), 'mismo instante');
+  assert.ok(!acceptPoint(a, pt(-500, 30)), 'fuera de orden');
+  assert.ok(!acceptPoint(a, pt(1000, 5000)), 'salto de 5 km en 1 s');
+  assert.ok(validCoords(pt(1)) && !validCoords({ lat: NaN, lng: 0 }));
+});
+
+test('track: trackKm suma el recorrido real y descarta el ruido', () => {
+  // 10 tramos de 50 m hacia el norte, un punto por 10 s
+  const clean = Array.from({ length: 11 }, (_, i) => pt(i * 10000, i * 50));
+  assert.ok(Math.abs(trackKm(clean) - 0.5) < 0.005, String(trackKm(clean)));
+  // parado con temblor de 2 m durante una hora: no suma
+  const still = Array.from({ length: 360 }, (_, i) => pt(i * 10000, (i % 2) * 2, (i % 3) * 1.5));
+  assert.ok(trackKm(still) < 0.01, 'temblor: ' + trackKm(still));
+  // un salto de GPS de 3 km y vuelta no infla los km
+  const jumpy = [pt(0, 0), pt(10000, 50), pt(20000, 3000), pt(30000, 100), pt(40000, 150)];
+  assert.ok(Math.abs(trackKm(jumpy) - 0.15) < 0.01, 'con salto: ' + trackKm(jumpy));
+  // precisión mala no cuenta
+  assert.ok(trackKm([pt(0, 0), pt(10000, 100, 0, { acc: 120 })]) === 0);
+  // caminando despacio (2 m cada 2 s) termina sumando: la referencia no avanza con el temblor
+  const slow = Array.from({ length: 31 }, (_, i) => pt(i * 2000, i * 2));
+  assert.ok(Math.abs(trackKm(slow) - 0.06) < 0.006, 'lento: ' + trackKm(slow));
+});
+
+test('track: thin conserva extremos, respeta el máximo y mergePoints no duplica', () => {
+  const line = Array.from({ length: 1000 }, (_, i) => pt(i * 1000, i * 2));       // 2 m entre puntos
+  const t10 = thin(line, 10, 2500);
+  assert.equal(t10[0].t, 0); assert.equal(t10[t10.length - 1].t, 999000);
+  assert.ok(t10.length < 300, 'adelgaza: ' + t10.length);
+  const capped = thin(Array.from({ length: 5000 }, (_, i) => pt(i * 1000, i * 20)), 10, 500);
+  assert.equal(capped.length, 500);
+  assert.equal(capped[0].t, 0); assert.equal(capped[499].t, 4999000);
+  assert.deepEqual(thin([pt(1)], 10, 5).length, 1);
+  const merged = mergePoints([pt(3000), pt(1000)], [pt(1000), pt(2000)]);
+  assert.deepEqual(merged.map(p => p.t), [1000, 2000, 3000]);
+  assert.ok(LIMITS.maxSpeedMs > 30);
 });
