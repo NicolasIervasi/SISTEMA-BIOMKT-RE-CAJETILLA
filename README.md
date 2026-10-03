@@ -19,7 +19,7 @@ Repositorio de guiones y material audiovisual.
 
 ## Apps
 
-- [`logistica-guemes/`](logistica-guemes/) — **Cuadra**, despacho de reparto para Mar del Plata, zona Güemes: pedidos dentro de un radio de 11 cuadras (1 cuadra = 100 m), reparto automático entre repartidores con rutas óptimas por calles reales, modo repartidor para el celular (con link de ruta por WhatsApp), tarifas por anillo y métricas. Estático, sin build: se sirve con `python3 -m http.server` o se publica en Netlify. Detalle, estructura y límites en su [README](logistica-guemes/README.md).
+- [`logistica-guemes/`](logistica-guemes/) — **Cuadra**, despacho de reparto para Mar del Plata, zona Güemes: pedidos dentro de un radio de 11 cuadras (1 cuadra = 100 m), reparto automático entre repartidores con rutas óptimas por calles reales, modo repartidor para el celular (con link de ruta por WhatsApp), tarifas por anillo y métricas. Estático, sin build: se sirve con `python3 -m http.server` o se publica en Netlify. En vivo: https://cuadra-guemes.netlify.app. Detalle, estructura y límites en su [README](logistica-guemes/README.md).
 
 ## Estructura
 

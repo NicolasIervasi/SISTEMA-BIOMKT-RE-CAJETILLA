@@ -2,6 +2,8 @@
 
 Despacho de reparto para Mar del Plata, zona Güemes: pedidos dentro de un radio de 11 cuadras (1 cuadra = 100 m → 1,1 km) alrededor de Güemes 2800, rutas óptimas por repartidor, modo repartidor para el celular y métricas. Sin build ni backend: HTML + módulos ES + Leaflet.
 
+**En vivo:** https://cuadra-guemes.netlify.app (Netlify). Se publica solo la app (sin tests ni README); `_headers` fija el tipo del manifest, el caché del service worker y encabezados de seguridad básicos.
+
 ## Qué hace
 
 - **Despacho**: carga de pedidos por dirección (geocodificada y validada contra el radio), marcando el punto en el mapa o pegando una lista desde una planilla. Estados `nuevo → asignado → en camino → entregado / no entregado` con historial.
@@ -22,7 +24,7 @@ python3 -m http.server 8080        # desde la raíz del repo
 # abrir http://localhost:8080/logistica-guemes/
 ```
 
-o publicarla tal cual en Netlify / GitHub Pages (es una carpeta estática).
+o publicarla tal cual en Netlify / GitHub Pages (es una carpeta estática; en Netlify, `_headers` ya viene incluido).
 
 ## Estructura
 
@@ -40,7 +42,7 @@ js/metrics.js         cálculo de métricas (puro)
 js/charts.js          gráficos en HTML/CSS
 js/map.js             mapa Leaflet
 js/views/             despacho, modo repartidor, métricas, ajustes, diálogos
-sw.js, manifest.webmanifest, icon.svg
+sw.js, manifest.webmanifest, icon.svg, _headers
 tests/unit.test.mjs   tests del núcleo
 ```
 
