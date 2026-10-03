@@ -441,3 +441,14 @@ dialog::backdrop { background: rgba(10, 15, 31, 0.55); backdrop-filter: blur(2px
 .field .seg { display: flex; }
 .field .seg button { flex: 1; white-space: nowrap; }
 @media (max-width: 520px) { .stack-sm { grid-template-columns: 1fr; } }
+
+/* ───────── Insignia de Netlify: la app se corre, no la esconde ───────── */
+html.host-badge { --badge-h: 68px; }
+html.host-badge .cv-sheet { padding-bottom: calc(28px + env(safe-area-inset-bottom) + var(--badge-h)); }
+html.host-badge .metrics-in, html.host-badge .settings-in { padding-bottom: calc(40px + var(--badge-h)); }
+@media (min-width: 900px) { html.host-badge .leaflet-bottom { margin-bottom: var(--badge-h); } }
+@media (max-width: 899px) {
+  html.host-badge .app { padding-bottom: calc(66px + env(safe-area-inset-bottom) + var(--badge-h)); }
+  html.host-badge .rail { padding-bottom: calc(6px + env(safe-area-inset-bottom) + var(--badge-h)); }
+  html.host-badge .toasts { bottom: calc(78px + env(safe-area-inset-bottom) + var(--badge-h)); }
+}

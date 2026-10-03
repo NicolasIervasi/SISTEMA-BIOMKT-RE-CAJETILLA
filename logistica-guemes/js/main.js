@@ -63,6 +63,12 @@ themeBtn.addEventListener('click', () => {
 });
 paintTheme();
 
+/* Netlify (plan gratuito) superpone una insignia fija de 194×64 abajo a la derecha. No se oculta: la app la detecta
+   (y detecta cuando el visitante la descarta) y se corre para que no tape la barra inferior, el zoom ni la atribución. */
+const markBadge = () => document.documentElement.classList.toggle('host-badge', !!document.getElementById('nl-badge-frame'));
+for (const root of [document.documentElement, document.body]) new MutationObserver(markBadge).observe(root, { childList: true });
+markBadge();
+
 route();
 
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) {
