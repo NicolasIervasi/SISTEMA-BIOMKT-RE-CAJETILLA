@@ -4,8 +4,11 @@ import { distM } from './geomath.js';
 
 export const LIMITS = {
   maxAccuracyM: 80,        // peor precisión que se acepta para dibujar y transmitir
+  minGapMs: 4000,          // nunca se acepta un punto antes de que pasen estos ms desde el anterior (acota lo que se transmite)
   minStepM: 15,            // se transmite un punto nuevo si se movió al menos esto...
   minStepMs: 8000,         // ...o si pasó al menos este tiempo
+  trailGapMs: 3 * 60e3,    // más de este silencio corta la estela en el mapa en vez de unir con una línea recta
+  kmGapMs: 10 * 60e3,      // y más de este silencio no suma km (no se sabe por dónde fue)
   maxSpeedMs: 45,          // 162 km/h: más que eso en la zona es un salto de GPS, no movimiento real
   kmMaxAccuracyM: 50,      // para sumar km se exige mejor precisión
   kmMinStepM: 4            // por debajo de esto es temblor del GPS parado
@@ -20,7 +23,7 @@ export function acceptPoint(prev, p, L = LIMITS) {
   if (finite(p.acc) && p.acc > L.maxAccuracyM) return false;
   if (!prev) return true;
   const dt = p.t - prev.t;
-  if (dt <= 0) return false;                                  // fuera de orden o repetido
+  if (dt < L.minGapMs) return false;                          // muy pronto, repetido o fuera de orden
   const d = distM(prev, p);
   if (d / (dt / 1000) > L.maxSpeedMs && d > 100) return false;  // salto imposible
   return d >= L.minStepM || dt >= L.minStepMs;
@@ -34,6 +37,7 @@ export function trackKm(points, L = LIMITS) {
     if (!prev) { prev = p; continue; }
     const d = distM(prev, p), dt = (p.t - prev.t) / 1000;
     if (!(dt > 0)) continue;                      // repetido o fuera de orden
+    if (dt * 1000 > L.kmGapMs) { prev = p; continue; }   // hueco largo: no se suma, se sigue desde acá
     if (d / dt > L.maxSpeedMs) continue;          // salto de GPS: se descarta y se sigue comparando con el último bueno
     if (d < L.kmMinStepM) continue;               // temblor: la referencia no avanza, así un movimiento lento sí termina sumando
     m += d; prev = p;
@@ -59,4 +63,16 @@ export function mergePoints(a, b) {
   const seen = new Set(), out = [];
   for (const p of [...a, ...b]) { if (!seen.has(p.t)) { seen.add(p.t); out.push(p); } }
   return out.sort((x, y) => x.t - y.t);
+}
+
+// Parte una estela en tramos continuos: un silencio de más de gapMs corta el trazo.
+export function splitTrail(points, gapMs = LIMITS.trailGapMs) {
+  const out = [];
+  let cur = [];
+  for (const p of points) {
+    if (cur.length && p.t - cur[cur.length - 1].t > gapMs) { out.push(cur); cur = []; }
+    cur.push(p);
+  }
+  if (cur.length) out.push(cur);
+  return out;
 }

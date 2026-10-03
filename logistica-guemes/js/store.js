@@ -11,7 +11,8 @@ export function freshState() {
   return {
     v: 2,
     settings: {
-      center: { ...DEFAULT_CENTER }, radiusBlocks: 11, serviceMin: 4, roundTrip: true, startTime: '', fees: [...DEFAULT_FEES]
+      center: { ...DEFAULT_CENTER }, radiusBlocks: 11, serviceMin: 4, roundTrip: true, startTime: '', fees: [...DEFAULT_FEES],
+      live: null            // seguimiento GPS en vivo: { ws, admin } (claves secretas, no se exportan)
     },
     couriers: [
       { id: uid(), name: 'Moto 1', vehicle: 'moto', color: COURIER_COLORS[0], active: true, phone: '' },
@@ -31,8 +32,11 @@ function sanitize(raw) {
   s.settings.serviceMin = Number.isFinite(Number(s.settings.serviceMin)) ? clamp(Math.round(Number(s.settings.serviceMin)), 0, 30) : 4;
   s.settings.fees = Array.isArray(s.settings.fees) && s.settings.fees.length === 3
     ? s.settings.fees.map(n => Math.max(0, Math.round(Number(n)) || 0)) : base.settings.fees;
+  const live = s.settings.live;
+  s.settings.live = live && /^[\w-]{16,64}$/.test(live.ws || '') && /^[\w-]{32,64}$/.test(live.admin || '')
+    ? { ws: live.ws, admin: live.admin, pending: (Array.isArray(live.pending) ? live.pending : []).filter(id => /^[\w-]{1,32}$/.test(id || '')).slice(0, 20) } : null;
   s.couriers = (Array.isArray(s.couriers) ? s.couriers : []).filter(x => x && x.id && x.name)
-    .map(x => ({ phone: '', active: true, color: COURIER_COLORS[0], ...x, vehicle: VEHICLES[x.vehicle] ? x.vehicle : 'moto' }));
+    .map(x => ({ phone: '', active: true, color: COURIER_COLORS[0], ...x, vehicle: VEHICLES[x.vehicle] ? x.vehicle : 'moto', ck: /^[\w-]{32,64}$/.test(x.ck || '') ? x.ck : undefined }));
   const cutoff = Date.now() - 90 * DAY;
   s.orders = (Array.isArray(s.orders) ? s.orders : []).filter(o =>
     o && o.id && Number.isFinite(o.lat) && Number.isFinite(o.lng) && STATUS[o.status] && (o.createdAt || 0) > cutoff)
@@ -215,6 +219,8 @@ export function updateCourier(id, patch) {
   commit();
 }
 export function removeCourier(id) {
+  const live = state.settings.live;
+  if (live && courierById(id)?.ck && !live.pending.includes(id)) live.pending.push(id);   // el servidor corta su clave en cuanto hay conexión
   for (const o of courierOrders(id)) {
     if (o.status === 'asignado' || o.status === 'en_camino') { o.courierId = null; pushHistory(o, 'nuevo'); }
   }
@@ -247,6 +253,21 @@ export function departCourier(courierId) {
   return true;
 }
 
+/* ───────── Seguimiento en vivo (claves) ───────── */
+export function setLive(live) {
+  state.settings.live = live ? { ws: live.ws, admin: live.admin, pending: [] } : null;
+  if (!live) state.couriers.forEach(c => { delete c.ck; });
+  commit();
+}
+export function setCourierKey(id, ck) {
+  const c = courierById(id);
+  if (c) { c.ck = ck || undefined; commit(); }
+}
+export function clearPendingRevoke(id) {
+  const live = state.settings.live;
+  if (live) { live.pending = live.pending.filter(x => x !== id); commit(); }
+}
+
 /* ───────── Ajustes y datos ───────── */
 export function updateSettings(patch) {
   Object.assign(state.settings, patch);
@@ -269,11 +290,22 @@ export function clearOrders({ onlyDemo = false, onlyDone = false } = {}) {
   }
   commit();
 }
-export function exportJSON() { return JSON.stringify(state, null, 1); }
+// El respaldo no lleva las claves del seguimiento en vivo: quien reciba el archivo no debe poder ver ubicaciones.
+export function exportJSON() {
+  const clean = JSON.parse(JSON.stringify(state));
+  clean.settings.live = null;
+  clean.couriers.forEach(c => { delete c.ck; });
+  return JSON.stringify(clean, null, 1);
+}
 export function importJSON(text) {
   const raw = JSON.parse(text);
   if (!raw || raw.v !== 2 || !Array.isArray(raw.orders)) throw new Error('Archivo de respaldo inválido.');
+  // El respaldo no trae claves: se conservan las de este navegador (y los repartidores que ya no están se dan de baja en el servidor).
+  const live = state.settings.live, keys = new Map(state.couriers.filter(c => c.ck).map(c => [c.id, c.ck]));
   replaceState(raw);
+  state.settings.live = live ? { ...live, pending: [...live.pending] } : null;       // nunca se toman credenciales de un archivo
+  for (const c of state.couriers) { if (live && keys.has(c.id)) c.ck = keys.get(c.id); else delete c.ck; }
+  if (live) for (const id of keys.keys()) if (!courierById(id) && !live.pending.includes(id) && state.settings.live.pending.length < 20) state.settings.live.pending.push(id);
   commit();
 }
 export function resetAll() {

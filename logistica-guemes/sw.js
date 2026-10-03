@@ -1,6 +1,6 @@
 // Service worker mínimo: la app abre sin conexión con la última versión que se vio.
 // Red primero para lo propio (así nunca queda una versión vieja), caché como respaldo; librerías y fuentes desde caché.
-const CACHE = 'cuadra-v2';
+const CACHE = 'cuadra-v3';
 const SHELL = ['./', 'index.html', 'css/app.css', 'icon.svg', 'manifest.webmanifest'];
 
 self.addEventListener('install', e => e.waitUntil(caches.open(CACHE).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())));
@@ -21,12 +21,14 @@ self.addEventListener('fetch', e => {
       const hit = await cache.match(req);
       if (hit) return hit;
     }
+    const offline = async () => (await cache.match(req)) || (req.mode === 'navigate' ? cache.match('index.html') : null);
     try {
       const res = await fetch(req);
-      if (res.ok || res.type === 'opaque') cache.put(req, res.clone());
+      if (res.ok || res.type === 'opaque') { cache.put(req, res.clone()); return res; }
+      if (res.status >= 500) return (await offline()) || res;          // sitio caído o pausado: se abre la última versión que se vio
       return res;
     } catch {
-      return (await cache.match(req)) || (req.mode === 'navigate' ? cache.match('index.html') : Response.error());
+      return (await offline()) || Response.error();
     }
   })());
 });

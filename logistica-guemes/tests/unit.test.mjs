@@ -9,7 +9,7 @@ import { etaPlan } from '../js/plan.js';
 import { computeMetrics, rangeFor } from '../js/metrics.js';
 import { decodePayload, encodePayload, buildCourierPayload } from '../js/share.js';
 import { loadDemo } from '../js/demo.js';
-import { acceptPoint, trackKm, thin, mergePoints, validCoords, LIMITS } from '../js/track-math.js';
+import { acceptPoint, trackKm, thin, mergePoints, splitTrail, validCoords, LIMITS } from '../js/track-math.js';
 
 const { state } = store;
 const rand = seed => () => { seed = (seed * 16807) % 2147483647; return seed / 2147483647; };
@@ -256,12 +256,13 @@ test('track: acceptPoint filtra precisión mala, saltos imposibles y repetidos',
   assert.ok(!acceptPoint(null, pt(1000, 0, 0, { acc: 200 })), 'precisión mala');
   assert.ok(!acceptPoint(null, { t: 1, lat: 95, lng: 0 }), 'coordenadas inválidas');
   const a = pt(0);
-  assert.ok(!acceptPoint(a, pt(2000, 5)), '5 m en 2 s: ni se movió ni pasó el tiempo');
-  assert.ok(acceptPoint(a, pt(2000, 20)), '20 m: se movió');
+  assert.ok(!acceptPoint(a, pt(2000, 20)), '2 s: muy pronto aunque se haya movido (acota lo que se transmite)');
+  assert.ok(!acceptPoint(a, pt(5000, 5)), '5 m en 5 s: ni se movió ni pasó el tiempo');
+  assert.ok(acceptPoint(a, pt(5000, 20)), '20 m en 5 s: se movió');
   assert.ok(acceptPoint(a, pt(9000, 2)), '9 s parado: se manda igual (señal de vida)');
   assert.ok(!acceptPoint(a, pt(0, 30)), 'mismo instante');
   assert.ok(!acceptPoint(a, pt(-500, 30)), 'fuera de orden');
-  assert.ok(!acceptPoint(a, pt(1000, 5000)), 'salto de 5 km en 1 s');
+  assert.ok(!acceptPoint(a, pt(5000, 5000)), 'salto de 5 km en 5 s');
   assert.ok(validCoords(pt(1)) && !validCoords({ lat: NaN, lng: 0 }));
 });
 
@@ -277,6 +278,9 @@ test('track: trackKm suma el recorrido real y descarta el ruido', () => {
   assert.ok(Math.abs(trackKm(jumpy) - 0.15) < 0.01, 'con salto: ' + trackKm(jumpy));
   // precisión mala no cuenta
   assert.ok(trackKm([pt(0, 0), pt(10000, 100, 0, { acc: 120 })]) === 0);
+  // un hueco de más de 10 min no suma (no se sabe por dónde fue) y se sigue desde el punto nuevo
+  const gap = [pt(0, 0), pt(10000, 50), pt(20 * 60e3, 1050), pt(20 * 60e3 + 10000, 1100)];
+  assert.ok(Math.abs(trackKm(gap) - 0.1) < 0.005, 'con hueco: ' + trackKm(gap));
   // caminando despacio (2 m cada 2 s) termina sumando: la referencia no avanza con el temblor
   const slow = Array.from({ length: 31 }, (_, i) => pt(i * 2000, i * 2));
   assert.ok(Math.abs(trackKm(slow) - 0.06) < 0.006, 'lento: ' + trackKm(slow));
@@ -294,4 +298,12 @@ test('track: thin conserva extremos, respeta el máximo y mergePoints no duplica
   const merged = mergePoints([pt(3000), pt(1000)], [pt(1000), pt(2000)]);
   assert.deepEqual(merged.map(p => p.t), [1000, 2000, 3000]);
   assert.ok(LIMITS.maxSpeedMs > 30);
+});
+
+test('track: splitTrail corta la estela donde hubo un silencio largo', () => {
+  const pts = [pt(0), pt(10000), pt(20000), pt(10 * 60e3), pt(10 * 60e3 + 5000)];
+  const parts = splitTrail(pts);
+  assert.deepEqual(parts.map(p => p.length), [3, 2]);
+  assert.deepEqual(splitTrail([]), []);
+  assert.deepEqual(splitTrail([pt(1)]).map(p => p.length), [1]);
 });
