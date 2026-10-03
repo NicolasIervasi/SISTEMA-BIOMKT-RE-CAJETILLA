@@ -1,0 +1,854 @@
+<!doctype html>
+<html lang="es-AR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Logística Güemes</title>
+<meta name="description" content="Planificador de reparto para Mar del Plata, zona Güemes: pedidos dentro de un radio de 11 cuadras y recorrido más corto.">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.css" integrity="sha512-h9FcoyWjHcOcmEVkxOfTLnmZFWIH0iZhZT1H2TbOq55xssQGEJHEaIm+PgoUaZbRvQTNTluNOEfb1ZRy6D3BOw==" crossorigin="anonymous">
+<style>
+/* Layout: panel de trabajo a la izquierda y mapa a la derecha; en celular el mapa queda fijo arriba y el panel scrollea debajo */
+:root {
+  --bg: #f3f5f7;
+  --card: #ffffff;
+  --ink: #14202b;
+  --muted: #566877;
+  --line: #d9e0e6;
+  --accent: #0b6bcb;
+  --accent-ink: #ffffff;
+  --accent-soft: #e6f0fb;
+  --ok: #14804a;
+  --warn: #92520a;
+  --bad: #c62828;
+  --shadow: 0 1px 2px rgba(20, 32, 43, 0.08), 0 4px 14px rgba(20, 32, 43, 0.06);
+  --radius: 12px;
+  --body: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color-scheme: light dark;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0e151d;
+    --card: #17212c;
+    --ink: #e8eef4;
+    --muted: #9db1c2;
+    --line: #2a3846;
+    --accent: #4da3ff;
+    --accent-ink: #06192e;
+    --accent-soft: #14283d;
+    --ok: #4cc58a;
+    --warn: #f0b35a;
+    --bad: #ff7b7b;
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 4px 14px rgba(0, 0, 0, 0.3);
+  }
+}
+* { box-sizing: border-box; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  margin: 0;
+  background: var(--bg);
+  color: var(--ink);
+  font-family: var(--body);
+  font-size: 16px;
+  line-height: 1.4;
+}
+button, input, textarea { font: inherit; color: inherit; }
+h1, h2, p { margin: 0; }
+
+.app {
+  display: grid;
+  grid-template-columns: minmax(360px, 440px) 1fr;
+  grid-template-rows: auto 1fr;
+  grid-template-areas: "head head" "panel map";
+  height: 100vh;
+  height: 100dvh;
+}
+header { grid-area: head; padding: 12px 16px; background: var(--card); border-bottom: 1px solid var(--line); display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+header h1 { font-size: 1.25rem; font-weight: 800; letter-spacing: -0.01em; }
+header .sub { color: var(--muted); font-size: 0.9rem; }
+header .fecha { margin-left: auto; color: var(--muted); font-size: 0.9rem; }
+header .fecha::first-letter { text-transform: uppercase; }
+
+.panel { grid-area: panel; overflow-y: auto; padding: 14px 16px 32px; display: flex; flex-direction: column; gap: 14px; }
+.mapwrap { grid-area: map; position: relative; isolation: isolate; z-index: 1; min-height: 0; }
+#map { position: absolute; inset: 0; background: var(--bg); }
+.zonechip, .maptool, .maphint { position: absolute; z-index: 500; box-shadow: var(--shadow); }
+.zonechip { left: 10px; bottom: 26px; background: var(--card); border: 1px solid var(--line); border-radius: 999px; padding: 4px 12px; font-size: 0.8rem; font-weight: 600; }
+.maptool { right: 10px; top: 10px; }
+.maphint { left: 50%; top: 10px; transform: translateX(-50%); background: var(--accent); color: var(--accent-ink); border-radius: 999px; padding: 8px 8px 8px 16px; display: flex; align-items: center; gap: 10px; font-weight: 600; font-size: 0.9rem; max-width: calc(100% - 140px); }
+.maphint[hidden] { display: none; }
+.maphint button { background: rgba(255, 255, 255, 0.22); border: 0; border-radius: 999px; padding: 4px 12px; cursor: pointer; font-weight: 700; color: inherit; }
+#map.is-picking, #map.is-picking .leaflet-interactive { cursor: crosshair; }
+#map.is-picking .leaflet-marker-pane * { pointer-events: none !important; }  /* al marcar, los pines no se tragan el toque */
+
+.card { background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); padding: 14px; box-shadow: var(--shadow); display: flex; flex-direction: column; gap: 12px; }
+.card h2 { font-size: 1rem; font-weight: 700; display: flex; align-items: baseline; justify-content: space-between; gap: 8px; }
+.card h2 small { font-weight: 500; color: var(--muted); font-size: 0.82rem; }
+
+label { display: flex; flex-direction: column; gap: 4px; font-size: 0.85rem; font-weight: 600; color: var(--muted); }
+input[type="text"], input[type="tel"], input[type="time"], input[type="number"], textarea {
+  width: 100%; min-height: 44px; padding: 8px 12px; border: 1px solid var(--line); border-radius: 8px; background: var(--bg); color: var(--ink); font-weight: 400;
+}
+textarea { min-height: 44px; resize: vertical; }
+input:focus-visible, textarea:focus-visible, button:focus-visible, a:focus-visible, summary:focus-visible { outline: 3px solid var(--accent); outline-offset: 2px; }
+.row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+.row3 { display: grid; grid-template-columns: 1.1fr 1fr; gap: 10px; align-items: end; }
+.check { flex-direction: row; align-items: center; gap: 10px; min-height: 44px; color: var(--ink); font-weight: 500; font-size: 0.95rem; }
+.check input { width: 22px; height: 22px; accent-color: var(--accent); }
+
+.btn { min-height: 44px; padding: 8px 16px; border-radius: 8px; border: 1px solid var(--line); background: var(--card); font-weight: 700; cursor: pointer; text-decoration: none; display: inline-flex; align-items: center; justify-content: center; text-align: center; }
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); }
+.btn.primary:hover { filter: brightness(1.08); }
+.btn.small { min-height: 36px; padding: 4px 12px; font-size: 0.85rem; }
+.btn.danger { color: var(--bad); }
+.btn[disabled] { opacity: 0.5; cursor: not-allowed; }
+.btn.is-on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+.actions { display: flex; flex-wrap: wrap; gap: 8px; }
+.actions > .btn { flex: 1 1 auto; }
+
+.msg { font-size: 0.9rem; border-radius: 8px; padding: 8px 12px; background: var(--accent-soft); }
+.msg:empty { display: none; }
+.msg.ok { color: var(--ok); }
+.msg.warn { color: var(--warn); }
+.msg.err { color: var(--bad); }
+
+.stops { display: flex; flex-direction: column; gap: 8px; list-style: none; margin: 0; padding: 0; }
+.stop { border: 1px solid var(--line); border-radius: 10px; padding: 10px; display: grid; grid-template-columns: 32px 1fr; gap: 4px 10px; background: var(--bg); }
+.stop.is-done { opacity: 0.7; }
+.badge { width: 32px; height: 32px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-weight: 800; font-size: 0.9rem; grid-row: span 2; }
+.badge.dot { background: var(--accent-soft); color: var(--accent); }
+.badge.done { background: var(--muted); }
+.stop-main { min-width: 0; }
+.stop-name { font-weight: 700; display: flex; gap: 8px; align-items: baseline; justify-content: space-between; }
+.stop-name span:last-child { font-weight: 600; font-size: 0.8rem; color: var(--muted); white-space: nowrap; }
+.stop-addr { color: var(--muted); font-size: 0.9rem; overflow-wrap: anywhere; }
+.stop-meta { font-size: 0.85rem; color: var(--muted); overflow-wrap: anywhere; }
+.stop-meta a { color: var(--accent); font-weight: 600; }
+.tag { display: inline-block; font-size: 0.75rem; font-weight: 700; padding: 1px 8px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); margin-right: 6px; }
+.tag.warn { background: transparent; border: 1px solid var(--warn); color: var(--warn); }
+.tag.bad { background: transparent; border: 1px solid var(--bad); color: var(--bad); }
+.stop-actions { grid-column: 2; display: flex; gap: 6px; flex-wrap: wrap; margin-top: 4px; }
+.empty { color: var(--muted); font-size: 0.9rem; }
+details summary { cursor: pointer; font-weight: 600; color: var(--muted); min-height: 32px; }
+details .stops { margin-top: 8px; }
+
+.summary { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; text-align: center; }
+.summary div { background: var(--accent-soft); border-radius: 10px; padding: 8px 4px; }
+.summary b { display: block; font-size: 1.15rem; }
+.summary span { font-size: 0.78rem; color: var(--muted); }
+.note { font-size: 0.82rem; color: var(--muted); }
+
+.pin-wrap { background: none; border: 0; }
+.pin { width: 30px; height: 30px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); border: 3px solid #fff; box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4); display: grid; place-items: center; font: 800 13px/1 var(--body); }
+.pin.dot { background: #fff; color: var(--accent); border-color: var(--accent); }
+.pin.dot::after { content: ""; width: 9px; height: 9px; border-radius: 50%; background: currentColor; }
+.pin.done { background: #6b7b88; }
+.pin.out { background: var(--bad); }
+.depot { background: #14202b; color: #fff; border: 2px solid #fff; border-radius: 8px; padding: 3px 8px; font: 800 12px/1.2 var(--body); box-shadow: 0 2px 6px rgba(0, 0, 0, 0.4); white-space: nowrap; }
+.leaflet-tooltip { font-family: var(--body); }
+
+@media (max-width: 859px) {
+  .app { display: block; height: auto; }
+  header { padding: 10px 16px; }
+  .mapwrap { position: sticky; top: 0; height: 42vh; height: 42dvh; z-index: 10; border-bottom: 1px solid var(--line); }
+  .panel { overflow: visible; padding-bottom: 48px; }
+  .maphint { max-width: calc(100% - 120px); }
+}
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <h1>Logística Güemes</h1>
+    <span class="sub" id="zoneSub">Mar del Plata · radio de 11 cuadras</span>
+    <span class="fecha" id="fecha"></span>
+  </header>
+
+  <section class="mapwrap" aria-label="Mapa de la zona">
+    <div id="map" role="application" aria-label="Mapa interactivo"></div>
+    <div class="zonechip" id="zoneChip"></div>
+    <button class="btn small maptool" id="fitZone" type="button">Ver toda la zona</button>
+    <div class="maphint" id="mapHint" hidden><span id="mapHintText"></span><button type="button" id="cancelMode">Cancelar</button></div>
+  </section>
+
+  <aside class="panel">
+    <form class="card" id="addForm" autocomplete="off">
+      <h2>Nuevo pedido</h2>
+      <div class="row">
+        <label>Cliente
+          <input type="text" id="fName" placeholder="Nombre (opcional)" maxlength="60">
+        </label>
+        <label>Teléfono
+          <input type="tel" id="fPhone" placeholder="223 555 1234" inputmode="tel" maxlength="24">
+        </label>
+      </div>
+      <label>Dirección
+        <input type="text" id="fAddress" placeholder="Güemes 2900" maxlength="100" enterkeyhint="search">
+      </label>
+      <label>Notas
+        <textarea id="fNotes" rows="1" placeholder="Timbre, piso, cambio, etc." maxlength="140"></textarea>
+      </label>
+      <div class="actions">
+        <button class="btn primary" type="submit" id="btnAdd">Buscar y agregar</button>
+        <button class="btn" type="button" id="btnPick">Marcar en el mapa</button>
+      </div>
+      <p class="msg" id="msg" role="status" aria-live="polite"></p>
+    </form>
+
+    <section class="card" aria-labelledby="hStops">
+      <h2 id="hStops">Pedidos <small id="count"></small></h2>
+      <ol class="stops" id="stops"></ol>
+      <details id="doneBox" hidden>
+        <summary id="doneSummary">Entregados</summary>
+        <ol class="stops" id="doneList"></ol>
+        <div class="actions" style="margin-top:8px"><button class="btn small" type="button" id="btnClearDone">Limpiar entregados</button></div>
+      </details>
+    </section>
+
+    <section class="card" aria-labelledby="hRoute">
+      <h2 id="hRoute">Recorrido</h2>
+      <div class="row3">
+        <label>Hora de salida
+          <input type="time" id="sStart">
+        </label>
+        <label>Min. por entrega
+          <input type="number" id="sService" min="0" max="30" step="1" inputmode="numeric">
+        </label>
+      </div>
+      <label class="check"><input type="checkbox" id="sRound"> Volver al local al terminar</label>
+      <button class="btn primary" type="button" id="btnRoute">Armar recorrido</button>
+      <p class="msg" id="routeMsg" role="status" aria-live="polite"></p>
+      <div id="routeOut"></div>
+    </section>
+
+    <section class="card" aria-labelledby="hZone">
+      <h2 id="hZone">Zona <small id="zoneInfo"></small></h2>
+      <div class="row3">
+        <label>Radio (cuadras)
+          <input type="number" id="sRadius" min="1" max="30" step="1" inputmode="numeric">
+        </label>
+        <button class="btn" type="button" id="btnCenter">Mover el centro</button>
+      </div>
+      <p class="note">El centro es el local, donde sale y vuelve el reparto. 1 cuadra = 100 m. Los anillos punteados marcan cada 5 cuadras. Los pedidos fuera del radio no entran en el recorrido.</p>
+      <div class="actions">
+        <button class="btn small" type="button" id="btnReset">Volver a Güemes 2800</button>
+        <button class="btn small danger" type="button" id="btnWipe">Vaciar todo</button>
+      </div>
+    </section>
+  </aside>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet/1.9.4/leaflet.min.js" integrity="sha512-puJW3E/qXDqYp9IfhAI54BJEaWIfloJ7JWs7OeD5i6ruC9JZL1gERT1wjtwXFlh7CjE7ZJ+/vcRZRkIYIb6p4g==" crossorigin="anonymous"></script>
+<script>
+'use strict';
+
+/* ───────── Configuración ───────── */
+const STORE_KEY = 'biomkt.logistica-guemes.v1';
+const BLOCK_M = 100;                 // una cuadra en Mar del Plata
+const MAX_STOPS = 40;
+const FALLBACK_SPEED = 18 / 3.6;     // m/s (≈18 km/h) para estimar sin conexión
+const FALLBACK_DETOUR = 1.3;         // la calle recorre más que la línea recta
+const OSRM = 'https://router.project-osrm.org';
+const NOMINATIM = 'https://nominatim.openstreetmap.org/search';
+const TILES = {
+  light: 'https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png',
+  dark: 'https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png'
+};
+const DEFAULT_CENTER = { lat: -38.0148, lng: -57.54085, label: 'Güemes 2800' };
+
+/* ───────── Utilidades ───────── */
+const $ = (sel, root = document) => root.querySelector(sel);
+const clamp = (n, a, b) => Math.min(b, Math.max(a, n));
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+const uid = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+const radiusM = () => state.radiusBlocks * BLOCK_M;
+
+function el(tag, props = {}, ...kids) {
+  const n = document.createElement(tag);
+  for (const [k, v] of Object.entries(props)) {
+    if (v == null || v === false) continue;
+    if (k === 'class') n.className = v;
+    else if (k === 'text') n.textContent = v;
+    else if (k.startsWith('on')) n.addEventListener(k.slice(2), v);
+    else n.setAttribute(k, v === true ? '' : v);
+  }
+  for (const kid of kids.flat()) if (kid != null && kid !== false) n.append(kid);
+  return n;
+}
+
+function distM(a, b) {
+  const R = 6371000, rad = Math.PI / 180;
+  const dLat = (b.lat - a.lat) * rad, dLng = (b.lng - a.lng) * rad;
+  const h = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLng / 2) ** 2;
+  return 2 * R * Math.asin(Math.sqrt(h));
+}
+const inZone = p => distM(state.center, p) <= radiusM() + 1;
+const num1 = n => n.toFixed(1).replace('.', ',');
+function fmtBlocks(m) {
+  const b = m / BLOCK_M;
+  return Math.abs(b - 1) < 0.05 ? '1 cuadra' : `${num1(b)} cuadras`;
+}
+function fmtDist(m) { return m < 1000 ? `${Math.round(m / 10) * 10} m` : `${num1(m / 1000)} km`; }
+function fmtDur(s) {
+  const m = Math.max(1, Math.round(s / 60));
+  return m < 60 ? `${m} min` : `${Math.floor(m / 60)} h ${String(m % 60).padStart(2, '0')}`;
+}
+const fmtTime = ms => new Date(ms).toLocaleTimeString('es-AR', { hour: '2-digit', minute: '2-digit', hour12: false });
+function todayAt(hhmm) {
+  const [h, m] = hhmm.split(':').map(Number);
+  const d = new Date(); d.setHours(h, m, 0, 0); return d.getTime();
+}
+const ll = p => `${p.lat.toFixed(6)},${p.lng.toFixed(6)}`;
+
+async function fetchJSON(url, ms = 9000) {
+  const ctl = new AbortController();
+  const t = setTimeout(() => ctl.abort(), ms);
+  try {
+    const r = await fetch(url, { signal: ctl.signal });
+    if (!r.ok) throw new Error('HTTP ' + r.status);
+    return await r.json();
+  } finally { clearTimeout(t); }
+}
+
+/* ───────── Estado ───────── */
+const state = load();
+
+function fresh() {
+  return { center: { ...DEFAULT_CENTER }, radiusBlocks: 11, serviceMin: 4, roundTrip: true, startTime: '', stops: [], route: null, day: dayKey() };
+}
+function dayKey() { return new Date().toISOString().slice(0, 10); }
+function load() {
+  const base = fresh();
+  try {
+    const saved = JSON.parse(localStorage.getItem(STORE_KEY) || 'null');
+    if (!saved || typeof saved !== 'object') return base;
+    const s = { ...base, ...saved };
+    if (!Array.isArray(s.stops)) s.stops = [];
+    s.stops = s.stops.filter(x => x && Number.isFinite(x.lat) && Number.isFinite(x.lng));
+    if (!Number.isFinite(s.center?.lat) || !Number.isFinite(s.center?.lng)) s.center = base.center;
+    s.radiusBlocks = clamp(Math.round(Number(s.radiusBlocks)) || 11, 1, 30);
+    s.serviceMin = clamp(Math.round(Number(s.serviceMin)), 0, 30);
+    if (!Number.isFinite(s.serviceMin)) s.serviceMin = 4;
+    if (s.day !== base.day) {          // día nuevo: los entregados de ayer ya no hacen falta
+      s.stops = s.stops.filter(x => !x.done);
+      s.route = null;
+      s.day = base.day;
+    }
+    return s;
+  } catch { return base; }
+}
+function save() {
+  try { localStorage.setItem(STORE_KEY, JSON.stringify(state)); } catch { /* sin almacenamiento: la app sigue funcionando */ }
+}
+
+/* ───────── Mapa ───────── */
+const map = L.map('map', { zoomControl: true }).setView([state.center.lat, state.center.lng], 15);
+const zoneLayer = L.layerGroup().addTo(map);
+const routeLayer = L.layerGroup().addTo(map);
+const stopLayer = L.layerGroup().addTo(map);
+const markers = new Map();
+const dark = matchMedia('(prefers-color-scheme: dark)');
+let tileLayer = null;
+
+function cssVar(name) { return getComputedStyle(document.documentElement).getPropertyValue(name).trim(); }
+function setTiles() {
+  if (tileLayer) tileLayer.remove();
+  tileLayer = L.tileLayer(dark.matches ? TILES.dark : TILES.light, {
+    maxZoom: 19, subdomains: 'abcd',
+    attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> · © <a href="https://carto.com/attributions">CARTO</a>'
+  }).addTo(map);
+  tileLayer.bringToBack();
+}
+dark.addEventListener('change', () => { setTiles(); render(); });
+setTiles();
+
+function drawZone() {
+  zoneLayer.clearLayers();
+  const accent = cssVar('--accent');
+  const c = [state.center.lat, state.center.lng];
+  L.circle(c, { radius: radiusM(), color: accent, weight: 2, fillColor: accent, fillOpacity: 0.07, interactive: false }).addTo(zoneLayer);
+  for (let b = 5; b < state.radiusBlocks; b += 5) {
+    L.circle(c, { radius: b * BLOCK_M, color: accent, weight: 1, dashArray: '4 6', fill: false, opacity: 0.6, interactive: false }).addTo(zoneLayer);
+  }
+  L.marker(c, {
+    icon: L.divIcon({ className: 'pin-wrap', html: '<div class="depot">Local</div>', iconSize: [56, 26], iconAnchor: [28, 32] }),   // la etiqueta queda arriba del punto exacto para no tapar pedidos cercanos
+    keyboard: false, zIndexOffset: 1000, interactive: false
+  }).addTo(zoneLayer);
+}
+function fitZone(animate = true) {
+  map.fitBounds(L.latLng(state.center.lat, state.center.lng).toBounds(radiusM() * 2), { padding: [16, 16], animate });
+}
+
+function pinIcon(kind, label) {
+  const inner = label == null ? '' : label;
+  return L.divIcon({ className: 'pin-wrap', html: `<div class="pin ${kind}">${inner}</div>`, iconSize: [30, 30], iconAnchor: [15, 15] });
+}
+
+function drawStops(ctx) {
+  stopLayer.clearLayers();
+  markers.clear();
+  for (const s of state.stops) {
+    const out = !s.done && !inZone(s);
+    const pos = ctx.position(s);
+    const kind = s.done ? 'done' : out ? 'out' : pos ? '' : 'dot';
+    const label = s.done ? '✓' : pos ? pos : null;
+    const m = L.marker([s.lat, s.lng], { icon: pinIcon(kind, label), draggable: !s.done, title: s.name, alt: s.name, zIndexOffset: 1100 }).addTo(stopLayer);
+    m.bindTooltip(el('div', {}, el('b', { text: s.name }), el('br'), document.createTextNode(s.address)), { direction: 'top', offset: [0, -14] });
+    m.on('dragend', ev => moveStop(s, ev.target.getLatLng()));
+    markers.set(s.id, m);
+  }
+}
+
+function drawRoute() {
+  routeLayer.clearLayers();
+  const r = state.route;
+  if (!r || !r.geometry?.length) return;
+  L.polyline(r.geometry, {
+    color: cssVar('--accent'), weight: r.stale ? 3 : 5, opacity: r.stale ? 0.4 : 0.85,
+    dashArray: r.stale || r.straight ? '8 8' : null, lineJoin: 'round', interactive: false
+  }).addTo(routeLayer);
+}
+
+map.on('click', ev => {
+  if (mode === 'place') placeByClick(ev.latlng);
+  else if (mode === 'center') moveCenter(ev.latlng);
+});
+
+/* ───────── Modos de clic ───────── */
+let mode = null;
+function setMode(next) {
+  mode = mode === next ? null : next;
+  $('#map').classList.toggle('is-picking', !!mode);
+  $('#btnPick').classList.toggle('is-on', mode === 'place');
+  $('#btnCenter').classList.toggle('is-on', mode === 'center');
+  const hint = $('#mapHint');
+  hint.hidden = !mode;
+  $('#mapHintText').textContent = mode === 'place' ? 'Tocá el mapa donde va el pedido' : mode === 'center' ? 'Tocá el mapa donde queda el local' : '';
+  if (mode && matchMedia('(max-width: 859px)').matches) window.scrollTo({ top: 0, behavior: 'smooth' });
+}
+$('#cancelMode').addEventListener('click', () => setMode(mode));
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && mode) setMode(mode); });
+
+/* ───────── Pedidos ───────── */
+function flash(node, text, kind = '') {
+  node.textContent = text;
+  node.className = 'msg ' + kind;
+}
+const msg = (t, k) => flash($('#msg'), t, k);
+
+function invalidateRoute() { if (state.route) state.route.stale = true; }
+
+function addStop({ lat, lng, address, approx }) {
+  const name = $('#fName').value.trim() || `Pedido ${state.stops.length + 1}`;
+  const stop = {
+    id: uid(), name, address,
+    phone: $('#fPhone').value.trim(), notes: $('#fNotes').value.trim(),
+    lat, lng, approx: !!approx, done: false
+  };
+  state.stops.push(stop);
+  invalidateRoute();
+  save(); render();
+  $('#addForm').reset();
+  map.panTo([lat, lng]);
+  return stop;
+}
+
+let lastGeocode = 0;
+async function geocode(text) {
+  const wait = lastGeocode + 1100 - Date.now();      // política de Nominatim: 1 consulta por segundo
+  if (wait > 0) await sleep(wait);
+  lastGeocode = Date.now();
+  const { lat, lng } = state.center;
+  const span = radiusM() * 2;
+  const dLat = span / 111320, dLng = span / (111320 * Math.cos(lat * Math.PI / 180));
+  const q = /mar del plata/i.test(text) ? text : `${text}, Mar del Plata, Argentina`;
+  const params = new URLSearchParams({
+    format: 'jsonv2', q, limit: '6', countrycodes: 'ar', addressdetails: '1', 'accept-language': 'es',
+    viewbox: [lng - dLng, lat + dLat, lng + dLng, lat - dLat].join(',')
+  });
+  const rows = await fetchJSON(`${NOMINATIM}?${params}`, 10000);
+  return rows.map(r => ({ lat: Number(r.lat), lng: Number(r.lon), exact: !!r.address?.house_number }));
+}
+
+$('#addForm').addEventListener('submit', async ev => {
+  ev.preventDefault();
+  const text = $('#fAddress').value.trim();
+  if (!text) { msg('Escribí la dirección, por ejemplo "Güemes 2900", o marcá el punto en el mapa.', 'warn'); $('#fAddress').focus(); return; }
+  if (state.stops.filter(s => !s.done).length >= MAX_STOPS) { msg(`Máximo ${MAX_STOPS} pedidos pendientes.`, 'warn'); return; }
+  const btn = $('#btnAdd');
+  btn.disabled = true; msg('Buscando la dirección…');
+  try {
+    const found = await geocode(text);
+    const inside = found.filter(inZone);
+    if (inside.length) {
+      const best = inside.find(r => r.exact) || inside[0];
+      const d = distM(state.center, best);
+      addStop({ lat: best.lat, lng: best.lng, address: text, approx: !best.exact });
+      msg(best.exact ? `Agregado · a ${fmtBlocks(d)} del local.` : `Agregado, pero la ubicación es aproximada (sin altura exacta). Arrastrá el pin para ajustarla.`, best.exact ? 'ok' : 'warn');
+    } else if (found.length) {
+      const nearest = Math.min(...found.map(r => distM(state.center, r)));
+      msg(`Esa dirección queda a ${fmtBlocks(nearest)} del local: fuera de las ${state.radiusBlocks} cuadras de la zona.`, 'err');
+    } else {
+      msg('No encontré esa dirección. Probá con "Calle 1234" o marcá el punto en el mapa.', 'err');
+    }
+  } catch {
+    msg('No pude consultar el buscador de direcciones. Revisá la conexión o marcá el punto en el mapa.', 'err');
+  } finally { btn.disabled = false; }
+});
+
+$('#btnPick').addEventListener('click', () => setMode('place'));
+function placeByClick(latlng) {
+  const p = { lat: latlng.lat, lng: latlng.lng };
+  if (!inZone(p)) { msg(`Ese punto queda a ${fmtBlocks(distM(state.center, p))} del local: fuera de la zona.`, 'err'); return; }
+  const address = $('#fAddress').value.trim() || 'Punto marcado en el mapa';
+  setMode('place');
+  addStop({ ...p, address, approx: false });
+  msg(`Agregado · a ${fmtBlocks(distM(state.center, p))} del local.`, 'ok');
+}
+
+function moveStop(stop, latlng) {
+  const p = { lat: latlng.lat, lng: latlng.lng };
+  if (!inZone(p)) { msg(`Ese punto queda fuera de las ${state.radiusBlocks} cuadras de la zona. Lo dejé donde estaba.`, 'err'); render(); return; }
+  stop.lat = p.lat; stop.lng = p.lng; stop.approx = false;
+  invalidateRoute(); save(); render();
+  msg(`${stop.name} movido · a ${fmtBlocks(distM(state.center, p))} del local.`, 'ok');
+}
+
+function removeStop(id) {
+  state.stops = state.stops.filter(s => s.id !== id);
+  if (state.route) state.route.order = state.route.order.filter(x => x !== id);
+  invalidateRoute(); save(); render();
+}
+function toggleDone(id) {
+  const s = state.stops.find(x => x.id === id);
+  if (!s) return;
+  s.done = !s.done;
+  if (s.done && state.route) state.route.order = state.route.order.filter(x => x !== id);
+  invalidateRoute(); save(); render();
+}
+function focusStop(id) {
+  const s = state.stops.find(x => x.id === id), m = markers.get(id);
+  if (!s || !m) return;
+  if (matchMedia('(max-width: 859px)').matches) window.scrollTo({ top: 0, behavior: 'smooth' });
+  map.flyTo([s.lat, s.lng], Math.max(map.getZoom(), 17), { duration: 0.6 });
+  m.openTooltip();
+}
+
+/* ───────── Optimización del recorrido ───────── */
+const full = (perm, closed) => closed ? [0, ...perm, 0] : [0, ...perm];
+function pathCost(path, D) {
+  let c = 0;
+  for (let i = 0; i < path.length - 1; i++) c += D[path[i]][path[i + 1]];
+  return c;
+}
+function nearestNeighbor(D) {
+  const left = new Set(D.map((_, i) => i).slice(1)), perm = [];
+  let cur = 0;
+  while (left.size) {
+    let best = null;
+    for (const j of left) if (best === null || D[cur][j] < D[cur][best]) best = j;
+    perm.push(best); left.delete(best); cur = best;
+  }
+  return perm;
+}
+function improve(perm, D, closed) {
+  let cost = pathCost(full(perm, closed), D), better = true;
+  while (better) {
+    better = false;
+    for (let i = 0; i < perm.length - 1; i++) {                    // 2-opt
+      for (let j = i + 1; j < perm.length; j++) {
+        const cand = [...perm.slice(0, i), ...perm.slice(i, j + 1).reverse(), ...perm.slice(j + 1)];
+        const c = pathCost(full(cand, closed), D);
+        if (c < cost - 1e-9) { perm = cand; cost = c; better = true; }
+      }
+    }
+    for (let i = 0; i < perm.length; i++) {                        // or-opt: mover una parada
+      const rest = [...perm.slice(0, i), ...perm.slice(i + 1)];
+      for (let k = 0; k <= rest.length; k++) {
+        if (k === i) continue;
+        const cand = [...rest.slice(0, k), perm[i], ...rest.slice(k)];
+        const c = pathCost(full(cand, closed), D);
+        if (c < cost - 1e-9) { perm = cand; cost = c; better = true; break; }
+      }
+    }
+  }
+  return perm;
+}
+function bruteForce(D, closed) {                                   // exacto para pocas paradas
+  const n = D.length - 1;
+  let best = null, bestC = Infinity;
+  const perm = Array.from({ length: n }, (_, i) => i + 1);
+  (function walk(k) {
+    if (k === n) {
+      const c = pathCost(full(perm, closed), D);
+      if (c < bestC) { bestC = c; best = perm.slice(); }
+      return;
+    }
+    for (let i = k; i < n; i++) {
+      [perm[k], perm[i]] = [perm[i], perm[k]];
+      walk(k + 1);
+      [perm[k], perm[i]] = [perm[i], perm[k]];
+    }
+  })(0);
+  return best;
+}
+function solve(D, closed) {
+  const n = D.length - 1;
+  if (n <= 1) return n === 1 ? [1] : [];
+  if (n <= 8) return bruteForce(D, closed);
+  let best = improve(nearestNeighbor(D), D, closed), bestC = pathCost(full(best, closed), D);
+  for (let r = 0; r < 10; r++) {                                   // reinicios aleatorios
+    const start = Array.from({ length: n }, (_, i) => i + 1).sort(() => Math.random() - 0.5);
+    const cand = improve(start, D, closed), c = pathCost(full(cand, closed), D);
+    if (c < bestC) { best = cand; bestC = c; }
+  }
+  return best;
+}
+
+function fallbackMatrix(pts) {
+  const dist = pts.map(a => pts.map(b => distM(a, b) * FALLBACK_DETOUR));
+  return { dur: dist.map(row => row.map(d => d / FALLBACK_SPEED)), dist, estimated: true };
+}
+async function getMatrix(pts) {
+  const coords = pts.map(p => `${p.lng.toFixed(6)},${p.lat.toFixed(6)}`).join(';');
+  try {
+    const j = await fetchJSON(`${OSRM}/table/v1/driving/${coords}?annotations=duration,distance`);
+    const valid = j.code === 'Ok' && j.durations && j.distances && j.durations.every(r => r.every(v => v != null));
+    if (!valid) throw new Error(j.code || 'matriz incompleta');
+    return { dur: j.durations, dist: j.distances, estimated: false };
+  } catch { return fallbackMatrix(pts); }
+}
+async function getGeometry(seq) {
+  const coords = seq.map(p => `${p.lng.toFixed(6)},${p.lat.toFixed(6)}`).join(';');
+  try {
+    const j = await fetchJSON(`${OSRM}/route/v1/driving/${coords}?overview=full&geometries=geojson&steps=false`);
+    if (j.code !== 'Ok' || !j.routes?.[0]) throw new Error(j.code);
+    const r = j.routes[0];
+    return { geometry: r.geometry.coordinates.map(([lng, lat]) => [lat, lng]), legs: r.legs.map(l => ({ dist: l.distance, dur: l.duration })) };
+  } catch { return null; }
+}
+
+function routable() { return state.stops.filter(s => !s.done && inZone(s)); }
+
+async function buildRoute() {
+  const stops = routable();
+  if (!stops.length) { flash($('#routeMsg'), 'No hay pedidos pendientes dentro de la zona.', 'warn'); return; }
+  const btn = $('#btnRoute');
+  btn.disabled = true; flash($('#routeMsg'), 'Calculando el mejor orden…');
+  try {
+    const pts = [state.center, ...stops];
+    const closed = state.roundTrip;
+    const matrix = await getMatrix(pts);
+    const perm = solve(matrix.dur, closed);
+    const order = perm.map(i => stops[i - 1]);
+    const seq = [state.center, ...order, ...(closed ? [state.center] : [])];
+
+    let legs = seq.slice(0, -1).map((_, k) => {
+      const a = k === 0 ? 0 : perm[k - 1], b = k + 1 <= perm.length ? perm[k] : 0;
+      return { dist: matrix.dist[a][b], dur: matrix.dur[a][b] };
+    });
+    let geometry = seq.map(p => [p.lat, p.lng]);
+    const estimated = matrix.estimated;
+    const real = estimated ? null : await getGeometry(seq);
+    const straight = !real;
+    if (real) { geometry = real.geometry; legs = real.legs; }
+
+    state.route = { order: order.map(s => s.id), legs, geometry, closed, estimated, straight, stale: false, createdAt: Date.now() };
+    save(); render();
+    map.fitBounds(L.polyline(geometry).getBounds(), { padding: [30, 30] });
+    if (estimated) flash($('#routeMsg'), 'Sin conexión con el servicio de calles: orden y tiempos estimados en línea recta.', 'warn');
+    else if (straight) flash($('#routeMsg'), 'No pude dibujar el trayecto por calles; la línea punteada es aproximada. Los tiempos sí son por calles.', 'warn');
+    else flash($('#routeMsg'), '');
+  } finally { btn.disabled = false; }
+}
+$('#btnRoute').addEventListener('click', buildRoute);
+
+/* ───────── Presentación del recorrido ───────── */
+function computeEtas() {
+  const r = state.route;
+  if (!r || r.stale || r.legs.length !== r.order.length + (r.closed ? 1 : 0)) return null;
+  const start = state.startTime ? todayAt(state.startTime) : r.createdAt;
+  const etas = new Map();
+  let t = start;
+  r.order.forEach((id, i) => { t += r.legs[i].dur * 1000; etas.set(id, t); t += state.serviceMin * 60000; });
+  const end = r.closed ? t + r.legs[r.order.length].dur * 1000 : t - state.serviceMin * 60000;
+  const dist = r.legs.reduce((a, l) => a + l.dist, 0);
+  return { etas, start, end, dist, stops: r.order.length };
+}
+
+function sortedPending() {
+  const byId = new Map(state.stops.map(s => [s.id, s]));
+  const ord = state.route ? state.route.order.map(id => byId.get(id)).filter(s => s && !s.done) : [];
+  const seen = new Set(ord.map(s => s.id));
+  return [...ord, ...state.stops.filter(s => !s.done && !seen.has(s.id))];
+}
+
+function stopCard(s, ctx) {
+  const pos = ctx.position(s), out = !s.done && !inZone(s);
+  const eta = ctx.plan?.etas.get(s.id);
+  const dist = distM(state.center, s);
+  const tags = [];
+  if (eta) tags.push(el('span', { class: 'tag', text: `llega ${fmtTime(eta)}` }));
+  if (out) tags.push(el('span', { class: 'tag bad', text: 'fuera de zona' }));
+  if (s.approx && !s.done) tags.push(el('span', { class: 'tag warn', text: 'ubicación aproximada' }));
+  const meta = [];
+  if (s.phone) meta.push(el('a', { href: 'tel:' + s.phone.replace(/[^\d+]/g, ''), text: s.phone }));
+  if (s.notes) meta.push(document.createTextNode((s.phone ? ' · ' : '') + s.notes));
+  return el('li', { class: 'stop' + (s.done ? ' is-done' : '') },
+    el('div', { class: 'badge' + (s.done ? ' done' : pos ? '' : ' dot'), text: s.done ? '✓' : pos ? String(pos) : '•' }),
+    el('div', { class: 'stop-main' },
+      el('div', { class: 'stop-name' }, el('span', { text: s.name }), el('span', { text: fmtBlocks(dist) })),
+      el('div', { class: 'stop-addr', text: s.address }),
+      tags.length ? el('div', { class: 'stop-meta' }, tags) : null,
+      meta.length ? el('div', { class: 'stop-meta' }, meta) : null),
+    el('div', { class: 'stop-actions' },
+      el('button', { class: 'btn small', type: 'button', text: s.done ? 'Reabrir' : 'Entregado', onclick: () => toggleDone(s.id) }),
+      el('button', { class: 'btn small', type: 'button', text: 'Ver', 'aria-label': `Ver ${s.name} en el mapa`, onclick: () => focusStop(s.id) }),
+      el('button', { class: 'btn small danger', type: 'button', text: 'Borrar', 'aria-label': `Borrar ${s.name}`, onclick: () => removeStop(s.id) })));
+}
+
+function mapsLinks(seq) {
+  const MAX = 11;                                    // origen + 9 paradas + destino por link de Google Maps
+  const links = [];
+  for (let i = 0; i < seq.length - 1;) {
+    const chunk = seq.slice(i, i + MAX);
+    const [o, ...rest] = chunk, d = rest[rest.length - 1], via = rest.slice(0, -1);
+    const q = new URLSearchParams({ api: '1', origin: ll(o), destination: ll(d), travelmode: 'driving' });
+    if (via.length) q.set('waypoints', via.map(ll).join('|'));
+    links.push(`https://www.google.com/maps/dir/?${q}`);
+    i += chunk.length - 1;
+  }
+  return links;
+}
+
+function routeText(plan) {
+  const r = state.route, byId = new Map(state.stops.map(s => [s.id, s]));
+  const fecha = new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' });
+  const lines = [`Reparto Güemes · ${fecha}`, `Salida ${fmtTime(plan.start)} · ${plan.stops} paradas · ${fmtDist(plan.dist)} · ${fmtDur((plan.end - plan.start) / 1000)}`, ''];
+  r.order.forEach((id, i) => {
+    const s = byId.get(id);
+    lines.push(`${i + 1}. ${s.name} · ${s.address} (${fmtTime(plan.etas.get(id))})`);
+    if (s.phone) lines.push(`   Tel: ${s.phone}`);
+    if (s.notes) lines.push(`   ${s.notes}`);
+  });
+  if (r.closed) lines.push('', `Vuelta al local ${fmtTime(plan.end)}`);
+  const seq = [state.center, ...r.order.map(id => byId.get(id)), ...(r.closed ? [state.center] : [])];
+  mapsLinks(seq).forEach((u, i, a) => lines.push('', a.length > 1 ? `Mapa, tramo ${i + 1} de ${a.length}: ${u}` : `Mapa: ${u}`));
+  return lines.join('\n');
+}
+
+async function copyText(text) {
+  try { await navigator.clipboard.writeText(text); return true; } catch { /* probamos el método viejo */ }
+  const ta = el('textarea', { style: 'position:fixed;opacity:0' });
+  ta.value = text; document.body.append(ta); ta.select();
+  let ok = false;
+  try { ok = document.execCommand('copy'); } catch { ok = false; }
+  ta.remove(); return ok;
+}
+
+function renderRoute(ctx) {
+  const out = $('#routeOut'), r = state.route;
+  out.replaceChildren();
+  const pending = routable().length;
+  $('#btnRoute').disabled = !pending;
+  $('#btnRoute').textContent = r ? 'Recalcular recorrido' : 'Armar recorrido';
+  if (!r) return;
+  if (r.stale) {
+    out.append(el('p', { class: 'msg warn', text: 'Cambiaron los pedidos o la zona desde que armaste el recorrido. Recalculalo para ver horarios y trayecto al día.' }));
+    return;
+  }
+  const plan = ctx.plan;
+  if (!plan) return;
+  const total = (plan.end - plan.start) / 1000;
+  const byId = new Map(state.stops.map(s => [s.id, s]));
+  const seq = [state.center, ...r.order.map(id => byId.get(id)), ...(r.closed ? [state.center] : [])];
+  const links = mapsLinks(seq);
+  out.append(
+    el('div', { class: 'summary' },
+      el('div', {}, el('b', { text: String(plan.stops) }), el('span', { text: 'paradas' })),
+      el('div', {}, el('b', { text: fmtDist(plan.dist) }), el('span', { text: 'recorrido' })),
+      el('div', {}, el('b', { text: fmtDur(total) }), el('span', { text: r.closed ? `vuelta ${fmtTime(plan.end)}` : `fin ${fmtTime(plan.end)}` }))),
+    el('p', { class: 'note', text: `Incluye ${state.serviceMin} min por entrega. ${r.estimated ? 'Valores estimados en línea recta.' : 'Tiempos por calles reales, respetando manos únicas.'}` }),
+    el('div', { class: 'actions' },
+      el('a', { class: 'btn primary', target: '_blank', rel: 'noopener', href: 'https://wa.me/?text=' + encodeURIComponent(routeText(plan)), text: 'Enviar por WhatsApp' }),
+      el('button', { class: 'btn', type: 'button', text: 'Copiar hoja de ruta', onclick: async ev => {
+        const ok = await copyText(routeText(plan));
+        ev.target.textContent = ok ? 'Copiada ✓' : 'No se pudo copiar';
+        setTimeout(() => { ev.target.textContent = 'Copiar hoja de ruta'; }, 2000);
+      } })),
+    el('div', { class: 'actions' }, links.map((u, i) =>
+      el('a', { class: 'btn', target: '_blank', rel: 'noopener', href: u, text: links.length > 1 ? `Google Maps · tramo ${i + 1}/${links.length}` : 'Abrir en Google Maps' }))));
+}
+
+/* ───────── Zona ───────── */
+function moveCenter(latlng) {
+  state.center = { lat: latlng.lat, lng: latlng.lng, label: 'Centro elegido en el mapa' };
+  setMode('center');
+  invalidateRoute(); save(); render(); fitZone();
+  const out = state.stops.filter(s => !s.done && !inZone(s)).length;
+  msg(out ? `Centro movido. ${out} pedido${out > 1 ? 's quedaron' : ' quedó'} fuera de la zona.` : 'Centro movido.', out ? 'warn' : 'ok');
+}
+$('#btnCenter').addEventListener('click', () => setMode('center'));
+$('#btnReset').addEventListener('click', () => {
+  state.center = { ...DEFAULT_CENTER }; state.radiusBlocks = 11;
+  invalidateRoute(); save(); render(); fitZone();
+});
+$('#sRadius').addEventListener('change', ev => {
+  state.radiusBlocks = clamp(Math.round(Number(ev.target.value)) || 11, 1, 30);
+  invalidateRoute(); save(); render(); fitZone();
+});
+$('#fitZone').addEventListener('click', fitZone);
+$('#btnClearDone').addEventListener('click', () => { state.stops = state.stops.filter(s => !s.done); save(); render(); });
+$('#btnWipe').addEventListener('click', () => {
+  if (!state.stops.length || !confirm('¿Borrar todos los pedidos y el recorrido?')) return;
+  state.stops = []; state.route = null; save(); render();
+});
+
+/* ───────── Ajustes del recorrido ───────── */
+$('#sStart').addEventListener('change', ev => { state.startTime = ev.target.value; save(); render(); });
+$('#sService').addEventListener('change', ev => {
+  const n = Math.round(Number(ev.target.value));
+  state.serviceMin = Number.isFinite(n) ? clamp(n, 0, 30) : 4;
+  save(); render();
+});
+$('#sRound').addEventListener('change', ev => { state.roundTrip = ev.target.checked; invalidateRoute(); save(); render(); });
+
+/* ───────── Render general ───────── */
+function render() {
+  const plan = computeEtas();
+  const order = state.route ? state.route.order : [];
+  const ctx = { plan, position: s => { const i = order.indexOf(s.id); return i >= 0 ? i + 1 : 0; } };
+
+  drawZone(); drawStops(ctx); drawRoute();
+
+  const pending = sortedPending(), done = state.stops.filter(s => s.done);
+  $('#count').textContent = `${pending.length} pendiente${pending.length === 1 ? '' : 's'} · ${done.length} entregado${done.length === 1 ? '' : 's'}`;
+  const list = $('#stops');
+  list.replaceChildren();
+  if (!pending.length) list.append(el('li', { class: 'empty', text: 'Todavía no hay pedidos pendientes. Cargá el primero arriba.' }));
+  pending.forEach(s => list.append(stopCard(s, ctx)));
+
+  $('#doneBox').hidden = !done.length;
+  $('#doneSummary').textContent = `Entregados (${done.length})`;
+  const dl = $('#doneList');
+  dl.replaceChildren();
+  done.forEach(s => dl.append(stopCard(s, ctx)));
+
+  const cuadras = `${state.radiusBlocks} cuadra${state.radiusBlocks === 1 ? '' : 's'}`;
+  $('#zoneSub').textContent = `Mar del Plata · radio de ${cuadras} (${fmtDist(radiusM())})`;
+  $('#zoneChip').textContent = `${state.center.label} · ${cuadras}`;
+  $('#zoneInfo').textContent = `${fmtDist(radiusM())} a la redonda`;
+  $('#sRadius').value = state.radiusBlocks;
+  $('#sService').value = state.serviceMin;
+  $('#sStart').value = state.startTime;
+  $('#sRound').checked = state.roundTrip;
+
+  renderRoute(ctx);
+}
+
+$('#fecha').textContent = new Date().toLocaleDateString('es-AR', { weekday: 'long', day: 'numeric', month: 'long' });
+render();
+fitZone(false);
+</script>
+</body>
+</html>
