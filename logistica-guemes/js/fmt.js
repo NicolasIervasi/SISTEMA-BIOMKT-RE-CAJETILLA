@@ -61,3 +61,6 @@ export function parseOrderLines(text) {
   }
   return rows;
 }
+
+// "8 s", "5 min", "2 h": hace cuánto pasó algo
+export const fmtAgo = ms => ms < 60000 ? `${Math.max(1, Math.round(ms / 1000))} s` : ms < 3600000 ? `${Math.round(ms / 60000)} min` : `${Math.round(ms / 3600000)} h`;

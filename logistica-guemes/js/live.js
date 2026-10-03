@@ -11,7 +11,8 @@ export const FLUSH_COUNT = 60;          // o antes, si junta un lote entero
 export const POLL_MS = 12000;           // el despacho consulta cada 12 s si hay alguien en línea
 export const POLL_IDLE_MS = 45000;      // cada 45 s si no hay nadie transmitiendo
 export const POLL_HIDDEN_MS = 60000;    // y cada 60 s si la pestaña está oculta
-export const ONLINE_MS = 75000;         // sin señal pasado este tiempo
+export const ONLINE_MS = 120000;        // sin señal (ni posiciones ni latidos) pasado este tiempo
+export const HEARTBEAT_MS = 45000;      // si no hay posiciones nuevas (celular quieto), igual avisa que sigue ahí
 export const MAX_QUEUE = 600;           // puntos que el celular guarda sin conexión (~40 min)
 export const MAX_TRACK = 5000;          // puntos por repartidor que el despacho mantiene en memoria
 export const SHARE_MAX_MS = 12 * 3600e3;// la transmisión se corta sola a las 12 h
@@ -43,11 +44,15 @@ export async function api(path, body, { keepalive = false, timeout = 10000, fetc
 }
 
 export class LiveError extends Error {}
+// Solo un 401 con el cuerpo JSON de la función significa "tu clave no sirve". Un 404 o un 5xx de HTML (sitio pausado, función ausente,
+// despliegue en curso) son fallas pasajeras: no se pierde la clave ni se frena el GPS.
+export const unauthorized = r => r.status === 401 && r.data?.error === 'unauthorized';
 const explain = r =>
   r.status === 0 ? 'No hay conexión con el servidor.'
     : r.status === 429 ? 'Demasiados intentos: probá de nuevo en un rato.'
-      : r.status === 503 && r.data?.error === 'not_configured' ? 'El seguimiento todavía no está activado en el servidor.'
-        : r.status >= 500 ? 'El servidor no está disponible ahora.' : 'El servidor no aceptó el pedido.';
+      : r.data?.error === 'not_configured' ? 'El seguimiento todavía no está activado en el servidor.'
+        : r.data?.error === 'paused' ? 'El seguimiento está en pausa en el servidor.'
+          : r.status >= 500 || r.status === 404 ? 'El servicio de seguimiento no responde ahora.' : 'El servidor no aceptó el pedido.';
 
 /* ───────── Despacho: activar y claves ───────── */
 export const isEnabled = () => !!store.state.settings.live;
@@ -79,16 +84,13 @@ export async function clearTracks(courierId) {
   if (!r.ok) throw new LiveError(explain(r));
 }
 
-// Devuelve la clave de escritura del repartidor (la pide al servidor la primera vez). null si no se pudo.
+// Devuelve la clave de escritura del repartidor (el servidor la devuelve siempre la misma hasta que se rote). null si no se pudo.
 export async function ensureCourierKey(courierId) {
   const live = store.state.settings.live, c = store.courierById(courierId);
   if (!live || !c) return null;
-  if (c.ck) return c.ck;
-  const ask = rotate => api('courier', { ws: live.ws, admin: live.admin, cid: c.id, name: c.name, color: c.color, ...(rotate ? { rotate: true } : {}) });
-  let r = await ask(false);
-  if (r.ok && r.data?.existing) r = await ask(true);              // el servidor ya lo tenía pero esta copia perdió la clave: se rota
-  if (r.ok && r.data?.ck) { store.setCourierKey(c.id, r.data.ck); return r.data.ck; }
-  return null;
+  const r = await api('courier', { ws: live.ws, admin: live.admin, cid: c.id, name: c.name, color: c.color });
+  if (r.ok && r.data?.ck) { if (c.ck !== r.data.ck) store.setCourierKey(c.id, r.data.ck); return r.data.ck; }
+  return c.ck || null;                        // sin conexión: el link sale con la clave que ya se tenía
 }
 
 // Corta la clave de un repartidor (por ejemplo un celular perdido) y le borra el recorrido. Genera una nueva al volver a enviarle el link.
@@ -105,7 +107,7 @@ export async function processPending() {
   const live = store.state.settings.live;
   for (const id of live ? [...live.pending] : []) {
     const r = await api('revoke', { ws: live.ws, admin: live.admin, cid: id });
-    if (r.ok || r.status === 401) store.clearPendingRevoke(id); else break;
+    if (r.ok || unauthorized(r)) store.clearPendingRevoke(id); else break;
   }
 }
 
@@ -123,8 +125,10 @@ export function createTracker({ getLive = () => store.state.settings.live, call 
 
   const snapshot = () => {
     for (const t of tracks.values()) {
-      t.ageMs = t.last ? Math.max(0, now() - offset - t.last.a) : null;
+      const seen = Math.max(t.seen ?? 0, t.last?.a ?? 0);
+      t.ageMs = seen ? Math.max(0, now() - offset - seen) : null;
       t.stopped = !!(t.ev && t.ev.k === 'stop' && (!t.last || t.ev.a >= t.last.a));
+      t.background = !!(t.ev && t.ev.k === 'hide');                // el celular pasó a segundo plano: no manda GPS hasta que vuelva
       t.online = t.ageMs != null && t.ageMs < ONLINE_MS && !t.stopped;
     }
     return { tracks, status };
@@ -151,18 +155,27 @@ export function createTracker({ getLive = () => store.state.settings.live, call 
       for (const [cid, d] of Object.entries(r.data.couriers)) {
         const t = tracks.get(cid) || { pts: [] };
         t.name = d.name; t.color = d.color;
+        if (d.clr > (t.clr || 0)) {                                  // se borraron recorridos en el servidor: lo viejo que se tenía en pantalla también se va
+          t.clr = d.clr;
+          t.pts = t.pts.filter(p => p.a >= d.clr); t.km = trackKm(t.pts);
+          if (t.last && t.last.a < d.clr) t.last = null;
+          if (t.ev && t.ev.a < d.clr) t.ev = null;
+          if (t.seen && t.seen < d.clr) t.seen = 0;
+        }
         if (d.pts?.length) { t.pts = mergePoints(t.pts, d.pts); if (t.pts.length > MAX_TRACK) t.pts = t.pts.slice(-MAX_TRACK); t.km = trackKm(t.pts); }
         t.km ??= 0;
         if (d.last && (!t.last || d.last.a >= t.last.a)) t.last = d.last;
         if (d.ev && (!t.ev || d.ev.a >= t.ev.a)) t.ev = d.ev;
+        if (d.seen > (t.seen || 0)) t.seen = d.seen;
         tracks.set(cid, t);
       }
       cursor = r.data.now - OVERLAP_MS;
-    } else if (r.status === 401 || r.status === 400) {
+    } else if (unauthorized(r)) {
       status = 'denied'; emit(); return;                           // credenciales que el servidor no reconoce: no se insiste
     } else {
       fails++;
-      status = r.status === 0 ? 'offline' : r.status === 429 ? 'limited' : r.status === 503 && r.data?.error === 'not_configured' ? 'unavailable' : 'error';
+      status = r.status === 0 ? 'offline' : r.status === 429 ? 'limited' : r.data?.error === 'paused' ? 'paused'
+        : r.data?.error === 'not_configured' || r.status === 404 ? 'unavailable' : 'error';
     }
     emit();
     schedule();
@@ -175,6 +188,7 @@ export function createTracker({ getLive = () => store.state.settings.live, call 
     stop() { running = false; clearTimeout(timer); doc?.removeEventListener?.('visibilitychange', onVisible); },
     reset() { tracks.clear(); cursor = null; fails = 0; wsId = null; },
     refresh() { if (running && !inFlight) tick(); },
+    retry() { running = true; fails = 0; tick(); },
     subscribe(fn) { listeners.add(fn); return () => listeners.delete(fn); },
     snapshot, tick
   };
@@ -201,15 +215,18 @@ export function createSharer({
   now = Date.now, doc = globalThis.document, nav = globalThis.navigator, rand = Math.random
 }) {
   const qKey = `cuadra.q.${tk.c}`;
-  let queue = loadQueue(storage, qKey), last = null, watchId = null, timer = null, sending = false, wake = null, pendingEv = null;
+  let queue = loadQueue(storage, qKey), last = null, watchId = null, timer = null, sending = false, wake = null;
+  const evs = [];                                        // eventos por enviar (start, stop, hide, show, hb), en orden
   let startedAt = 0, fails = 0, nextTry = 0;
-  const s = { status: 'idle', sent: 0, km: 0, trail: [], lastAt: null, error: '', fix: null };
+  const s = { status: 'idle', sent: 0, km: 0, trail: [], lastAt: null, fixAt: null, error: '', geoError: '', fix: null };
   const emit = () => onChange?.({ ...s, queued: queue.length });
   const set = (status, error = '') => { s.status = status; s.error = error; emit(); };
 
   function onPos(pos) {
     const c = pos.coords;
     s.fix = { lat: c.latitude, lng: c.longitude, acc: c.accuracy };
+    s.fixAt = now();
+    s.geoError = '';
     const p = { t: pos.timestamp || now(), lat: c.latitude, lng: c.longitude };
     if (Number.isFinite(c.accuracy)) p.acc = Math.round(c.accuracy);
     if (Number.isFinite(c.speed) && c.speed >= 0) p.spd = Math.round(c.speed * 10) / 10;
@@ -226,32 +243,34 @@ export function createSharer({
   }
   function onErr(err) {
     if (err?.code === 1) { stop({ final: false }); set('denied', 'Permiso de ubicación denegado.'); }
-    else set(s.status, err?.code === 3 ? 'Buscando señal GPS…' : 'No pude obtener tu ubicación.');
+    else { s.geoError = err?.code === 3 ? 'Buscando señal GPS…' : 'No pude obtener tu ubicación todavía.'; emit(); }
   }
 
   async function flush({ keepalive = false, force = false } = {}) {
     if (sending || (!force && now() < nextTry)) return;
     if (watchId != null && now() - startedAt > SHARE_MAX_MS) { stop({ final: true, status: 'expired', error: 'Pasaron 12 horas: dejé de compartir tu ubicación. Volvé a activarla si seguís repartiendo.' }); return; }
+    if (watchId != null && !queue.length && !evs.length && now() - (s.lastAt ?? startedAt) >= HEARTBEAT_MS) evs.push('hb');   // quieto: sigue ahí
     sending = true;
     try {
       queue = queue.filter(p => now() - p.t < STALE_PT_MS);
-      while (queue.length || pendingEv) {
+      while (queue.length || evs.length) {
         const batch = queue.slice(0, 60);
-        const ev = pendingEv;
+        const ev = evs[0];
         const r = await call('ping', { ws: tk.w, cid: tk.c, ck: tk.k, ct: now(), pts: batch, ...(ev ? { ev } : {}) }, { keepalive });
         if (r.ok || r.status === 400 || r.status === 413) {          // 400/413: lote mal armado; reintentarlo no lo arregla
           queue = queue.slice(batch.length);
-          if (ev && ev === pendingEv) pendingEv = null;
+          if (ev && evs[0] === ev) evs.shift();
           if (r.ok) { s.sent += r.data?.accepted ?? batch.length; s.lastAt = now(); }
           fails = 0; nextTry = 0;
           saveQueue(storage, qKey, queue);
           if (s.status !== 'denied' && s.status !== 'expired') set(watchId != null ? 'live' : 'idle');
-          if (!queue.length && !pendingEv) break;
+          if (!queue.length && !evs.length) break;
         } else {
-          if (r.status === 401 || r.status === 403 || r.status === 404) { stop({ final: false }); set('revoked', 'El despacho dejó de aceptar tu ubicación. Pedile un link nuevo.'); }
+          if (unauthorized(r)) { stop({ final: false }); set('revoked', 'El despacho dejó de aceptar tu ubicación. Pedile un link nuevo.'); }
           else {
             fails++; nextTry = now() + backoff(FLUSH_MS, fails - 1, rand);
-            set('offline', r.status === 429 ? 'Enviando muy seguido; reintento en un momento.' : 'Sin conexión: guardo tu recorrido y lo envío cuando vuelva.');
+            if ((ev === 'hb' || ev === 'show' || ev === 'hide') && evs[0] === ev) evs.shift();      // estos no valen la pena si no llegaron a tiempo
+            set('offline', r.status === 429 ? 'Enviando muy seguido; reintento en un momento.' : r.data?.error === 'paused' ? 'El seguimiento está en pausa en el servidor.' : 'Sin conexión: guardo tu recorrido y lo envío cuando vuelva.');
           }
           break;
         }
@@ -262,15 +281,17 @@ export function createSharer({
   async function lockScreen() {
     try { if (nav?.wakeLock && !wake) { wake = await nav.wakeLock.request('screen'); wake.addEventListener?.('release', () => { wake = null; }); } } catch { wake = null; }
   }
+  // Con la pantalla bloqueada o en otra app el navegador deja de entregar posiciones: se avisa al despacho para que no lo tome por una falla.
   const onVisibility = () => {
-    if (!doc) return;
-    if (doc.hidden) flush({ keepalive: true, force: true }); else if (watchId != null) lockScreen();
+    if (!doc || watchId == null) return;
+    if (doc.hidden) { evs.push('hide'); flush({ keepalive: true, force: true }); }
+    else { evs.push('show'); lockScreen(); flush({ force: true }); }
   };
 
   function start() {
     if (watchId != null) return true;
     if (!geo) { set('error', 'Este dispositivo no permite usar la ubicación.'); return false; }
-    pendingEv = 'start'; startedAt = now(); fails = 0; nextTry = 0; last = null;
+    evs.length = 0; evs.push('start'); startedAt = now(); fails = 0; nextTry = 0; last = null; s.lastAt = null;
     watchId = geo.watchPosition(onPos, onErr, { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 });
     timer = setInterval(() => flush(), FLUSH_MS);
     doc?.addEventListener?.('visibilitychange', onVisibility);
@@ -286,7 +307,7 @@ export function createSharer({
     doc?.removeEventListener?.('visibilitychange', onVisibility);
     try { wake?.release?.(); } catch { /* ya liberado */ }
     wake = null; s.fix = null;
-    if (final) { pendingEv = 'stop'; await flush({ keepalive: true, force: true }); if (s.status !== 'revoked') set(status, error); }
+    if (final) { evs.length = 0; evs.push('stop'); await flush({ keepalive: true, force: true }); if (s.status !== 'revoked') set(status, error); }
   }
 
   // "Borrar mi recorrido": lo que el servidor guardó de este repartidor y lo que falta enviar

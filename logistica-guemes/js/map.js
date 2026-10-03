@@ -8,18 +8,20 @@ const BRAND = '#4f46e5';
 const lum = hex => { const c = [1, 3, 5].map(i => parseInt(hex.slice(i, i + 2), 16) / 255).map(v => v <= 0.03928 ? v / 12.92 : ((v + 0.055) / 1.055) ** 2.4); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
 const inkOn = hex => { const L = lum(hex); return 1.05 / (L + 0.05) >= (L + 0.05) / 0.058 ? '#ffffff' : '#0f172a'; };   // el que más contraste da: blanco o tinta
 
-export function createMap(container, { onClick } = {}) {
+export function createMap(container, { onClick, onDrag } = {}) {
   const map = L.map(container, { zoomControl: false }).setView([-38.0148, -57.54085], 15);
   L.control.zoom({ position: 'bottomright' }).addTo(map);
   L.tileLayer(TILES, { maxZoom: 19, attribution: '© <a href="https://www.openstreetmap.org/copyright">Colaboradores de OpenStreetMap</a>' }).addTo(map);
   const zoneLayer = L.layerGroup().addTo(map);
   const routeLayer = L.layerGroup().addTo(map);
   const pinLayer = L.layerGroup().addTo(map);
+  const liveLayer = L.layerGroup().addTo(map);
   const meLayer = L.layerGroup().addTo(map);
-  const markers = new Map();
+  const markers = new Map(), liveMarkers = new Map();
   let zoneCenter = null, zoneRadius = 0;
 
   map.on('click', ev => onClick && onClick(ev.latlng));
+  map.on('dragstart', () => onDrag && onDrag());
 
   return {
     map, markers,
@@ -67,6 +69,35 @@ export function createMap(container, { onClick } = {}) {
         markers.set(p.id, m);
       }
     },
+
+    // items: [{ id, color, name, segments: [[[lat, lng], ...], ...], last: { lat, lng }, state: 'live' | 'off', title, sub }]
+    // La estela va punteada (lo que ya recorrió) para no confundirla con la ruta planeada (línea llena).
+    drawLive(items, { onSelect } = {}) {
+      liveLayer.clearLayers();
+      liveMarkers.clear();
+      for (const it of items) {
+        const color = safeColor(it.color), faded = it.state === 'off';
+        for (const seg of it.segments || []) {
+          if (seg.length < 2) continue;
+          L.polyline(seg, { color: '#ffffff', weight: 8, opacity: faded ? 0.5 : 0.85, lineJoin: 'round', interactive: false }).addTo(liveLayer);
+          L.polyline(seg, { color, weight: 5, opacity: faded ? 0.6 : 1, dashArray: '1 8', lineCap: 'round', lineJoin: 'round', interactive: false }).addTo(liveLayer);
+        }
+        if (!it.last) continue;
+        const initial = (String(it.name || '?').trim()[0] || '?').toUpperCase().replace(/[^0-9A-ZÁÉÍÓÚÑ]/g, '•');
+        const m = L.marker([it.last.lat, it.last.lng], {
+          icon: L.divIcon({
+            className: 'pin-wrap', iconSize: [36, 36], iconAnchor: [18, 18],
+            html: `<div class="cmark ${it.state === 'off' ? 'off' : 'live'}" style="--c:${color};--t:${inkOn(color)}"><span>${initial}</span></div>`
+          }),
+          title: it.title, alt: it.title, zIndexOffset: 1500
+        }).addTo(liveLayer);
+        m.bindTooltip(el('div', {}, el('b', { text: it.title }), el('br'), el('small', { text: it.sub || '' })), { direction: 'top', offset: [0, -18] });
+        m.on('click', () => onSelect && onSelect(it.id));
+        liveMarkers.set(it.id, m);
+      }
+    },
+    panToLive(id) { const m = liveMarkers.get(id); if (m) map.panTo(m.getLatLng(), { animate: true, duration: 0.6 }); return !!m; },
+    focusLive(id, zoom = 16) { const m = liveMarkers.get(id); if (m) map.flyTo(m.getLatLng(), Math.max(map.getZoom(), zoom), { duration: 0.6 }); return !!m; },
 
     setMe(pos) {
       meLayer.clearLayers();

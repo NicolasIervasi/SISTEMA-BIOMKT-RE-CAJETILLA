@@ -2,7 +2,7 @@
 // POST /api/track/<ws|courier|ping|read|revoke|clear> con cuerpo JSON.
 import { createTrackService } from './track-core.mjs';
 
-export const MAX_BODY = 32 * 1024;
+export const MAX_BODY = 24 * 1024;
 const HEADERS = {
   'content-type': 'application/json; charset=utf-8',
   'cache-control': 'no-store',
@@ -27,15 +27,17 @@ async function readBody(req) {
   return Buffer.concat(chunks).toString('utf8');
 }
 
-export async function handleRequest(req, { code, store, now }) {
-  if (req.method !== 'POST') return send(405, { error: 'method_not_allowed' }, { allow: 'POST' });
-  if (!/^application\/json\b/i.test(req.headers.get('content-type') || '')) return send(415, { error: 'unsupported_media_type' });
-  if (!code) return send(503, { error: 'not_configured' });
+// Una línea por pedido, solo con ruta, estado y duración: nunca cuerpos, claves, coordenadas ni IP.
+export async function handleRequest(req, { code, secret, paused = false, store, now, log }) {
+  const t0 = Date.now();
   const route = new URL(req.url).pathname.replace(/^\/api\/track\/?/, '').replace(/\/+$/, '');
+  const done = (status, body, extra) => { log?.(JSON.stringify({ route: route.slice(0, 16), status, ms: Date.now() - t0 })); return send(status, body, extra); };
+  if (req.method !== 'POST') return done(405, { error: 'method_not_allowed' }, { allow: 'POST' });
+  if (!/^application\/json\b/i.test(req.headers.get('content-type') || '')) return done(415, { error: 'unsupported_media_type' });
   const text = await readBody(req);
-  if (text === null) return send(413, { error: 'too_large' });
+  if (text === null) return done(413, { error: 'too_large' });
   let body;
-  try { body = JSON.parse(text); } catch { return send(400, { error: 'bad_request' }); }
-  const { status, body: out } = await createTrackService({ store, code, now }).handle(route, body);
-  return send(status, out);
+  try { body = JSON.parse(text); } catch { return done(400, { error: 'bad_request' }); }
+  const { status, body: out } = await createTrackService({ store, code, secret, paused, now }).handle(route, body);
+  return done(status, out);
 }

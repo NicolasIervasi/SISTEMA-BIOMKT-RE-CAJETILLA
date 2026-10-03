@@ -4,13 +4,14 @@ import { createTrackService, gc, CFG, bucketOf } from '../netlify/lib/track-core
 import { memoryStore } from '../netlify/lib/stores.mjs';
 
 const CODE = 'TEST-CODE-0000-1111-2222';
+const SECRET = 'secreto-de-prueba-'.padEnd(48, 'x');
 const T0 = Date.UTC(2026, 9, 3, 15, 0, 0);
 
-function setup({ code = CODE, store = memoryStore() } = {}) {
+function setup({ code = CODE, secret = SECRET, paused = false, store = memoryStore() } = {}) {
   const clock = { t: T0 };
   let n = 0;
   const rand = len => Buffer.alloc(len, 0).map((_, i) => (i * 31 + ++n * 7) & 255);   // determinista y distinto cada vez
-  const svc = createTrackService({ store, code, now: () => clock.t, rand });
+  const svc = createTrackService({ store, code, secret, paused, now: () => clock.t, rand });
   const call = async (route, body) => (await svc.handle(route, body));
   return { svc, store, clock, call };
 }
@@ -28,44 +29,60 @@ const pt = (ctx, i, extra = {}) => ({ t: ctx.clock.t - 1000 * (10 - i), lat: -38
 const ping = (ctx, w, cid, ck, pts, extra = {}) => ctx.call('ping', { ws: w.ws, cid, ck, pts, ...extra });
 const read = (ctx, w, extra = {}) => ctx.call('read', { ws: w.ws, admin: w.admin, ...extra });
 
-test('sin código de activación el servicio no responde y no toca el almacenamiento', async () => {
-  const c = setup({ code: '' });
-  for (const route of ['ws', 'courier', 'ping', 'read', 'revoke', 'clear']) assert.equal((await c.call(route, {})).status, 503, route);
-  assert.equal((await c.call('nada', {})).status, 404);
-  assert.deepEqual(c.store.ops, { get: 0, put: 0, del: 0, list: 0 });
+test('sin código o sin secreto (o con un secreto corto) el servicio no responde y no toca el almacenamiento', async () => {
+  for (const cfg of [{ code: '' }, { secret: '' }, { secret: 'corto' }, { secret: CODE }]) {
+    const c = setup(cfg);
+    for (const route of ['ws', 'courier', 'ping', 'read', 'revoke', 'clear', 'health']) assert.equal((await c.call(route, {})).status, 503, `${JSON.stringify(cfg)} ${route}`);
+    assert.equal((await c.call('nada', {})).status, 404);
+    assert.deepEqual(c.store.ops, { get: 0, put: 0, del: 0, list: 0 });
+  }
 });
 
-test('crear espacio: pide el código y la clave del despacho no se guarda ni se puede inventar', async () => {
+test('pausa de emergencia: corta todo salvo /health, sin tocar el almacenamiento', async () => {
+  const c = setup({ paused: true });
+  for (const route of ['ws', 'courier', 'ping', 'read', 'revoke', 'clear']) assert.deepEqual((await c.call(route, {})).body, { error: 'paused' }, route);
+  assert.equal((await c.call('health', {})).status, 200);
+  assert.equal(c.store.ops.put + c.store.ops.list + c.store.ops.del, 0);
+});
+
+test('crear espacio: pide el código; las claves salen del secreto (no del código) y son siempre las mismas', async () => {
   const c = setup();
   assert.equal((await c.call('ws', { code: 'otro' })).status, 401);
   assert.equal((await c.call('ws', {})).status, 401);
   assert.equal((await c.call('ws', { code: 12345 })).status, 401);
+  assert.equal((await c.call('ws', { code: 'x'.repeat(500) })).status, 401);
   const w = await workspace(c);
   assert.match(w.ws, /^[A-Za-z0-9_-]{22}$/);
   assert.match(w.admin, /^[A-Za-z0-9_-]{43}$/);
   assert.deepEqual(c.store.ops, { get: 0, put: 0, del: 0, list: 0 }, 'crear el espacio no usa almacenamiento');
-  const w2 = await workspace(c);
-  assert.notEqual(w.ws, w2.ws);
-  assert.notEqual(w.admin, w2.admin);
-  // otro código de activación = otras claves para el mismo ws
-  const d = setup({ code: 'OTRO-CODIGO-DISTINTO-1234' });
-  assert.notEqual(d.svc._adminFor(w.ws), w.admin);
+  assert.deepEqual(await workspace(c), w, 'volver a teclear el código devuelve las mismas claves (recuperar o vincular otro dispositivo)');
+  assert.deepEqual((await c.call('ws', { code: ` ${CODE} ` })).body, { ok: true, ...w }, 'los espacios de alrededor no importan');
+  // cambiar el código no corta las claves; cambiar el secreto sí
+  const newCode = setup({ code: 'OTRO-CODIGO-DISTINTO-1234' });
+  assert.deepEqual((await newCode.call('ws', { code: 'OTRO-CODIGO-DISTINTO-1234' })).body, { ok: true, ...w });
+  const d = setup({ secret: 'otro-secreto-'.padEnd(48, 'y') });
+  const w2 = (await d.call('ws', { code: CODE })).body;
+  assert.notEqual(w2.ws, w.ws);
+  assert.notEqual(w2.admin, w.admin);
 });
 
-test('el espacio ajeno no se puede leer ni administrar con la clave de otro', async () => {
+test('claves ajenas, de otro secreto o inventadas se rechazan sin leer ni escribir', async () => {
   const c = setup();
-  const a = await workspace(c), b = await workspace(c);
-  await newCourier(c, a);
+  const w = await workspace(c);
+  await newCourier(c, w);
+  const other = setup({ secret: 'otro-secreto-'.padEnd(48, 'y'), store: c.store });
+  const o = (await other.call('ws', { code: CODE })).body;
   c.store.ops.get = c.store.ops.list = c.store.ops.put = 0;
+  const bogus = 'B'.repeat(22);
   for (const [route, body] of [
-    ['read', { ws: b.ws, admin: a.admin }], ['read', { ws: a.ws, admin: b.admin }], ['read', { ws: a.ws, admin: 'x'.repeat(43) }],
-    ['courier', { ws: b.ws, admin: a.admin, cid: 'c1' }], ['revoke', { ws: b.ws, admin: a.admin }], ['clear', { ws: b.ws, admin: a.admin }],
-    ['read', { ws: a.ws }], ['read', { ws: a.ws, admin: 123 }]
-  ]) assert.equal((await c.call(route, body)).status, 401, route + JSON.stringify(body).slice(0, 40));
+    ['read', { ws: o.ws, admin: o.admin }], ['read', { ws: w.ws, admin: o.admin }], ['read', { ws: bogus, admin: w.admin }], ['read', { ws: w.ws, admin: 'x'.repeat(43) }],
+    ['courier', { ws: o.ws, admin: o.admin, cid: 'c1' }], ['courier', { ws: w.ws, admin: o.admin, cid: 'c1' }], ['revoke', { ws: o.ws, admin: o.admin }], ['clear', { ws: w.ws, admin: o.admin }],
+    ['read', { ws: w.ws }], ['read', { ws: w.ws, admin: 123 }]
+  ]) assert.equal((await c.call(route, body)).status, 401, route + JSON.stringify(body).slice(0, 50));
   assert.equal(c.store.ops.get + c.store.ops.list + c.store.ops.put, 0, 'las claves falsas se rechazan sin leer ni escribir');
 });
 
-test('repartidor: alta, nombre limpio, repetido, rotación y tope', async () => {
+test('repartidor: alta, nombre limpio, la clave se recupera, rotación y tope', async () => {
   const c = setup();
   const w = await workspace(c);
   const ck = await newCourier(c, w, 'c1', { name: '  <b>Moto</b>\u0007 1 con un nombre larguísimo que se corta ', color: 'rojo' });
@@ -73,21 +90,24 @@ test('repartidor: alta, nombre limpio, repetido, rotación y tope', async () => 
   const doc = JSON.parse(c.store.raw(`ck/${w.ws}/c1`));
   assert.ok(doc.name.length <= CFG.MAX_NAME && !/[<>\u0007]/.test(doc.name), doc.name);
   assert.equal(doc.color, '#2563eb');
-  assert.ok(!c.store.raw(`ck/${w.ws}/c1`).includes(ck), 'la clave del repartidor no se guarda');
-  // repetido: avisa y no entrega otra clave; el cambio de nombre se sincroniza
+  assert.ok(!c.store.raw(`ck/${w.ws}/c1`).includes(ck), 'la clave del repartidor no se guarda entera');
+  // pedirla otra vez devuelve la misma (el link ya enviado sigue valiendo) y sincroniza el nombre
   const again = await c.call('courier', { ws: w.ws, admin: w.admin, cid: 'c1', name: 'Moto Uno', color: '#dc2626' });
-  assert.deepEqual(again.body, { ok: true, existing: true });
+  assert.equal(again.body.ck, ck);
   assert.equal(JSON.parse(c.store.raw(`ck/${w.ws}/c1`)).name, 'Moto Uno');
+  assert.equal((await ping(c, w, 'c1', ck, [pt(c, 1)])).status, 200);
   // rotar invalida la anterior
   const ck2 = (await c.call('courier', { ws: w.ws, admin: w.admin, cid: 'c1', rotate: true, name: 'Moto Uno', color: '#dc2626' })).body.ck;
   assert.notEqual(ck, ck2);
-  assert.equal((await ping(c, w, 'c1', ck, [pt(c, 1)])).status, 401);
-  assert.equal((await ping(c, w, 'c1', ck2, [pt(c, 1)])).status, 200);
+  assert.equal((await ping(c, w, 'c1', ck, [pt(c, 2)])).status, 401);
+  assert.equal((await ping(c, w, 'c1', ck2, [pt(c, 2)])).status, 200);
+  assert.equal((await c.call('courier', { ws: w.ws, admin: w.admin, cid: 'c1' })).body.ck, ck2);
   // identificadores raros
   for (const cid of ['', 'a/b', 'x'.repeat(33), '..', 'a b', 'ñ']) assert.equal((await c.call('courier', { ws: w.ws, admin: w.admin, cid })).status, 400, JSON.stringify(cid));
   // tope por espacio
   for (let i = 2; i <= CFG.MAX_COURIERS; i++) await newCourier(c, w, `c${i}`);
   assert.equal((await c.call('courier', { ws: w.ws, admin: w.admin, cid: 'extra' })).status, 409);
+  assert.equal((await c.call('courier', { ws: w.ws, admin: w.admin, cid: 'c3' })).status, 200, 'los que ya existen siguen pudiendo pedir su clave');
 });
 
 test('ping: guarda los puntos, rechaza claves falsas sin tocar el almacenamiento y no deja usar la clave en otro repartidor', async () => {
@@ -133,8 +153,11 @@ test('ping: validación del cuerpo y aceptación parcial', async () => {
   assert.deepEqual(saved.map(p => p.t), [mixed[0].t, mixed[9].t, mixed[10].t]);
   assert.ok(!('spd' in saved[1]) && !('hdg' in saved[1]), 'velocidad y rumbo fuera de rango se omiten, el punto se conserva');
   assert.equal((await ping(c, w, 'c1', ck, [{ ...pt(c, 1), acc: 500 }])).body.accepted, 0, 'si todo se descarta igual responde 200 (el celular no reintenta)');
-  const r2 = await ping(c, w, 'c1', ck, [], { ev: 'stop' });
-  assert.equal(r2.status, 200);
+  for (const ev of ['stop', 'hb', 'hide', 'show', 'start']) assert.equal((await ping(c, w, 'c1', ck, [], { ev })).status, 200, ev);
+  const evs = JSON.parse(c.store.raw(`pts/${w.ws}/c1/${bucketOf(T0)}`)).e;
+  assert.deepEqual(evs.map(e => e.k), ['stop', 'hb', 'hide', 'show', 'start']);
+  for (let i = 0; i < 30; i++) await ping(c, w, 'c1', ck, [], { ev: 'hb' });
+  assert.ok(JSON.parse(c.store.raw(`pts/${w.ws}/c1/${bucketOf(T0)}`)).e.length <= CFG.MAX_EVENTS, 'los eventos tienen tope');
 });
 
 test('ping: el reintento del mismo lote no duplica y el tope por ventana se respeta', async () => {
@@ -175,9 +198,12 @@ test('ping: corrige un reloj del celular desfasado y respeta el que está bien',
 
 test('read: devuelve lo nuevo desde el cursor, valida since y no mezcla espacios', async () => {
   const c = setup();
-  const w = await workspace(c), other = await workspace(c);
+  const w = await workspace(c);
+  const c2svc = setup({ secret: 'otro-secreto-'.padEnd(48, 'y'), store: c.store });
+  c2svc.clock = c.clock;
+  const other = (await c2svc.call('ws', { code: CODE })).body;
   const ck1 = await newCourier(c, w, 'c1', { name: 'Ana', color: '#16a34a' }), ck2 = await newCourier(c, w, 'c2');
-  await newCourier(c, other, 'zz');
+  assert.equal((await c2svc.call('courier', { ws: other.ws, admin: other.admin, cid: 'zz' })).status, 200);
   await ping(c, w, 'c1', ck1, [pt(c, 1), pt(c, 2)]);
   c.clock.t += 30e3;
   await ping(c, w, 'c1', ck1, [pt(c, 8), pt(c, 9)], { ev: 'stop' });
@@ -189,7 +215,9 @@ test('read: devuelve lo nuevo desde el cursor, valida since y no mezcla espacios
   assert.equal(r.body.couriers.c1.pts.length, 4);
   assert.equal(r.body.couriers.c1.last.a, T0 + 30e3);
   assert.equal(r.body.couriers.c1.ev.k, 'stop');
+  assert.equal(r.body.couriers.c1.seen, T0 + 30e3, 'última señal de vida');
   assert.equal(r.body.couriers.c2.pts.length, 0);
+  assert.equal(r.body.couriers.c2.seen, undefined);
   assert.equal(r.body.couriers.c2.last, undefined);
   assert.equal(r.body.now, T0 + 30e3);
   // cursor: solo lo que llegó después
@@ -200,8 +228,9 @@ test('read: devuelve lo nuevo desde el cursor, valida since y no mezcla espacios
   // since muy viejo o futuro se recorta
   assert.equal((await read(c, w, { since: -1e15 })).status, 200);
   assert.equal((await read(c, w, { since: 1e15 })).body.couriers.c1.pts.length, 0);
-  // otro espacio no ve a c1
-  assert.deepEqual(Object.keys((await read(c, other)).body.couriers), ['zz']);
+  // otro espacio (otro secreto) no ve a c1
+  assert.deepEqual(Object.keys((await c2svc.call('read', { ws: other.ws, admin: other.admin })).body.couriers), ['zz']);
+  assert.equal((await c.call('read', { ws: other.ws, admin: other.admin })).status, 401);
 });
 
 test('read: pedidos largos usan el listado y no piden ventanas inexistentes', async () => {
@@ -232,6 +261,7 @@ test('clear: borrado lógico (lo que llegó antes no vuelve) y cada repartidor b
   let r = await read(c, w);
   assert.equal(r.body.couriers.c1.pts.length, 0);
   assert.equal(r.body.couriers.c2.pts.length, 1);
+  assert.equal(r.body.couriers.c1.clr, T0 + 5e3, 'informa desde cuándo vale lo guardado, para que el despacho descarte lo que tenía en pantalla');
   assert.ok(!c.store.keys().some(k => k.startsWith(`pts/${w.ws}/c1/`)));
   // un envío que estaba en vuelo con hora de llegada anterior al borrado queda fuera aunque escriba después
   const clr = JSON.parse(c.store.raw(`ck/${w.ws}/c1`)).clr;
@@ -298,23 +328,33 @@ test('un fallo del almacenamiento devuelve 500 sin detalles', async () => {
   } finally { console.error = orig; }
 });
 
-test('limpieza programada: vencen las ventanas viejas y los repartidores vencidos, no lo reciente', async () => {
+test('limpieza programada: vence lo viejo, deja lo reciente, anota cuándo corrió y respeta el tope', async () => {
   const c = setup();
   const w = await workspace(c);
   const ck = await newCourier(c, w, 'c1'); await newCourier(c, w, 'c2');
   await ping(c, w, 'c1', ck, [pt(c, 1)]);
+  assert.equal((await c.call('health', {})).body.gcAt, null);
   c.clock.t += 47 * 3600e3;
   await ping(c, w, 'c1', ck, [pt(c, 2)]);
   c.clock.t += 2 * 3600e3;                                   // la primera ventana ya tiene 49 h
   await c.store.put('pts/zzz/x/not-a-number', '{}');
   let r = await gc({ store: c.store, now: () => c.clock.t });
   assert.equal(r.deleted, 2);
+  assert.equal(r.left, 0);
   assert.deepEqual(c.store.keys().filter(k => k.startsWith('pts/')), [`pts/${w.ws}/c1/${bucketOf(T0 + 47 * 3600e3)}`]);
+  assert.equal(JSON.parse(c.store.raw('meta/gc')).at, c.clock.t);
+  assert.equal((await c.call('health', {})).body.gcAt, c.clock.t, '/health informa la última limpieza');
   c.clock.t += 91 * 24 * 3600e3;
   r = await gc({ store: c.store, now: () => c.clock.t });
-  assert.deepEqual(c.store.keys(), []);
+  assert.deepEqual(c.store.keys().filter(k => !k.startsWith('meta/')), []);
   assert.equal(r.couriers, 2);
-  // tope de trabajo por corrida
-  for (let i = 0; i < 5; i++) await c.store.put(`pts/${w.ws}/c9/${i}`, '{}');
-  assert.equal((await gc({ store: c.store, now: () => c.clock.t, maxDeletes: 3 })).deleted, 3);
+  // tope de trabajo por corrida: lo más viejo primero, y avisa cuánto quedó
+  for (let i = 0; i < 25; i++) await c.store.put(`pts/${w.ws}/c9/${i}`, '{}');
+  r = await gc({ store: c.store, now: () => c.clock.t, maxDeletes: 10 });
+  assert.equal(r.deleted, 10);
+  assert.equal(r.left, 15);
+  assert.ok(!c.store.keys().includes(`pts/${w.ws}/c9/0`) && c.store.keys().includes(`pts/${w.ws}/c9/24`));
+  // sin tiempo disponible no hace nada, pero igual deja constancia
+  r = await gc({ store: c.store, now: () => c.clock.t, budgetMs: -1 });
+  assert.equal(r.deleted, 0);
 });

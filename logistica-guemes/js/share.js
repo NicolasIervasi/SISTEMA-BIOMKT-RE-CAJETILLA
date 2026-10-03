@@ -1,6 +1,7 @@
 // Link para el repartidor: la ruta viaja dentro de la URL (#/r/...), así llega al celular sin servidor.
 import { VEHICLES } from './config.js';
 import { courierById, isOpen, orderById, state } from './store.js';
+import { ensureCourierKey, trackingFor } from './live.js';
 
 const toB64u = bytes => {
   let s = '';
@@ -41,6 +42,7 @@ export function buildCourierPayload(courierId) {
   const c = courierById(courierId);
   const { r, list } = pendingStopsOf(courierId);
   const legAt = o => r && !r.stale ? r.legs[r.order.indexOf(o.id)] : null;
+  const tk = trackingFor(courierId);       // credenciales para transmitir la ubicación, solo si el seguimiento está activo
   return {
     v: 1,
     c: { name: c.name, vehicle: c.vehicle, color: c.color },
@@ -53,11 +55,13 @@ export function buildCourierPayload(courierId) {
       return [o.code, o.name, o.address, o.phone, o.notes, +o.lat.toFixed(6), +o.lng.toFixed(6), o.amount + o.fee, o.payment === 'efectivo' ? 1 : 0,
         leg ? Math.round(leg.dur) : null, leg ? Math.round(leg.dist) : null];
     }),
-    lr: r && !r.stale && r.closed ? [Math.round(r.legs[r.order.length].dur), Math.round(r.legs[r.order.length].dist)] : null
+    lr: r && !r.stale && r.closed ? [Math.round(r.legs[r.order.length].dur), Math.round(r.legs[r.order.length].dist)] : null,
+    ...(tk ? { t: [tk.w, tk.c, tk.k], bn: state.settings.business || '' } : {})
   };
 }
 
 export async function courierLink(courierId) {
+  if (state.settings.live) await ensureCourierKey(courierId);       // si el seguimiento está activo, el link lleva la clave para transmitir
   const data = await encodePayload(buildCourierPayload(courierId));
   return `${location.origin}${location.pathname}#/r/${data}`;
 }

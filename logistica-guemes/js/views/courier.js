@@ -1,15 +1,16 @@
 // Modo repartidor: pantalla de celular con la próxima parada, navegación, aviso al cliente y entrega.
 // Dos orígenes de datos con la misma interfaz: la flota del despacho (local) o una ruta recibida por link (link).
 import { BRAND, COURIER_KEY, FALLBACK_DETOUR, FALLBACK_SPEED, VEHICLES } from '../config.js';
-import { $, el, icon, toast } from '../dom.js';
-import { fmtDist, fmtDur, fmtMoney, fmtTime, startOfDay, waLink } from '../fmt.js';
+import { $, confirmDialog, el, icon, toast } from '../dom.js';
+import { fmtAgo, fmtDist, fmtDur, fmtMoney, fmtTime, startOfDay, waLink } from '../fmt.js';
 import { getRouteLegs } from '../geo.js';
 import { distM } from '../geomath.js';
+import { createSharer, giveConsent, hasConsent } from '../live.js';
 import { createMap } from '../map.js';
 import { computeEtas, etaPlan } from '../plan.js';
 import { decodePayload } from '../share.js';
 import * as store from '../store.js';
-import { failDialog } from './dialogs.js';
+import { consentDialog, failDialog } from './dialogs.js';
 
 const ARRIVED_M = 40;
 const pendingStatus = s => s.status === 'asignado' || s.status === 'en_camino';
@@ -63,7 +64,21 @@ export async function importLink(str) {
     }
     let ret = p.lr ? { dur: p.lr[0], dist: p.lr[1] } : null;
     if (p.rt && !ret) { const d = distM(prev, p.d) * FALLBACK_DETOUR; ret = { dist: d, dur: d / FALLBACK_SPEED }; }
-    session = { v: 1, courier: p.c, depot: p.d, closed: !!p.rt, factor: p.f || 1, serviceMin: p.sv ?? 4, stops, ret, departAt: null, geometry: null, importedAt: Date.now() };
+    const t = p.t, tk = Array.isArray(t) && /^[\w-]{22}$/.test(t[0]) && /^[\w-]{1,32}$/.test(t[1]) && /^[\w-]{43}$/.test(t[2]) ? { w: t[0], c: t[1], k: t[2] } : null;
+    // Volver a abrir el link (o recibir una ruta actualizada del mismo despacho) no borra lo que ya marcó este repartidor.
+    if (!session) loadSession();
+    const before = session, same = !!before && (tk ? before.tk?.w === tk.w && before.tk?.c === tk.c : !before.tk && before.courier?.name === p.c.name);
+    let departAt = null;
+    if (same) {
+      for (const st of stops) {
+        const old = before.stops?.find(o => o.code === st.code && o.address === st.address);
+        if (!old) continue;
+        departAt = before.departAt || departAt;
+        if (old.status !== 'asignado') { st.status = old.status; st.doneAt = old.doneAt; if (old.failReason) st.failReason = old.failReason; }
+      }
+    }
+    session = { v: 1, courier: p.c, depot: p.d, closed: !!p.rt, factor: p.f || 1, serviceMin: p.sv ?? 4, stops, ret, departAt, geometry: null, importedAt: Date.now(),
+      tk, bn: tk && typeof p.bn === 'string' ? p.bn.slice(0, 40) : '' };
     saveSession();
     refreshGeometry();
     return true;
@@ -90,6 +105,7 @@ function linkSource() {
   const find = id => session.stops.find(s => s.id === id);
   return {
     kind: 'link', courier: session.courier, depot: session.depot, closed: !!session.closed,
+    tk: session.tk || null, business: session.bn || '',
     stops: () => session.stops,
     plan: () => computeEtas({
       order: session.stops.map(s => s.id), legs: [...session.stops.map(s => s.leg), ...(session.closed && session.ret ? [session.ret] : [])],
@@ -108,22 +124,27 @@ function linkSource() {
 
 /* ───────── Vista ───────── */
 let src = null, mapCtl = null, unsub = null, timer = null, watchId = null, me = null, focusId = null, lastNext = null;
+let sharer = null, sharerTk = null, shareState = null, shareTimer = null;
 const els = {};
 
 export function open(id) {
-  close();
-  src = id === 'link' ? linkSource() : localSource(id);
+  const next = id === 'link' ? linkSource() : localSource(id);
+  const t = next?.tk;
+  close({ keepShare: !!(sharer?.isActive() && t && sharerTk && t.w === sharerTk.w && t.c === sharerTk.c && t.k === sharerTk.k) });   // si sigue compartiendo con el mismo despacho, no se corta
+  src = next;
   if (!src) return false;
   build();
   unsub = src.subscribe(render);
   timer = setInterval(render, 30000);
+  shareTimer = setInterval(paintShare, 10000);
   render();
   setTimeout(() => { mapCtl?.invalidate(); fitNow(false); }, 0);
   return true;
 }
-export function close() {
+export function close({ keepShare = false } = {}) {
   stopGps();
-  unsub?.(); clearInterval(timer);
+  if (!keepShare) closeSharer();
+  unsub?.(); clearInterval(timer); clearInterval(shareTimer);
   mapCtl?.destroy(); mapCtl = null; src = null; focusId = null; lastNext = null;
   $('#courierRoot').replaceChildren();
 }
@@ -131,7 +152,8 @@ export function close() {
 function build() {
   const c = src.courier;
   els.title = el('div', { class: 'cv-title' });
-  els.gps = el('button', { class: 'btn sm', type: 'button', 'aria-pressed': 'false', onclick: toggleGps }, icon('locate', 'sm'), 'Mi ubicación');
+  els.gps = el('button', { class: 'btn sm', type: 'button', 'aria-pressed': 'false', onclick: src.tk ? toggleShare : toggleGps }, icon('locate', 'sm'), src.tk ? 'Compartir' : 'Mi ubicación');
+  els.shareBox = el('section', { class: 'card cv-share', 'aria-live': 'polite' });
   const head = el('header', { class: 'cv-head', style: { '--c': /^#[0-9a-f]{6}$/i.test(c.color) ? c.color : '#4f46e5' } },
     src.kind === 'local' ? el('a', { class: 'iconbtn', href: '#/', 'aria-label': 'Volver al despacho' }, icon('back')) : el('img', { src: 'icon.svg', alt: '', width: '30', height: '30', style: { 'border-radius': '8px' } }),
     els.title, els.gps);
@@ -146,6 +168,7 @@ function render() {
   const stops = src.stops(), plan = src.plan();
   const pending = stops.filter(pendingStatus), finished = stops.filter(s => !pendingStatus(s));
   const c = src.courier;
+  if (stops.length && !pending.length && sharer?.isActive()) { stopShare(); toast('Ruta completa: dejé de compartir tu ubicación.', 'ok', 5000); }
   els.title.replaceChildren(el('b', { text: c.name }), el('span', { text: `${VEHICLES[c.vehicle]?.label || ''} · ${finished.length} de ${stops.length} entregas` }));
   renderSheet(stops, pending, finished, plan);
   renderMap(stops, pending);
@@ -178,7 +201,8 @@ function renderSheet(stops, pending, finished, plan) {
     out.push(el('details', { class: 'cv-done' }, el('summary', { text: `Hechas (${finished.length})` }), finished.map(s => doneRow(s))));
   }
   if (src.kind === 'link') out.push(el('p', { class: 'note', text: 'Ruta enviada por el despacho. Lo que marques queda en este celular.' }));
-  sheet.replaceChildren(...out);
+  sheet.replaceChildren(els.shareBox, ...out);
+  paintShare();
 }
 
 function startCard(pending, plan) {
@@ -270,6 +294,86 @@ async function finish(s, status) {
   }
   focusId = null;
   fitNow();
+}
+
+/* ───────── Compartir la ubicación con el despacho ───────── */
+function paintShare() {
+  const box = els.shareBox;
+  if (!box || !src) return;
+  box.hidden = !src.tk;
+  if (!src.tk) return;
+  const s = shareState || sharer?.state() || { status: 'idle', sent: 0, queued: 0, km: 0, lastAt: null, error: '' };
+  const who = src.business || 'el despacho';
+  const active = sharer?.isActive();
+  const out = [];
+  const row = (...kids) => el('div', { class: 'cv-share-row' }, ...kids);
+  if (active) {
+    const waiting = s.lastAt == null && s.status === 'live';
+    out.push(row(el('span', { class: 'live-dot' + (s.status === 'offline' ? ' off' : '') }), el('b', { text: s.status === 'offline' ? 'Sin conexión' : waiting ? 'Conectando…' : 'Compartiendo en vivo' })));
+    const bits = [`Con ${who}`];
+    if (s.lastAt != null) bits.push(`Último envío hace ${fmtAgo(Date.now() - s.lastAt)}`);
+    bits.push(`${fmtDist(s.km * 1000)} recorridos`);
+    if (s.queued) bits.push(`${s.queued} sin enviar`);
+    out.push(el('p', { class: 'note', text: bits.join(' · ') }));
+    const silent = s.status === 'live' && s.fixAt && Date.now() - s.fixAt > 60000;
+    if (s.error || s.geoError || silent) out.push(el('p', { class: 'note warn', text: s.error || s.geoError || `No llegan posiciones del GPS desde hace ${fmtAgo(Date.now() - s.fixAt)}: si cambiaste de app o bloqueaste el celular, volvé a esta pantalla.` }));
+    out.push(el('p', { class: 'note', text: 'Dejá esta pantalla abierta: si la bloqueás o cambiás de app, el celular puede pausar el GPS.' }));
+    out.push(row(el('button', { class: 'btn sm', type: 'button', onclick: () => stopShare() }, 'Dejar de compartir')));
+  } else {
+    out.push(el('h3', { text: `Compartí tu ubicación con ${who}` }));
+    out.push(el('p', { class: 'note', text: s.status === 'denied' || s.status === 'revoked' || s.status === 'expired' || s.status === 'error' ? s.error : 'Se ve en el mapa del despacho mientras dure tu reparto. Vos elegís cuándo empezar y cuándo parar.' }));
+    out.push(row(
+      el('button', { class: 'btn primary', type: 'button', disabled: s.status === 'revoked', onclick: toggleShare }, icon('locate', 'sm'), 'Compartir mi ubicación'),
+      (s.sent || s.queued) ? el('button', { class: 'btn sm', type: 'button', onclick: forgetMine }, 'Borrar mi recorrido') : null));
+  }
+  box.replaceChildren(...out);
+  box.classList.toggle('is-live', !!active && s.status !== 'offline');
+  els.gps?.setAttribute('aria-pressed', String(!!active));
+  if (els.gps) els.gps.lastChild.textContent = active ? 'Compartiendo' : 'Compartir';
+}
+
+function ensureSharer() {
+  if (sharer) return sharer;
+  sharerTk = src.tk;
+  sharer = createSharer({
+    tk: src.tk,
+    onChange: s => {
+      shareState = s;
+      if (s.fix) { me = { lat: s.fix.lat, lng: s.fix.lng, acc: s.fix.acc }; mapCtl?.setMe(me); } else if (!sharer?.isActive()) { me = null; mapCtl?.setMe(null); }
+      paintShare();
+    }
+  });
+  return sharer;
+}
+
+async function toggleShare() {
+  if (!src?.tk) return;
+  if (sharer?.isActive()) { stopShare(); return; }
+  if (!hasConsent(src.tk.w)) {
+    if (!(await consentDialog({ business: src.business }))) return;
+    giveConsent(src.tk.w);
+  }
+  if (!src) return;
+  ensureSharer();
+  if (sharer.start()) toast('Compartiendo tu ubicación.', 'ok');
+  paintShare();
+}
+
+function stopShare() {
+  sharer?.stop();
+  me = null; mapCtl?.setMe(null);
+  paintShare();
+}
+
+async function forgetMine() {
+  if (!(await confirmDialog({ title: 'Borrar mi recorrido', message: 'Se borra de este celular y del servidor lo que ya enviaste. El despacho deja de verlo.', confirmLabel: 'Borrar', danger: true }))) return;
+  const ok = await ensureSharer().clearMine();
+  toast(ok ? 'Recorrido borrado.' : 'No pude borrarlo del servidor ahora: se borra solo a las 48 h.', ok ? 'ok' : 'warn', 5000);
+  shareState = null; paintShare();
+}
+
+function closeSharer() {
+  if (sharer) { sharer.stop(); sharer = null; sharerTk = null; shareState = null; }
 }
 
 /* ───────── Mapa y ubicación ───────── */

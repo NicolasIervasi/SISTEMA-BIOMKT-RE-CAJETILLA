@@ -1,20 +1,22 @@
 // Consola de despacho: pedidos y flota a la izquierda, mapa a la derecha.
 import { BRAND, STATUS, VEHICLES } from '../config.js';
 import { $, el, icon, toast } from '../dom.js';
-import { fmtBlocks, fmtDist, fmtDur, fmtMoney, fmtTime, startOfDay, waLink } from '../fmt.js';
+import { fmtAgo, fmtBlocks, fmtDist, fmtDur, fmtMoney, fmtTime, startOfDay, waLink } from '../fmt.js';
 import { loadDemo } from '../demo.js';
 import { DispatchError, autoDispatch, replanCourier } from '../dispatch.js';
 import { distM, ringLabel } from '../geomath.js';
+import { getTracker } from '../live.js';
 import { createMap } from '../map.js';
 import { etaPlan } from '../plan.js';
+import { splitTrail, thin } from '../track-math.js';
 import * as store from '../store.js';
 import { courierDialog, editOrderDialog, failDialog, orderDialog, shareDialog } from './dialogs.js';
 
 const { state } = store;
 export const title = 'Despacho';
 
-const ui = { tab: 'pedidos', filter: 'todos', courierFilter: null, selectedId: null, pick: null, busy: false };
-let root, mapCtl, unsub, timer, pendingPick = null;
+const ui = { tab: 'pedidos', filter: 'todos', courierFilter: null, selectedId: null, pick: null, busy: false, follow: null };
+let root, mapCtl, unsub, timer, pendingPick = null, tracker = null, unTrack = null, liveSig = '';
 const parts = {};
 
 // Settings pide mover el centro desde el mapa: la vista lo toma al montarse
@@ -36,7 +38,8 @@ export function mount(container) {
   parts.legend = el('div', { class: 'maplegend', 'aria-label': 'Tarifas por distancia' });
   parts.hintText = el('span');
   parts.hint = el('div', { class: 'maphint', hidden: true, role: 'status' }, parts.hintText, el('button', { class: 'btn sm', type: 'button', text: 'Cancelar', onclick: endPick }));
-  parts.tools = el('div', { class: 'maptools' },
+  parts.liveChip = el('div', { class: 'livechip', hidden: true, role: 'status' });
+  parts.tools = el('div', { class: 'maptools' }, parts.liveChip,
     el('button', { class: 'btn sm', type: 'button', onclick: () => mapCtl.fitZone() }, icon('map', 'sm'), 'Toda la zona'),
     el('button', { class: 'btn sm', type: 'button', onclick: fitRoutes }, icon('truck', 'sm'), 'Rutas'));
 
@@ -45,7 +48,9 @@ export function mount(container) {
     el('div', { class: 'mapwrap' }, parts.mapbox, parts.legend, parts.tools, parts.hint));
   container.replaceChildren(root);
 
-  mapCtl = createMap(parts.mapbox, { onClick: onMapClick });
+  mapCtl = createMap(parts.mapbox, { onClick: onMapClick, onDrag: () => { if (ui.follow) { ui.follow = null; render(); } } });
+  tracker = getTracker();
+  unTrack = tracker.subscribe(onTrack);
   unsub = store.subscribe(render);
   timer = setInterval(() => { if (!document.activeElement?.closest?.('select, input, textarea')) render(); }, 60000);
   document.addEventListener('keydown', onKey);
@@ -54,7 +59,8 @@ export function mount(container) {
   if (pendingPick === 'center') { pendingPick = null; startPick('Tocá el mapa donde queda el local', pickCenter); }
 }
 export function unmount() {
-  unsub?.(); clearInterval(timer); document.removeEventListener('keydown', onKey);
+  unsub?.(); unTrack?.(); tracker?.stop(); tracker = null; liveSig = '';
+  clearInterval(timer); document.removeEventListener('keydown', onKey);
   mapCtl?.destroy(); mapCtl = null;
 }
 export function onShow() { mapCtl?.invalidate(); }
@@ -94,12 +100,14 @@ const plannableCount = () => {
 
 /* ───────── Render ───────── */
 function render() {
-  if (!root) return;
+  if (!root || !tracker) return;
+  if (state.settings.live) tracker.start(); else { tracker.stop(); tracker.reset(); }       // consulta solo si el seguimiento está activo
   const ctx = context();
   renderKpis();
   renderHead(ctx);
   if (ui.tab === 'pedidos') renderOrders(ctx); else renderFleet(ctx);
   renderMap(ctx);
+  renderLive(true);
   renderLegend();
 }
 
@@ -264,11 +272,71 @@ function fleetCard(c, ctx) {
       el('label', { class: 'switch', title: c.active ? 'En turno' : 'Fuera de turno' },
         el('input', { type: 'checkbox', checked: c.active, 'aria-label': `${c.name} en turno`, onchange: ev => store.updateCourier(c.id, { active: ev.target.checked }) }), el('i'))),
     el('div', { class: 'status-line' }, el('span', { class: 'pill ' + (st === 'en_ruta' ? 'en_camino' : st === 'asignado' ? 'asignado' : ''), text: st === 'en_ruta' ? 'En ruta' : st === 'asignado' ? 'Asignado' : 'Libre' }), line),
+    liveSlot(c),
     el('div', { class: 'stats' },
       stat(mine.length, 'paradas', mine.length ? () => { ui.courierFilter = c.id; ui.filter = 'todos'; setTab('pedidos'); } : null),
       stat(plan ? fmtDist(plan.dist) : '—', 'recorrido'),
       stat(plan ? fmtDur(plan.total) : '—', 'tiempo total')),
     el('div', { class: 'ccard-actions' }, actions));
+}
+
+
+/* ───────── Seguimiento en vivo ───────── */
+// Se actualiza sin redibujar las tarjetas: un redibujado entre mousedown y mouseup se come el clic.
+function liveSlot(c) {
+  const slot = el('div', { 'data-live': c.id });
+  fillLive(slot, c);
+  return slot;
+}
+
+function fillLive(slot, c) {
+  if (!state.settings.live) { slot.replaceChildren(); return; }
+  const t = tracker.snapshot().tracks.get(c.id);
+  const line = (...kids) => slot.replaceChildren(el('div', { class: 'live-line' }, icon('locate', 'sm'), ...kids));
+  if (!c.ck) return line(el('span', { class: 'grow', text: 'Seguimiento: mandale la ruta y, al abrirla, puede compartir su ubicación.' }));
+  if (!t?.last) return line(el('span', { class: 'grow', text: t?.stopped ? 'Dejó de compartir su ubicación.' : 'Todavía no compartió su ubicación.' }));
+  const km = t.km ? ` · ${fmtDist(t.km * 1000)} hoy` : '';
+  const text = t.online && t.background ? el('span', { class: 'grow' }, el('b', { text: 'En segundo plano' }), ` · sin GPS hasta que vuelva a la app${km}`)
+    : t.online ? el('span', { class: 'grow' }, el('b', { text: 'En vivo' }), ` · hace ${fmtAgo(t.ageMs)}${km}`)
+    : el('span', { class: 'grow' }, el('b', { text: t.stopped ? 'Dejó de compartir' : 'Sin señal' }), ` hace ${fmtAgo(t.ageMs)}${km}`);
+  const btn = t.online
+    ? el('button', { class: 'btn sm', type: 'button', onclick: () => { ui.follow = ui.follow === c.id ? null : c.id; if (ui.follow) mapCtl.focusLive(c.id); onTrack(); } }, ui.follow === c.id ? 'Dejar de seguir' : 'Seguir')
+    : el('button', { class: 'btn sm', type: 'button', onclick: () => mapCtl.focusLive(c.id) }, 'Ver última posición');
+  line(text, btn);
+}
+
+function liveItems(snap) {
+  const out = [];
+  for (const c of state.couriers) {
+    const t = snap.tracks.get(c.id);
+    if (!t?.last) continue;
+    out.push({
+      id: c.id, color: c.color, name: c.name, last: t.last, state: t.online ? 'live' : 'off',
+      segments: splitTrail(t.pts).map(seg => thin(seg, 8, 700).map(p => [p.lat, p.lng])),
+      title: c.name, sub: t.online ? (t.background ? 'En segundo plano (sin GPS)' : `En vivo · hace ${fmtAgo(t.ageMs)}`) : `${t.stopped ? 'Dejó de compartir' : 'Sin señal'} hace ${fmtAgo(t.ageMs)}`
+    });
+  }
+  return out;
+}
+
+function renderLive(force = false) {
+  if (!root || !mapCtl || !tracker) return;
+  const live = state.settings.live, snap = tracker.snapshot();
+  const items = live ? liveItems(snap) : [];
+  const sig = items.map(i => `${i.id}:${i.last.a}:${i.state}:${i.segments.length}:${i.color}:${i.title}:${i.sub.slice(0, 8)}`).join('|');
+  if (force || sig !== liveSig) { liveSig = sig; mapCtl.drawLive(items, { onSelect: () => setTab('flota') }); }
+  const online = items.filter(i => i.state === 'live').length;
+  parts.liveChip.hidden = !live;
+  parts.liveChip.classList.toggle('warn', snap.status !== 'ok' && snap.status !== 'idle');
+  parts.liveChip.textContent = !live ? '' : snap.status === 'denied' ? 'Seguimiento: revisá Ajustes' : snap.status === 'idle' ? 'Seguimiento: conectando…'
+    : snap.status === 'ok' ? (online ? `${online} en vivo` : 'Seguimiento: nadie transmite') : snap.status === 'paused' ? 'Seguimiento en pausa en el servidor' : snap.status === 'unavailable' ? 'Seguimiento sin servicio · reintentando' : 'Seguimiento sin conexión · reintentando';
+  if (ui.follow && !mapCtl.panToLive(ui.follow)) ui.follow = null;
+}
+
+function onTrack() {
+  if (!root) return;
+  renderLive();
+  for (const slot of parts.body?.querySelectorAll?.('[data-live]') ?? []) { const c = store.courierById(slot.dataset.live); if (c) fillLive(slot, c); }
 }
 
 async function replan(id) {

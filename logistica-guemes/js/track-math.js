@@ -11,7 +11,7 @@ export const LIMITS = {
   kmGapMs: 10 * 60e3,      // y más de este silencio no suma km (no se sabe por dónde fue)
   maxSpeedMs: 45,          // 162 km/h: más que eso en la zona es un salto de GPS, no movimiento real
   kmMaxAccuracyM: 50,      // para sumar km se exige mejor precisión
-  kmMinStepM: 4            // por debajo de esto es temblor del GPS parado
+  kmMinStepM: 8            // por debajo de esto (o del 75 % del error del punto) es temblor del GPS parado
 };
 
 const finite = n => typeof n === 'number' && Number.isFinite(n);
@@ -39,7 +39,7 @@ export function trackKm(points, L = LIMITS) {
     if (!(dt > 0)) continue;                      // repetido o fuera de orden
     if (dt * 1000 > L.kmGapMs) { prev = p; continue; }   // hueco largo: no se suma, se sigue desde acá
     if (d / dt > L.maxSpeedMs) continue;          // salto de GPS: se descarta y se sigue comparando con el último bueno
-    if (d < L.kmMinStepM) continue;               // temblor: la referencia no avanza, así un movimiento lento sí termina sumando
+    if (d < Math.max(L.kmMinStepM, (finite(p.acc) ? p.acc : 0) * 0.75)) continue;   // temblor: la referencia no avanza, así un movimiento lento sí termina sumando
     m += d; prev = p;
   }
   return m / 1000;

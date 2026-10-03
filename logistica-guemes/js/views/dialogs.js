@@ -4,6 +4,7 @@ import { closeDialog, confirmDialog, copyText, el, icon, openDialog, toast } fro
 import { fmtBlocks, fmtMoney, parseOrderLines, waLink } from '../fmt.js';
 import { geocode } from '../geo.js';
 import { distM } from '../geomath.js';
+import { trackingFor } from '../live.js';
 import { courierLink } from '../share.js';
 import * as store from '../store.js';
 
@@ -206,6 +207,24 @@ export async function courierDialog(courier) {
   return v;
 }
 
+/* ───────── Compartir ubicación (celular del repartidor) ───────── */
+export async function consentDialog({ business = '' } = {}) {
+  const who = business || 'el despacho';
+  const v = await openDialog({
+    title: 'Compartir tu ubicación', size: 460,
+    body: el('div', { class: 'stack' },
+      el('p', {}, 'Vas a compartir tu ubicación con ', el('b', { text: who }), '.'),
+      el('ul', { class: 'consent-list' },
+        el('li', { text: 'Solo mientras esta pantalla esté abierta y lo tengas activado. Se corta sola a las 12 horas o al terminar la ruta.' }),
+        el('li', { text: 'Si abrís Maps o bloqueás el celular, el GPS se pausa hasta que vuelvas a esta pantalla.' }),
+        el('li', { text: 'El despacho ve tu posición y tu recorrido en el mapa durante tu turno.' }),
+        el('li', { text: 'Lo que se envía se guarda hasta 48 horas en servidores de Netlify (EE. UU.) y se borra solo. Podés borrarlo cuando quieras.' }),
+        el('li', { text: 'Podés dejar de compartir en cualquier momento.' }))),
+    actions: [{ label: 'Ahora no', value: '' }, { label: 'Aceptar y compartir', kind: 'primary', value: 'ok' }]
+  });
+  return v === 'ok';
+}
+
 /* ───────── Link de ruta ───────── */
 export async function shareDialog(courierId) {
   const c = store.courierById(courierId);
@@ -219,7 +238,8 @@ export async function shareDialog(courierId) {
     body: el('div', { class: 'stack' },
       el('p', { text: `Mandale este link por WhatsApp: abre el modo repartidor en su celular con las ${n} paradas, el orden y los horarios. No necesita instalar nada.` }),
       el('div', { class: 'linkbox' }, box, copy),
-      el('p', { class: 'note', text: `${link.length} caracteres. El link lleva la ruta adentro: lo que marque el repartidor queda en su celular.` })),
+      el('p', { class: 'note', text: `${link.length} caracteres. El link lleva la ruta adentro: lo que marque el repartidor queda en su celular.` }),
+      store.state.settings.live && !trackingFor(courierId) ? el('p', { class: 'note warn', text: 'Este link no comparte ubicación: no pude conseguir la clave del repartidor (sin conexión con el servidor). Cerralo y abrilo de nuevo para reintentar.' }) : null),
     actions: [{ label: 'Cerrar', value: '' }, { label: 'Enviar por WhatsApp', kind: 'primary', value: 'wa', onClick: () => { window.open(waLink(c.phone, text), '_blank', 'noopener'); return false; } }]
   });
 }

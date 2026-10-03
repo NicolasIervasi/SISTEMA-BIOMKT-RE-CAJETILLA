@@ -1,22 +1,27 @@
 // Núcleo del seguimiento GPS (servidor). Sin Netlify ni red: recibe un `store` con cuatro operaciones y devuelve { status, body }.
 // Así se prueba entero en memoria y la función de Netlify queda como un adaptador finito.
 //
-// Credenciales sin estado: la clave del despacho (`admin`) y la de cada repartidor (`ck`) son HMAC de un secreto que sale del
-// código de activación del servidor (TRACK_SETUP_CODE). Un pedido con una clave inventada se rechaza SIN tocar el almacenamiento
-// (un curl en bucle solo gasta invocaciones, no lecturas), y cambiar el código corta de golpe todas las claves emitidas.
+// Dos secretos del servidor, con usos distintos:
+//   TRACK_SETUP_CODE  lo teclea el dueño en Ajustes para obtener las claves del despacho. Solo se compara.
+//   TRACK_SECRET      al azar (≥ 32 caracteres), nunca se teclea: de él se derivan el espacio de trabajo, la clave del despacho y las de los repartidores.
+// Las claves son HMAC de TRACK_SECRET, así un pedido con una clave inventada se rechaza SIN tocar el almacenamiento (un curl en bucle solo
+// gasta invocaciones, no lecturas) y cambiar TRACK_SECRET corta de golpe todas las claves emitidas. Hay un único espacio por servidor:
+// pedir las claves de nuevo con el código devuelve siempre las mismas (así se recupera o se vincula un segundo dispositivo).
 //
 // Almacenamiento (todas las claves tienen la forma <tipo>/<espacio>/...):
 //   ck/<ws>/<cid>               documento del repartidor: { n: nonce vigente, name, color, exp, clr }
-//   pts/<ws>/<cid>/<bucket>     puntos recibidos en una ventana de 10 min de hora de LLEGADA: { p: [punto...], e: [evento...] }
-// Los puntos llevan `a` (hora de llegada al servidor): el despacho pide "lo que llegó después de X", sin depender del reloj del celular.
+//   pts/<ws>/<cid>/<bucket>     lo recibido en una ventana de 10 min de hora de LLEGADA: { p: [punto...], e: [evento...] }
+//   meta/gc                     la última limpieza: { at, deleted, left }
+// Los puntos y eventos llevan `a` (hora de llegada al servidor): el despacho pide "lo que llegó después de X", sin depender del reloj del celular.
 import { createHmac, createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 
+export const API_VERSION = 1;
 export const CFG = {
   BUCKET_MS: 10 * 60e3,
   RETENTION_MS: 48 * 3600e3,         // los puntos viven 48 h y se borran
   COURIER_TTL_MS: 90 * 24 * 3600e3,  // el documento de un repartidor (nombre y color) vence a los 90 días
   MAX_PTS_PER_PING: 60,
-  MAX_PING_BODY_PTS: 200,            // más que esto es un pedido mal armado
+  MAX_PING_BODY_PTS: 100,            // más que esto es un pedido mal armado
   MAX_PTS_PER_BUCKET: 400,
   MAX_COURIERS: 12,
   MAX_NAME: 30,
@@ -30,8 +35,11 @@ export const CFG = {
   CAS_TRIES: 3,
   SKEW_IGNORE_MS: 60e3,              // un reloj desfasado menos que esto se toma como bueno
   SKEW_MAX_MS: 24 * 3600e3,
-  IO_PARALLEL: 8
+  IO_PARALLEL: 8,
+  GC_BUDGET_MS: 20e3,                // las funciones programadas tienen 30 s
+  MIN_SECRET_CHARS: 32
 };
+export const EVENTS = ['start', 'stop', 'hb', 'hide', 'show'];   // hb = latido: sigue ahí aunque no haya posiciones nuevas
 
 const RE_WS = /^[A-Za-z0-9_-]{22}$/;
 const RE_CID = /^[A-Za-z0-9_-]{1,32}$/;
@@ -48,6 +56,7 @@ export const bucketOf = ms => Math.floor(ms / CFG.BUCKET_MS);
 const ckKey = (ws, cid) => `ck/${ws}/${cid}`;
 const ptsKey = (ws, cid, b) => `pts/${ws}/${cid}/${b}`;
 const ptsPrefix = (ws, cid) => `pts/${ws}/${cid}/`;
+const META_GC = 'meta/gc';
 
 const res = (status, body = {}) => ({ status, body });
 const fail = (status, error) => res(status, { error });
@@ -82,17 +91,22 @@ async function deleteAll(store, keys) { await inChunks(keys, k => store.del(k), 
 const cleanName = v => (typeof v === 'string' ? v.replace(/[\u0000-\u001f\u007f<>]/g, '').trim().slice(0, CFG.MAX_NAME) : '') || 'Repartidor';
 const cleanColor = v => (typeof v === 'string' && RE_COLOR.test(v) ? v.toLowerCase() : '#2563eb');
 
-export function createTrackService({ store, code, now = Date.now, rand = randomBytes }) {
-  const secret = code ? createHmac('sha256', 'cuadra-track-v1').update(String(code)).digest() : null;
-  const mac = (...parts) => createHmac('sha256', secret).update(parts.join('\0')).digest();
+// ¿Está bien configurado el servidor? El secreto tiene que ser largo y distinto del código que se teclea.
+export const configured = ({ code, secret }) => typeof code === 'string' && code.length > 0 && typeof secret === 'string' && secret.length >= CFG.MIN_SECRET_CHARS && secret !== code;
 
+export function createTrackService({ store, code, secret, paused = false, now = Date.now, rand = randomBytes }) {
+  const ready = configured({ code, secret });
+  const root = ready ? createHmac('sha256', 'cuadra-track-v2').update(secret).digest() : null;
+  const mac = (...parts) => createHmac('sha256', root).update(parts.join('\0')).digest();
+
+  const WS = ready ? b64u(mac('ws').subarray(0, 16)) : null;               // el único espacio de este servidor
   const adminFor = ws => b64u(mac('adm', ws));
-  const adminOk = (ws, admin) => typeof admin === 'string' && RE_KEY.test(admin) && same(admin, adminFor(ws));
+  const adminOk = (ws, admin) => ws === WS && typeof admin === 'string' && RE_KEY.test(admin) && same(admin, adminFor(ws));
 
   // ck = nonce (12 bytes) + etiqueta HMAC (20 bytes). Devuelve el nonce si la etiqueta es válida (sin tocar el almacenamiento).
   const makeCk = (ws, cid, nonce) => b64u(Buffer.concat([nonce, mac('ck', ws, cid, b64u(nonce)).subarray(0, 20)]));
   function ckNonce(ws, cid, ck) {
-    if (typeof ck !== 'string' || !RE_KEY.test(ck)) return null;
+    if (ws !== WS || typeof ck !== 'string' || !RE_KEY.test(ck)) return null;
     const raw = Buffer.from(ck, 'base64url');
     if (raw.length !== 32 || b64u(raw) !== ck) return null;          // codificación no canónica
     const nonce = raw.subarray(0, 12);
@@ -111,14 +125,17 @@ export function createTrackService({ store, code, now = Date.now, rand = randomB
   }
 
   const idsOk = (ws, cid) => RE_WS.test(ws) && (cid === undefined || RE_CID.test(cid));
+  const wsBody = b => isObj(b) && typeof b.ws === 'string' && RE_WS.test(b.ws) && (b.cid === undefined || (typeof b.cid === 'string' && RE_CID.test(b.cid)));
 
   /* ───────── Despacho ───────── */
+  // Siempre devuelve las mismas claves para este servidor: teclear el código otra vez recupera o vincula otro dispositivo.
   async function createWorkspace(b) {
-    if (typeof b.code !== 'string' || b.code.length > 200 || !same(sha(b.code.trim()), sha(String(code)))) return fail(401, 'bad_code');
-    const ws = b64u(rand(16));
-    return res(200, { ok: true, ws, admin: adminFor(ws) });
+    if (typeof b.code !== 'string' || b.code.length > 200 || !same(sha(b.code.trim()), sha(code))) return fail(401, 'bad_code');
+    return res(200, { ok: true, ws: WS, admin: adminFor(WS) });
   }
 
+  // Alta de un repartidor. Devuelve siempre su clave (se vuelve a derivar del nonce guardado, así el link ya enviado sigue valiendo);
+  // con rotate se genera una nueva y la anterior deja de servir.
   async function courier(b) {
     if (!isObj(b) || typeof b.ws !== 'string' || typeof b.cid !== 'string' || !idsOk(b.ws, b.cid)) return fail(400, 'bad_request');
     if (!adminOk(b.ws, b.admin)) return fail(401, 'unauthorized');
@@ -126,19 +143,15 @@ export function createTrackService({ store, code, now = Date.now, rand = randomB
     const cur = await store.get(key);
     let doc = null;
     if (cur) { try { doc = JSON.parse(cur.data); } catch { doc = null; } }
-    if (isObj(doc) && doc.exp > now()) {
-      if (!b.rotate) {
-        if (doc.name !== name || doc.color !== color) await mutate(store, key, d => (isObj(d) ? { ...d, name, color } : undefined));
-        return res(200, { ok: true, existing: true });
-      }
-      const nonce = rand(12);
-      const r = await mutate(store, key, d => ({ ...(isObj(d) ? d : {}), n: b64u(nonce), name, color, exp: now() + CFG.COURIER_TTL_MS, clr: (isObj(d) && d.clr) || now() }));
-      return r.ok ? res(200, { ok: true, ck: makeCk(b.ws, b.cid, nonce) }) : fail(503, 'busy');
+    const alive = isObj(doc) && doc.exp > now() && typeof doc.n === 'string' && Buffer.from(doc.n, 'base64url').length === 12;
+    if (alive && !b.rotate) {
+      if (doc.name !== name || doc.color !== color) await mutate(store, key, d => (isObj(d) ? { ...d, name, color } : undefined));
+      return res(200, { ok: true, ck: makeCk(b.ws, b.cid, Buffer.from(doc.n, 'base64url')) });
     }
     if (!cur && (await store.list(`ck/${b.ws}/`)).length >= CFG.MAX_COURIERS) return fail(409, 'too_many_couriers');
-    const nonce = rand(12);
-    const t = now();
-    const ok = await store.put(key, JSON.stringify({ n: b64u(nonce), name, color, exp: t + CFG.COURIER_TTL_MS, clr: t }), cur ? { ifMatch: cur.etag } : { ifNew: true });
+    const nonce = rand(12), t = now();
+    const next = { n: b64u(nonce), name, color, exp: t + CFG.COURIER_TTL_MS, clr: alive ? doc.clr || t : t };
+    const ok = await store.put(key, JSON.stringify(next), cur ? { ifMatch: cur.etag } : { ifNew: true });
     return ok ? res(200, { ok: true, ck: makeCk(b.ws, b.cid, nonce) }) : fail(503, 'busy');
   }
 
@@ -153,7 +166,7 @@ export function createTrackService({ store, code, now = Date.now, rand = randomB
   const courierIds = async ws => (await store.list(`ck/${ws}/`)).map(k => k.slice(`ck/${ws}/`.length)).filter(c => RE_CID.test(c));
 
   async function revoke(b) {
-    if (!isObj(b) || typeof b.ws !== 'string' || !RE_WS.test(b.ws) || (b.cid !== undefined && (typeof b.cid !== 'string' || !RE_CID.test(b.cid)))) return fail(400, 'bad_request');
+    if (!wsBody(b)) return fail(400, 'bad_request');
     if (!adminOk(b.ws, b.admin)) return fail(401, 'unauthorized');
     const cids = b.cid ? [b.cid] : await courierIds(b.ws);
     await purge(b.ws, cids);
@@ -162,7 +175,7 @@ export function createTrackService({ store, code, now = Date.now, rand = randomB
 
   // Borra posiciones. Despacho: todas las del espacio o las de un repartidor. Repartidor: solo las suyas.
   async function clear(b) {
-    if (!isObj(b) || typeof b.ws !== 'string' || !RE_WS.test(b.ws) || (b.cid !== undefined && (typeof b.cid !== 'string' || !RE_CID.test(b.cid)))) return fail(400, 'bad_request');
+    if (!wsBody(b)) return fail(400, 'bad_request');
     let cids;
     if (b.admin !== undefined) {
       if (!adminOk(b.ws, b.admin)) return fail(401, 'unauthorized');
@@ -195,7 +208,7 @@ export function createTrackService({ store, code, now = Date.now, rand = randomB
 
   async function ping(b) {
     if (!isObj(b) || typeof b.ws !== 'string' || typeof b.cid !== 'string' || !idsOk(b.ws, b.cid)) return fail(400, 'bad_request');
-    if (!Array.isArray(b.pts) || b.pts.length > CFG.MAX_PING_BODY_PTS || (b.ev !== undefined && b.ev !== 'start' && b.ev !== 'stop')) return fail(400, 'bad_request');
+    if (!Array.isArray(b.pts) || b.pts.length > CFG.MAX_PING_BODY_PTS || (b.ev !== undefined && !EVENTS.includes(b.ev))) return fail(400, 'bad_request');
     const auth = await courierAuth(b.ws, b.cid, b.ck);                           // la etiqueta se valida antes de tocar el almacenamiento
     if (!auth) return fail(401, 'unauthorized');
 
@@ -255,42 +268,61 @@ export function createTrackService({ store, code, now = Date.now, rand = randomB
       pts.sort((x, y) => x.t - y.t);
       const truncated = pts.length > CFG.MAX_RESP_PTS;
       if (truncated) pts = pts.slice(-CFG.MAX_RESP_PTS);
-      const entry = { name: doc.name, color: doc.color, pts };
+      const entry = { name: doc.name, color: doc.color, clr, pts };      // clr: el despacho descarta lo que tenga guardado de antes de un borrado
       if (pts.length) entry.last = pts.reduce((m, p) => (p.a >= m.a ? p : m), pts[0]);
       if (lastEv) entry.ev = lastEv;
+      if (entry.last || lastEv) entry.seen = Math.max(entry.last?.a ?? 0, lastEv?.a ?? 0);   // última señal de vida: un punto o un latido
       if (truncated) entry.truncated = true;
       out[cid] = entry;
     });
     return res(200, { ok: true, now: t0, couriers: out });
   }
 
-  const ROUTES = { ws: createWorkspace, courier, ping, read, revoke, clear };
+  // Estado del servicio (sin credenciales): para verificar el despliegue y que la limpieza esté corriendo.
+  async function health() {
+    const g = await readJSON(store, META_GC);
+    return res(200, { ok: true, v: API_VERSION, gcAt: g?.at ?? null });
+  }
 
-  // route: "ws" | "courier" | "ping" | "read" | "revoke" | "clear"; body: objeto ya parseado
+  const ROUTES = { ws: createWorkspace, courier, ping, read, revoke, clear, health };
+
+  // route: "ws" | "courier" | "ping" | "read" | "revoke" | "clear" | "health"; body: objeto ya parseado
   async function handle(route, body) {
     const fn = Object.hasOwn(ROUTES, route) ? ROUTES[route] : null;
     if (!fn) return fail(404, 'not_found');
-    if (!secret) return fail(503, 'not_configured');
+    if (!ready) return fail(503, 'not_configured');
+    if (paused && route !== 'health') return fail(503, 'paused');           // palanca de emergencia: TRACK_PAUSED=1 corta todo antes de tocar el almacenamiento
     if (!isObj(body)) return fail(400, 'bad_request');
     try { return await fn(body); } catch (e) { console.error('track: error interno', e?.name); return fail(500, 'internal'); }
   }
 
-  return { handle, _adminFor: adminFor };
+  return { handle, workspace: WS, _adminFor: adminFor };
 }
 
-// Limpieza programada: borra ventanas de puntos vencidas y documentos de repartidores vencidos.
-export async function gc({ store, now = Date.now, maxDeletes = 3000 }) {
-  const t = now(), limit = bucketOf(t - CFG.RETENTION_MS);
-  let deleted = 0, couriers = 0;
-  for (const key of await store.list('pts/')) {
-    if (deleted >= maxDeletes) break;
-    const n = Number(key.slice(key.lastIndexOf('/') + 1));
-    if (!Number.isInteger(n) || n < limit) { await store.del(key); deleted++; }
+// Limpieza programada: borra ventanas de puntos vencidas y documentos de repartidores vencidos, dentro de un presupuesto de tiempo.
+export async function gc({ store, now = Date.now, budgetMs = CFG.GC_BUDGET_MS, maxDeletes = 5000 }) {
+  const t = now(), limit = bucketOf(t - CFG.RETENTION_MS), deadline = Date.now() + budgetMs;
+  const bucketNum = key => Number(key.slice(key.lastIndexOf('/') + 1));
+  const old = (await store.list('pts/')).filter(k => { const n = bucketNum(k); return !Number.isInteger(n) || n < limit; })
+    .sort((a, b) => bucketNum(a) - bucketNum(b));                                   // lo más viejo primero
+  let deleted = 0, couriers = 0, left = 0;
+  for (let i = 0; i < old.length; i += 10) {
+    if (deleted >= maxDeletes || Date.now() > deadline) { left = old.length - i; break; }
+    const chunk = old.slice(i, i + 10);
+    await Promise.all(chunk.map(k => store.del(k)));
+    deleted += chunk.length;
   }
-  for (const key of await store.list('ck/')) {
-    if (deleted >= maxDeletes) break;
-    const doc = await readJSON(store, key);
-    if (!doc || !(doc.exp > t)) { await store.del(key); deleted++; couriers++; }
+  if (!left) {
+    const cks = await store.list('ck/');
+    for (let i = 0; i < cks.length; i += CFG.IO_PARALLEL) {
+      if (deleted >= maxDeletes || Date.now() > deadline) { left += cks.length - i; break; }
+      const chunk = cks.slice(i, i + CFG.IO_PARALLEL);
+      const docs = await Promise.all(chunk.map(k => readJSON(store, k)));
+      const dead = chunk.filter((_, j) => !docs[j] || !(docs[j].exp > t));
+      await Promise.all(dead.map(k => store.del(k)));
+      deleted += dead.length; couriers += dead.length;
+    }
   }
-  return { deleted, couriers };
+  await store.put(META_GC, JSON.stringify({ at: t, deleted, left }));
+  return { deleted, couriers, left };
 }

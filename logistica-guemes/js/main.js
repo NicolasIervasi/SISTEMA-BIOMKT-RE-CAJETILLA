@@ -1,7 +1,8 @@
 // Arranque: enrutado por hash, navegación, tema y service worker.
 import { THEME_KEY } from './config.js';
 import { $, $$, icon } from './dom.js';
-import './store.js';
+import { processPending } from './live.js';
+import * as store from './store.js';
 
 const views = {
   despacho: () => import('./views/dispatch.js'),
@@ -68,6 +69,17 @@ paintTheme();
 const markBadge = () => document.documentElement.classList.toggle('host-badge', !!document.getElementById('nl-badge-frame'));
 for (const root of [document.documentElement, document.body]) new MutationObserver(markBadge).observe(root, { childList: true });
 markBadge();
+
+/* Repartidores dados de baja: el servidor corta sus claves en cuanto hay conexión (si no, se reintenta al volver a haber red). */
+let sweeping = false;
+async function sweepRevokes() {
+  if (sweeping || !store.state.settings.live?.pending?.length) return;
+  sweeping = true;
+  try { await processPending(); } finally { sweeping = false; }
+}
+store.subscribe(sweepRevokes);
+addEventListener('online', sweepRevokes);
+sweepRevokes();
 
 route();
 

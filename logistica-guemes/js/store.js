@@ -12,6 +12,7 @@ export function freshState() {
     v: 2,
     settings: {
       center: { ...DEFAULT_CENTER }, radiusBlocks: 11, serviceMin: 4, roundTrip: true, startTime: '', fees: [...DEFAULT_FEES],
+      business: '',         // nombre del local: lo ve el repartidor al aceptar compartir su ubicación
       live: null            // seguimiento GPS en vivo: { ws, admin } (claves secretas, no se exportan)
     },
     couriers: [
@@ -32,6 +33,7 @@ function sanitize(raw) {
   s.settings.serviceMin = Number.isFinite(Number(s.settings.serviceMin)) ? clamp(Math.round(Number(s.settings.serviceMin)), 0, 30) : 4;
   s.settings.fees = Array.isArray(s.settings.fees) && s.settings.fees.length === 3
     ? s.settings.fees.map(n => Math.max(0, Math.round(Number(n)) || 0)) : base.settings.fees;
+  s.settings.business = typeof s.settings.business === 'string' ? s.settings.business.replace(/[\u0000-\u001f]/g, '').trim().slice(0, 40) : '';
   const live = s.settings.live;
   s.settings.live = live && /^[\w-]{16,64}$/.test(live.ws || '') && /^[\w-]{32,64}$/.test(live.admin || '')
     ? { ws: live.ws, admin: live.admin, pending: (Array.isArray(live.pending) ? live.pending : []).filter(id => /^[\w-]{1,32}$/.test(id || '')).slice(0, 20) } : null;

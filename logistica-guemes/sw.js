@@ -10,6 +10,7 @@ self.addEventListener('activate', e => e.waitUntil(
 self.addEventListener('fetch', e => {
   const req = e.request, url = new URL(req.url);
   if (req.method !== 'GET') return;
+  if (url.pathname.startsWith('/api/')) return;                 // el seguimiento nunca pasa por la caché
   // mapas, direcciones y rutas: siempre red (no se guardan)
   if (/tile\.openstreetmap\.org|nominatim|osrm/.test(url.host)) return;
   const sameOrigin = url.origin === location.origin;

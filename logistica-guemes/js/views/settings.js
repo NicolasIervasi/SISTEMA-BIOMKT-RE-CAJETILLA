@@ -4,6 +4,7 @@ import { clearDemo, loadDemo } from '../demo.js';
 import { confirmDialog, download, el, icon, toast } from '../dom.js';
 import { csvCell, fmtDist } from '../fmt.js';
 import { distM, ringLabel } from '../geomath.js';
+import { LiveError, clearTracks, disableLive, enableLive } from '../live.js';
 import * as store from '../store.js';
 import { courierDialog } from './dialogs.js';
 import { requestCenterPick } from './dispatch.js';
@@ -71,6 +72,8 @@ function render() {
       el('button', { class: 'btn sm', type: 'button', onclick: () => courierDialog(c) }, icon('edit', 'sm'), 'Editar')))),
     el('div', { class: 'actions' }, el('button', { class: 'btn', type: 'button', onclick: () => courierDialog(null) }, icon('plus', 'sm'), 'Agregar repartidor')));
 
+  const live = liveSection();
+
   const fileInput = el('input', { type: 'file', accept: 'application/json,.json', hidden: true, onchange: onImportFile });
   const data = section('Datos', `${state.orders.length} pedidos guardados en este navegador (se conservan 90 días).`,
     el('div', { class: 'actions' },
@@ -81,9 +84,49 @@ function render() {
       el('button', { class: 'btn', type: 'button', onclick: () => toast(`Cargué ${loadDemo()} pedidos de ejemplo.`, 'ok') }, icon('package', 'sm'), 'Cargar datos de ejemplo'),
       el('button', { class: 'btn', type: 'button', disabled: !state.orders.some(o => o.demo), onclick: () => { clearDemo(); toast('Borré los datos de ejemplo.', 'ok'); } }, 'Borrar datos de ejemplo'),
       el('button', { class: 'btn', type: 'button', disabled: !state.orders.some(store.isDone), onclick: async () => { if (await confirmDialog({ title: 'Limpiar entregados', message: 'Se borran los pedidos entregados y no entregados. Las métricas dejan de contarlos.', confirmLabel: 'Limpiar', danger: true })) store.clearOrders({ onlyDone: true }); } }, 'Limpiar entregados'),
-      el('button', { class: 'btn danger', type: 'button', onclick: async () => { if (await confirmDialog({ title: 'Vaciar todo', message: 'Se borran pedidos, rutas y ajustes de este navegador. No se puede deshacer: hacé un respaldo antes si lo necesitás.', confirmLabel: 'Vaciar todo', danger: true })) { store.resetAll(); toast('Todo vacío.', 'ok'); } } }, icon('trash', 'sm'), 'Vaciar todo')));
+      el('button', { class: 'btn danger', type: 'button', onclick: async () => { if (await confirmDialog({ title: 'Vaciar todo', message: 'Se borran pedidos, rutas y ajustes de este navegador. No se puede deshacer: hacé un respaldo antes si lo necesitás.', confirmLabel: 'Vaciar todo', danger: true })) { if (state.settings.live) await disableLive({ force: true }); store.resetAll(); toast('Todo vacío.', 'ok'); } } }, icon('trash', 'sm'), 'Vaciar todo')));
 
-  root.replaceChildren(el('div', { class: 'settings-in' }, zone, fees, ops, fleet, data));
+  root.replaceChildren(el('div', { class: 'settings-in' }, zone, fees, ops, fleet, live, data));
+}
+
+/* ───────── Seguimiento en vivo ───────── */
+function liveSection() {
+  const s = state.settings, on = !!s.live;
+  const business = field('Nombre del local', el('input', { class: 'input', type: 'text', maxlength: '40', placeholder: 'Ej.: Panadería Güemes', value: s.business, onchange: e => silent(() => store.updateSettings({ business: e.target.value })) }), 'Lo ve cada repartidor cuando acepta compartir su ubicación.');
+  const privacy = el('p', { class: 'note', text: 'Cada repartidor lo acepta en su celular y puede dejar de compartir cuando quiera. Los recorridos se guardan 48 horas en el servidor y se borran solos. Los respaldos no incluyen las claves.' });
+  if (!on) {
+    const code = el('input', { class: 'input', type: 'password', autocomplete: 'off', spellcheck: 'false', placeholder: 'Código de activación', 'aria-label': 'Código de activación' });
+    const btn = el('button', { class: 'btn primary', type: 'button', onclick: async () => {
+      if (!code.value.trim()) { toast('Ingresá el código de activación.', 'err'); return; }
+      btn.disabled = true;
+      try { await enableLive(code.value); toast('Seguimiento activado. Mandá la ruta a cada repartidor para que pueda compartir su ubicación.', 'ok', 6000); }
+      catch (e) { toast(e instanceof LiveError ? e.message : 'No pude activar el seguimiento.', 'err', 6000); }
+      finally { btn.disabled = false; }
+    } }, icon('locate', 'sm'), 'Activar seguimiento');
+    return section('Seguimiento en vivo', 'Mirá en el mapa dónde está cada repartidor y por dónde fue. Es opcional.',
+      business, el('div', { class: 'field' }, 'Código de activación', el('div', { class: 'code-row' }, code, btn),
+        el('small', { text: 'Lo define quien publicó la app en el servidor (variable TRACK_SETUP_CODE).' })), privacy);
+  }
+  const withKey = state.couriers.filter(c => c.ck).length;
+  return section('Seguimiento en vivo', `Activo · ${withKey} de ${state.couriers.length} repartidores con link de seguimiento.`,
+    business, privacy,
+    el('div', { class: 'actions' },
+      el('button', { class: 'btn', type: 'button', onclick: async () => {
+        if (!(await confirmDialog({ title: 'Borrar recorridos', message: 'Se borran del servidor las posiciones guardadas de todos los repartidores. El seguimiento sigue activo.', confirmLabel: 'Borrar', danger: true }))) return;
+        try { await clearTracks(); toast('Recorridos borrados.', 'ok'); } catch (e) { toast(e instanceof LiveError ? e.message : 'No pude borrar los recorridos.', 'err', 6000); }
+      } }, icon('trash', 'sm'), 'Borrar recorridos guardados'),
+      el('button', { class: 'btn danger', type: 'button', onclick: deactivateLive }, 'Desactivar y borrar todo')));
+}
+
+async function deactivateLive() {
+  if (!(await confirmDialog({ title: 'Desactivar seguimiento', message: 'Se borran del servidor los recorridos y las claves de todos los repartidores: los links que ya enviaste dejan de transmitir.', confirmLabel: 'Desactivar', danger: true }))) return;
+  try { await disableLive(); toast('Seguimiento desactivado y datos borrados.', 'ok'); }
+  catch (e) {
+    if (!(e instanceof LiveError)) { toast('No pude desactivarlo.', 'err'); return; }
+    if (await confirmDialog({ title: 'No pude borrar del servidor', message: `${e.message} Si lo desactivás igual, los recorridos guardados se borran solos a las 48 horas y los links viejos dejan de servir cuando se cambie el código del servidor.`, confirmLabel: 'Desactivar igual', danger: true })) {
+      await disableLive({ force: true }); toast('Seguimiento desactivado.', 'ok');
+    }
+  }
 }
 
 function exportCsv() {

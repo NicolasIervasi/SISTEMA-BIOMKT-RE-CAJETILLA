@@ -150,7 +150,7 @@ test('sharer: se corta solo a las 12 horas y avisa', async () => {
 
 test('sharer: clave revocada detiene la transmisión; permiso denegado avisa; sin GPS avisa', async () => {
   const geo = fakeGeo();
-  const sh = createSharer({ tk: { w: W, c: 'c4', k: KEY }, geo, call: async () => ({ ok: false, status: 401, data: null }), storage: mem(), now: () => 100000, doc: undefined, nav: {} });
+  const sh = createSharer({ tk: { w: W, c: 'c4', k: KEY }, geo, call: async () => ({ ok: false, status: 401, data: { error: 'unauthorized' } }), storage: mem(), now: () => 100000, doc: undefined, nav: {} });
   sh.start(); await tick();
   assert.equal(sh.state().status, 'revoked');
   assert.ok(!sh.isActive());
@@ -159,6 +159,63 @@ test('sharer: clave revocada detiene la transmisión; permiso denegado avisa; si
   assert.equal(sh2.state().status, 'denied');
   assert.ok(!sh2.isActive());
   assert.equal(mk('c6', { geo: null }).start(), false);
+});
+
+test('sharer: un 404, un 503 de HTML o un 403 son fallas pasajeras: no revocan ni frenan el GPS', async () => {
+  for (const status of [404, 403, 502, 503, 429]) {
+    const geo = fakeGeo();
+    const sh = createSharer({ tk: { w: W, c: 'cx', k: KEY }, geo, call: async () => ({ ok: false, status, data: null }), storage: mem(), now: () => 100000, doc: undefined, nav: {}, rand: () => 0.5 });
+    try {
+      sh.start(); await tick();
+      assert.equal(sh.state().status, 'offline', String(status));
+      assert.ok(sh.isActive(), `${status}: sigue activo`);
+      geo.cb(pos(1000, 0));
+      assert.equal(sh.state().queued, 1, 'y sigue guardando el recorrido');
+    } finally { await sh.stop({ final: false }); }
+  }
+});
+
+test('sharer: quieto manda un latido; en segundo plano avisa "hide" y al volver "show"', async () => {
+  const geo = fakeGeo(), clock = { t: 100000 }, evs = [];
+  const doc = { hidden: false, listeners: {}, addEventListener(k, f) { this.listeners[k] = f; }, removeEventListener() {} };
+  const sh = createSharer({ tk: { w: W, c: 'ch', k: KEY }, geo, call: async (p, b) => { evs.push(b.ev || null); return ok(); }, storage: mem(), now: () => clock.t, doc, nav: {}, rand: () => 0.5 });
+  try {
+    sh.start(); await tick();
+    assert.deepEqual(evs, ['start']);
+    await sh.flush({ force: true });
+    assert.deepEqual(evs, ['start'], 'recién enviado: no hace falta otro latido');
+    clock.t += 50_000;
+    await sh.flush({ force: true });
+    assert.equal(evs.at(-1), 'hb', 'pasaron 45 s sin posiciones nuevas: latido');
+    doc.hidden = true; doc.listeners.visibilitychange();
+    await tick();
+    assert.equal(evs.at(-1), 'hide');
+    doc.hidden = false; doc.listeners.visibilitychange();
+    await tick();
+    assert.equal(evs.at(-1), 'show');
+    await sh.stop();
+    assert.equal(evs.at(-1), 'stop');
+  } finally { await sh.stop({ final: false }); }
+});
+
+test('tracker: el latido cuenta como señal de vida y "hide" se muestra como segundo plano', async () => {
+  const live = { ws: W, admin: 'a'.repeat(43), pending: [] };
+  let ev = { a: 990_000, k: 'hb' };
+  const P = (t, a) => ({ t, lat: -38.0148, lng: -57.54085, a });
+  const call = async () => ok({ now: 1_000_000, couriers: { c1: { name: 'Moto 1', color: '#2a78d6', clr: 0, pts: [P(1, 700_000)], last: P(1, 700_000), ev, seen: ev.a } } });
+  const tr = createTracker({ getLive: () => live, call, now: () => 1_000_000, doc: { hidden: false }, rand: () => 0.5 });
+  try {
+    tr.start(); await tick();
+    let t = tr.snapshot().tracks.get('c1');
+    assert.ok(t.online, 'último punto hace 5 min pero hubo latido hace 10 s');
+    assert.equal(t.ageMs, 10_000);
+    assert.equal(t.background, false);
+    ev = { a: 995_000, k: 'hide' };
+    await tr.tick();
+    t = tr.snapshot().tracks.get('c1');
+    assert.equal(t.background, true);
+    assert.ok(t.online);
+  } finally { tr.stop(); }
 });
 
 test('sharer: "borrar mi recorrido" vacía la cola local y pide el borrado al servidor con la clave del repartidor', async () => {
@@ -183,8 +240,9 @@ test('tracker del despacho: fusiona sin duplicar, calcula online, km y "dejó de
   const P = (t, dy, a) => ({ t, lat: -38.0148 + dy * M, lng: -57.54085, a });
   const call = async (path, body) => {
     calls.push(body); n++;
-    if (mode === 'denied') return { ok: false, status: 401, data: null };
+    if (mode === 'denied') return { ok: false, status: 401, data: { error: 'unauthorized' } };
     if (mode === 'down') return { ok: false, status: 503, data: { error: 'busy' } };
+    if (mode === 'html404') return { ok: false, status: 404, data: null };
     if (n === 1) return ok({ now: serverNow, couriers: { c1: { name: 'Moto 1', color: '#2a78d6', pts: [P(1, 0, 930_000), P(11_000, 60, 940_000), P(21_000, 120, 950_000)], last: P(21_000, 120, 950_000) }, c2: { name: 'Moto 2', color: '#e11d48', pts: [] } } });
     if (mode === 'stop') return ok({ now: serverNow, couriers: { c1: { name: 'Moto 1', color: '#2a78d6', pts: [], ev: { a: serverNow - 1000, k: 'stop' } }, c2: { name: 'Moto 2', color: '#e11d48', pts: [] } } });
     return ok({ now: serverNow, couriers: { c1: { name: 'Moto 1', color: '#2a78d6', pts: [P(21_000, 120, 950_000), P(31_000, 180, 1_000_000)], last: P(31_000, 180, 1_000_000) }, c2: { name: 'Moto 2', color: '#e11d48', pts: [] } } });
@@ -228,16 +286,38 @@ test('tracker del despacho: fusiona sin duplicar, calcula online, km y "dejó de
   tr.stop();
 });
 
+test('tracker del despacho: si se borraron los recorridos en el servidor, lo que tenía en pantalla se va también', async () => {
+  const live = { ws: W, admin: 'a'.repeat(43), pending: [] };
+  const P = (t, dy, a) => ({ t, lat: -38.0148 + dy * M, lng: -57.54085, a });
+  let cleared = false;
+  const call = async () => ok({ now: 1_000_000, couriers: { c1: cleared
+    ? { name: 'Moto 1', color: '#2a78d6', clr: 990_000, pts: [] }
+    : { name: 'Moto 1', color: '#2a78d6', clr: 100, pts: [P(1, 0, 930_000), P(11_000, 60, 940_000), P(21_000, 120, 995_000)], last: P(21_000, 120, 995_000), ev: { a: 930_000, k: 'start' } } } });
+  const tr = createTracker({ getLive: () => live, call, now: () => 1_000_000, doc: { hidden: false }, rand: () => 0.5 });
+  try {
+    tr.start(); await tick();
+    let t = tr.snapshot().tracks.get('c1');
+    assert.equal(t.pts.length, 3);
+    cleared = true;
+    await tr.tick();
+    t = tr.snapshot().tracks.get('c1');
+    assert.equal(t.pts.length, 1, 'se conserva solo lo que llegó después del borrado (a >= 990000)');
+    assert.equal(t.last.a, 995_000);
+    assert.equal(t.ev, null, 'el evento anterior al borrado también se descarta');
+    assert.equal(t.km, 0);
+  } finally { tr.stop(); }
+});
+
 test('claves: activar con código, pedir la del repartidor, link, respaldo sin secretos, baja y desactivación', async () => {
   store.resetAll();
   const seen = [];
-  let existing = false, revokeOk = true, enableCode = 'BUENO';
+  let revokeOk = true, enableCode = 'BUENO';
   const fake = async (url, init) => {
     const path = url.split('/api/track/')[1], body = JSON.parse(init.body);
     seen.push({ path, body });
     const res = (status, data) => ({ ok: status < 300, status, json: async () => data });
     if (path === 'ws') return body.code === enableCode ? res(200, { ws: W, admin: 'A'.repeat(43) }) : res(401, { error: 'bad_code' });
-    if (path === 'courier') return body.rotate || !existing ? res(200, { ck: 'C'.repeat(43) }) : res(200, { existing: true });
+    if (path === 'courier') return res(200, { ck: (body.rotate ? 'R' : 'C').repeat(43) });
     if (path === 'revoke') return revokeOk ? res(200, { ok: true }) : res(503, { error: 'busy' });
     if (path === 'clear') return res(200, { ok: true });
     return res(404, {});
@@ -253,8 +333,9 @@ test('claves: activar con código, pedir la del repartidor, link, respaldo sin s
     assert.equal(trackingFor(c1.id), null, 'todavía sin clave del repartidor');
     assert.equal(await ensureCourierKey(c1.id), 'C'.repeat(43));
     assert.deepEqual(trackingFor(c1.id), { w: W, c: c1.id, k: 'C'.repeat(43) });
-    existing = true;
-    assert.equal(await ensureCourierKey(c2.id), 'C'.repeat(43), 'si el servidor ya lo tenía, se rota y se obtiene una clave nueva');
+    assert.equal(await ensureCourierKey(c2.id), 'C'.repeat(43), 'cada repartidor recibe su clave');
+    assert.equal(await ensureCourierKey(c1.id), 'C'.repeat(43), 'pedirla otra vez devuelve la misma: el link ya enviado sigue valiendo');
+    assert.equal(seen.filter(x => x.path === 'courier' && x.body.rotate).length, 0, 'no se rota por perder la copia local');
     const backup = store.exportJSON();
     assert.ok(!backup.includes('A'.repeat(43)) && !backup.includes('C'.repeat(43)), 'el respaldo no lleva claves');
     assert.equal(JSON.parse(backup).settings.live, null);
@@ -282,7 +363,7 @@ test('claves: activar con código, pedir la del repartidor, link, respaldo sin s
     // desactivar: si el servidor no responde avisa, y con force se desactiva igual
     await ensureCourierKey(c1.id);
     revokeOk = false;
-    await assert.rejects(() => disableLive(), /servidor/);
+    await assert.rejects(() => disableLive(), /no responde/);
     assert.ok(store.state.settings.live, 'sigue activo si no se pudo borrar');
     await disableLive({ force: true });
     assert.equal(store.state.settings.live, null);
