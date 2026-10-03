@@ -19,7 +19,7 @@ Repositorio de guiones y material audiovisual.
 
 ## Apps
 
-- [`logistica-guemes/index.html`](logistica-guemes/index.html) — planificador de reparto para Mar del Plata, zona Güemes. Solo acepta pedidos dentro de un radio de 11 cuadras (1 cuadra = 100 m → 1,1 km) alrededor de Güemes 2800; arma el recorrido más corto con horarios de llegada y lo manda por WhatsApp o Google Maps. Un solo HTML, sin build. Direcciones con Nominatim y tiempos por calles con OSRM, ambos públicos y gratuitos. Para que ande el buscador de direcciones hay que abrirla desde un hosting (Netlify, GitHub Pages) o con `python3 -m http.server`; si se abre con doble clic como archivo local el buscador puede ser rechazado (marcar el punto en el mapa funciona igual).
+- [`logistica-guemes/index.html`](logistica-guemes/index.html) — planificador de reparto para Mar del Plata, zona Güemes. Solo acepta pedidos dentro de un radio de 11 cuadras (1 cuadra = 100 m → 1,1 km) alrededor de Güemes 2800; arma el recorrido más corto con horarios de llegada y lo manda por WhatsApp o Google Maps. Un solo HTML, sin build. Mapa de OpenStreetMap, direcciones con Nominatim y tiempos por calles con OSRM, todos públicos y gratuitos. Hay que abrirla desde un hosting (Netlify, GitHub Pages) o con `python3 -m http.server`: OpenStreetMap exige que el navegador envíe el origen de la página, y abierta con doble clic como archivo local puede no cargar los mapas ni el buscador de direcciones.
 
 ## Estructura
 
