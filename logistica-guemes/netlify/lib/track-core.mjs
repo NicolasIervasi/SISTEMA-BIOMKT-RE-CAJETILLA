@@ -9,10 +9,14 @@
 // pedir las claves de nuevo con el código devuelve siempre las mismas (así se recupera o se vincula un segundo dispositivo).
 //
 // Almacenamiento (todas las claves tienen la forma <tipo>/<espacio>/...):
-//   ck/<ws>/<cid>               documento del repartidor: { n: nonce vigente, name, color, exp, clr }
-//   pts/<ws>/<cid>/<bucket>     lo recibido en una ventana de 10 min de hora de LLEGADA: { p: [punto...], e: [evento...] }
-//   meta/gc                     la última limpieza: { at, deleted, left }
-// Los puntos y eventos llevan `a` (hora de llegada al servidor): el despacho pide "lo que llegó después de X", sin depender del reloj del celular.
+//   ck/<ws>/<cid>                      documento del repartidor: { n: nonce vigente, name, color, exp, clr } (se escribe rara vez)
+//   pts/<ws>/<cid>/<bucket>/<a>-<r>    UN BLOB POR ENVÍO: { a, p: [puntos], e: [eventos] }, <bucket> = ventana de 10 min de hora de LLEGADA
+//   pts/<ws>/<cid>/<bucket>/_c         la ventana ya compactada (se juntan los blobs chicos de una ventana cerrada)
+//   meta/gc                            la última limpieza: { at, deleted, left }
+// Cada envío escribe su propio blob y no lee antes: Blobs en producción NO serializa las escrituras condicionales (la prueba de humo
+// perdió un punto con 5 envíos en paralelo usando If-Match), así que no se actualiza nunca un documento compartido. Los duplicados
+// (reintentos) se resuelven al leer, por hora del punto. Los puntos y eventos llevan `a` (hora de llegada al servidor): el despacho
+// pide "lo que llegó después de X", sin depender del reloj del celular.
 import { createHmac, createHash, randomBytes, timingSafeEqual } from 'node:crypto';
 
 export const API_VERSION = 1;
@@ -22,7 +26,11 @@ export const CFG = {
   COURIER_TTL_MS: 90 * 24 * 3600e3,  // el documento de un repartidor (nombre y color) vence a los 90 días
   MAX_PTS_PER_PING: 60,
   MAX_PING_BODY_PTS: 100,            // más que esto es un pedido mal armado
-  MAX_PTS_PER_BUCKET: 400,
+  MAX_PINGS_PER_BUCKET: 120,         // envíos por ventana y repartidor (lo normal son ~30)
+  MAX_PTS_PER_COMPACT: 800,
+  MAX_READ_BLOBS: 400,               // blobs que se leen por repartidor en una consulta
+  COMPACT_INLINE_MS: 4000,           // tiempo máximo que un envío dedica a compactar la ventana anterior (las funciones tienen 10 s)
+  COMPACT_AFTER_BUCKETS: 2,          // el GC compacta ventanas más viejas que esto
   MAX_COURIERS: 12,
   MAX_NAME: 30,
   MAX_ACC_M: 100,
@@ -54,8 +62,12 @@ const sha = s => createHash('sha256').update(s).digest();
 
 export const bucketOf = ms => Math.floor(ms / CFG.BUCKET_MS);
 const ckKey = (ws, cid) => `ck/${ws}/${cid}`;
-const ptsKey = (ws, cid, b) => `pts/${ws}/${cid}/${b}`;
 const ptsPrefix = (ws, cid) => `pts/${ws}/${cid}/`;
+const bucketPrefix = (ws, cid, b) => `pts/${ws}/${cid}/${b}/`;
+const COMPACT = '_c';
+const isCompact = key => key.endsWith(`/${COMPACT}`);
+const keyBucket = key => Number(key.split('/')[3]);                                  // pts/<ws>/<cid>/<bucket>/<nombre>
+const keyArrival = key => Number(key.slice(key.lastIndexOf('/') + 1).split('-')[0]);  // NaN en el compactado
 const META_GC = 'meta/gc';
 
 const res = (status, body = {}) => ({ status, body });
@@ -87,6 +99,28 @@ async function readJSON(store, key) {
 }
 
 async function deleteAll(store, keys) { await inChunks(keys, k => store.del(k), 10); return keys.length; }
+
+// Junta en un solo blob todo lo de una ventana ya cerrada. Es seguro aunque haya envíos tardíos o dos compactaciones a la vez:
+// lo compactado es siempre un superconjunto de lo que se borra, y un blob que llegue después queda aparte y se junta la próxima vez.
+// deadline (ms de reloj): si la lectura se pasa de ese momento no se escribe nada y queda para la limpieza horaria.
+export async function compactBucket(store, ws, cid, b, { deadline = Infinity } = {}) {
+  const prefix = bucketPrefix(ws, cid, b);
+  const keys = await store.list(prefix);
+  const smalls = keys.filter(k => !isCompact(k));
+  if (!smalls.length) return 0;
+  const docs = await inChunks(keys, k => readJSON(store, k));
+  if (Date.now() > deadline) return 0;
+  const seen = new Set(), p = [], e = [];
+  for (const d of docs) {
+    if (!d) continue;
+    for (const pt of Array.isArray(d.p) ? d.p : []) if (!seen.has(pt.t)) { seen.add(pt.t); p.push(pt); }
+    for (const ev of Array.isArray(d.e) ? d.e : []) e.push(ev);
+  }
+  p.sort((x, y) => x.t - y.t); e.sort((x, y) => x.a - y.a);
+  await store.put(prefix + COMPACT, JSON.stringify({ p: p.slice(0, CFG.MAX_PTS_PER_COMPACT), e: e.slice(-CFG.MAX_EVENTS) }));
+  await deleteAll(store, smalls);
+  return smalls.length;
+}
 
 const cleanName = v => (typeof v === 'string' ? v.replace(/[\u0000-\u001f\u007f<>]/g, '').trim().slice(0, CFG.MAX_NAME) : '') || 'Repartidor';
 const cleanColor = v => (typeof v === 'string' && RE_COLOR.test(v) ? v.toLowerCase() : '#2563eb');
@@ -219,21 +253,13 @@ export function createTrackService({ store, code, secret, paused = false, now = 
     const discarded = b.pts.length - cand.length;
     if (!cand.length && !b.ev) return res(200, { ok: true, accepted: 0, dropped: discarded, now: t0 });
 
-    const a = t0, key = ptsKey(b.ws, b.cid, bucketOf(a));
-    let accepted = 0;
-    const r = await mutate(store, key, d => {
-      const doc = isObj(d) && Array.isArray(d.p) ? d : { p: [], e: [] };
-      const seen = new Set(doc.p.map(p => p.t));
-      const fresh = cand.filter(p => !seen.has(p.t));
-      const room = Math.max(0, CFG.MAX_PTS_PER_BUCKET - doc.p.length);
-      const take = fresh.slice(0, room);
-      accepted = take.length;
-      const e = Array.isArray(doc.e) ? doc.e.slice(-(CFG.MAX_EVENTS - 1)) : [];
-      if (b.ev) e.push({ a, k: b.ev });
-      return { p: doc.p.concat(take.map(p => ({ ...p, a }))), e };
-    });
-    if (!r.ok) return fail(503, 'busy');
-    return res(200, { ok: true, accepted, dropped: discarded + (cand.length - accepted), now: t0 });
+    const a = t0, bucket = bucketOf(a), prefix = bucketPrefix(b.ws, b.cid, bucket);
+    const existing = await store.list(prefix);
+    if (existing.length >= CFG.MAX_PINGS_PER_BUCKET) return fail(429, 'rate_limited');
+    const key = `${prefix}${String(a).padStart(13, '0')}-${b64u(rand(3))}`;
+    await store.put(key, JSON.stringify({ a, p: cand.map(p => ({ ...p, a })), ...(b.ev ? { e: [{ a, k: b.ev }] } : {}) }));
+    if (!existing.length) { try { await compactBucket(store, b.ws, b.cid, bucket - 1, { deadline: Date.now() + CFG.COMPACT_INLINE_MS }); } catch { /* se compacta en la limpieza horaria */ } }   // primer envío de la ventana: se junta la anterior
+    return res(200, { ok: true, accepted: cand.length, dropped: discarded, now: t0 });
   }
 
   /* ───────── Lectura del despacho ───────── */
@@ -254,25 +280,31 @@ export function createTrackService({ store, code, secret, paused = false, now = 
     await inChunks(cids, async cid => {
       const doc = await readJSON(store, ckKey(b.ws, cid));
       if (!doc || !(doc.exp > t0)) return;
-      let nums;
-      if (b1 - b0 < 6) nums = Array.from({ length: b1 - b0 + 1 }, (_, i) => b0 + i);   // rango corto: se piden las ventanas directamente
-      else nums = (await store.list(ptsPrefix(b.ws, cid))).map(k => Number(k.slice(ptsPrefix(b.ws, cid).length))).filter(n => Number.isInteger(n) && n >= b0 && n <= b1);
-      const docs = await inChunks(nums, n => readJSON(store, ptsKey(b.ws, cid, n)));
+      const prefix = ptsPrefix(b.ws, cid);
+      let keys;
+      if (b1 - b0 < 6) keys = (await inChunks(Array.from({ length: b1 - b0 + 1 }, (_, i) => b0 + i), n => store.list(bucketPrefix(b.ws, cid, n)))).flat();   // rango corto: solo esas ventanas
+      else keys = (await store.list(prefix)).filter(k => keyBucket(k) >= b0 && keyBucket(k) <= b1);
+      let want = keys.filter(k => isCompact(k) || keyArrival(k) > since);                  // por el nombre se descarta lo ya visto sin leerlo
+      const truncated = want.length > CFG.MAX_READ_BLOBS;
+      if (truncated) want = want.slice(-CFG.MAX_READ_BLOBS);
+      const docs = await inChunks(want, k => readJSON(store, k));
       const clr = doc.clr || 0;                       // lo que llegó antes del último borrado no se devuelve
-      let pts = [], lastEv = null;
+      const byT = new Map();
+      let lastEv = null;
       for (const d of docs) {
         if (!d) continue;
-        if (Array.isArray(d.p)) for (const p of d.p) if (p.a > since && p.a >= clr) pts.push(p);
+        if (Array.isArray(d.p)) for (const p of d.p) if (p.a > since && p.a >= clr && (!byT.has(p.t) || p.a < byT.get(p.t).a)) byT.set(p.t, p);   // un reintento repite puntos: queda el primero
         if (Array.isArray(d.e)) for (const e of d.e) if (e.a >= clr && (!lastEv || e.a >= lastEv.a)) lastEv = e;
       }
+      let pts = [...byT.values()];
       pts.sort((x, y) => x.t - y.t);
-      const truncated = pts.length > CFG.MAX_RESP_PTS;
-      if (truncated) pts = pts.slice(-CFG.MAX_RESP_PTS);
+      const tooMany = pts.length > CFG.MAX_RESP_PTS;
+      if (tooMany) pts = pts.slice(-CFG.MAX_RESP_PTS);
       const entry = { name: doc.name, color: doc.color, clr, pts };      // clr: el despacho descarta lo que tenga guardado de antes de un borrado
       if (pts.length) entry.last = pts.reduce((m, p) => (p.a >= m.a ? p : m), pts[0]);
       if (lastEv) entry.ev = lastEv;
       if (entry.last || lastEv) entry.seen = Math.max(entry.last?.a ?? 0, lastEv?.a ?? 0);   // última señal de vida: un punto o un latido
-      if (truncated) entry.truncated = true;
+      if (truncated || tooMany) entry.truncated = true;
       out[cid] = entry;
     });
     return res(200, { ok: true, now: t0, couriers: out });
@@ -299,18 +331,31 @@ export function createTrackService({ store, code, secret, paused = false, now = 
   return { handle, workspace: WS, _adminFor: adminFor };
 }
 
-// Limpieza programada: borra ventanas de puntos vencidas y documentos de repartidores vencidos, dentro de un presupuesto de tiempo.
+// Limpieza programada, dentro de un presupuesto de tiempo: borra ventanas vencidas y repartidores vencidos, y compacta las ventanas cerradas
+// que quedaron con blobs sueltos.
 export async function gc({ store, now = Date.now, budgetMs = CFG.GC_BUDGET_MS, maxDeletes = 5000 }) {
-  const t = now(), limit = bucketOf(t - CFG.RETENTION_MS), deadline = Date.now() + budgetMs;
-  const bucketNum = key => Number(key.slice(key.lastIndexOf('/') + 1));
-  const old = (await store.list('pts/')).filter(k => { const n = bucketNum(k); return !Number.isInteger(n) || n < limit; })
-    .sort((a, b) => bucketNum(a) - bucketNum(b));                                   // lo más viejo primero
-  let deleted = 0, couriers = 0, left = 0;
+  const t = now(), limit = bucketOf(t - CFG.RETENTION_MS), deadline = Date.now() + budgetMs, cur = bucketOf(t);
+  const all = await store.list('pts/');
+  const bucketNum = k => (k.split('/').length >= 5 ? keyBucket(k) : Number(k.slice(k.lastIndexOf('/') + 1)));    // las claves raras (sin ventana numérica) cuentan como vencidas
+  const old = all.filter(k => { const n = bucketNum(k); return !Number.isInteger(n) || n < limit; }).sort((x, y) => (bucketNum(x) || 0) - (bucketNum(y) || 0));
+  let deleted = 0, couriers = 0, compacted = 0, left = 0;
   for (let i = 0; i < old.length; i += 10) {
     if (deleted >= maxDeletes || Date.now() > deadline) { left = old.length - i; break; }
     const chunk = old.slice(i, i + 10);
     await Promise.all(chunk.map(k => store.del(k)));
     deleted += chunk.length;
+  }
+  if (!left) {
+    const groups = new Map();                                                      // ventanas cerradas con blobs sueltos
+    for (const k of all) {
+      const parts = k.split('/');
+      if (parts.length === 5 && !isCompact(k) && Number.isInteger(keyBucket(k)) && keyBucket(k) >= limit && keyBucket(k) <= cur - CFG.COMPACT_AFTER_BUCKETS) groups.set(parts.slice(1, 4).join('/'), true);
+    }
+    for (const g of groups.keys()) {
+      if (Date.now() > deadline) { left++; continue; }
+      const [ws, cid, b] = g.split('/');
+      compacted += await compactBucket(store, ws, cid, Number(b)).catch(() => 0);
+    }
   }
   if (!left) {
     const cks = await store.list('ck/');
@@ -323,6 +368,6 @@ export async function gc({ store, now = Date.now, budgetMs = CFG.GC_BUDGET_MS, m
       deleted += dead.length; couriers += dead.length;
     }
   }
-  await store.put(META_GC, JSON.stringify({ at: t, deleted, left }));
-  return { deleted, couriers, left };
+  await store.put(META_GC, JSON.stringify({ at: t, deleted, compacted, left }));
+  return { deleted, couriers, compacted, left };
 }

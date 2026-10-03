@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { createTrackService, gc, CFG, bucketOf } from '../netlify/lib/track-core.mjs';
+import { createTrackService, gc, compactBucket, CFG, bucketOf } from '../netlify/lib/track-core.mjs';
 import { memoryStore } from '../netlify/lib/stores.mjs';
 
 const CODE = 'TEST-CODE-0000-1111-2222';
@@ -14,6 +14,12 @@ function setup({ code = CODE, secret = SECRET, paused = false, store = memorySto
   const svc = createTrackService({ store, code, secret, paused, now: () => clock.t, rand });
   const call = async (route, body) => (await svc.handle(route, body));
   return { svc, store, clock, call };
+}
+// Lo guardado en una ventana: todos los blobs (uno por envío, más el compactado), puntos ordenados por hora y eventos por llegada
+function stored(c, w, cid = 'c1', bucket = bucketOf(T0)) {
+  const keys = c.store.keys().filter(k => k.startsWith(`pts/${w.ws}/${cid}/${bucket}/`));
+  const docs = keys.map(k => JSON.parse(c.store.raw(k)));
+  return { keys, p: docs.flatMap(d => d.p || []).sort((x, y) => x.t - y.t), e: docs.flatMap(d => d.e || []).sort((x, y) => x.a - y.a) };
 }
 async function workspace(ctx) {
   const r = await ctx.call('ws', { code: CODE });
@@ -118,7 +124,9 @@ test('ping: guarda los puntos, rechaza claves falsas sin tocar el almacenamiento
   assert.equal(r.status, 200);
   assert.equal(r.body.accepted, 3);
   assert.equal(r.body.now, T0);
-  const bucket = JSON.parse(c.store.raw(`pts/${w.ws}/c1/${bucketOf(T0)}`));
+  const bucket = stored(c, w);
+  assert.equal(bucket.keys.length, 1, 'un blob por envío');
+  assert.match(bucket.keys[0], new RegExp(`^pts/${w.ws}/c1/${bucketOf(T0)}/${String(T0).padStart(13, '0')}-`));
   assert.equal(bucket.p.length, 3);
   assert.ok(bucket.p.every(p => p.a === T0));
   assert.deepEqual(bucket.e, [{ a: T0, k: 'start' }]);
@@ -149,33 +157,33 @@ test('ping: validación del cuerpo y aceptación parcial', async () => {
   assert.equal(r.status, 200);
   assert.equal(r.body.accepted, 3, JSON.stringify(r.body));       // 1, 8 (sin spd ni hdg) y 9
   assert.equal(r.body.dropped, 8);
-  const saved = JSON.parse(c.store.raw(`pts/${w.ws}/c1/${bucketOf(T0)}`)).p;
+  const saved = stored(c, w).p;
   assert.deepEqual(saved.map(p => p.t), [mixed[0].t, mixed[9].t, mixed[10].t]);
   assert.ok(!('spd' in saved[1]) && !('hdg' in saved[1]), 'velocidad y rumbo fuera de rango se omiten, el punto se conserva');
   assert.equal((await ping(c, w, 'c1', ck, [{ ...pt(c, 1), acc: 500 }])).body.accepted, 0, 'si todo se descarta igual responde 200 (el celular no reintenta)');
   for (const ev of ['stop', 'hb', 'hide', 'show', 'start']) assert.equal((await ping(c, w, 'c1', ck, [], { ev })).status, 200, ev);
-  const evs = JSON.parse(c.store.raw(`pts/${w.ws}/c1/${bucketOf(T0)}`)).e;
-  assert.deepEqual(evs.map(e => e.k), ['stop', 'hb', 'hide', 'show', 'start']);
+  assert.deepEqual(stored(c, w).e.map(e => e.k), ['stop', 'hb', 'hide', 'show', 'start']);
+  // la compactación (al primer envío de la ventana siguiente) también limita los eventos
   for (let i = 0; i < 30; i++) await ping(c, w, 'c1', ck, [], { ev: 'hb' });
-  assert.ok(JSON.parse(c.store.raw(`pts/${w.ws}/c1/${bucketOf(T0)}`)).e.length <= CFG.MAX_EVENTS, 'los eventos tienen tope');
+  await compactBucket(c.store, w.ws, 'c1', bucketOf(T0));
+  assert.ok(stored(c, w).e.length <= CFG.MAX_EVENTS, 'los eventos tienen tope');
 });
 
-test('ping: el reintento del mismo lote no duplica y el tope por ventana se respeta', async () => {
+test('ping: el reintento repite el lote y la lectura lo deduplica; el tope de envíos por ventana se respeta', async () => {
   const c = setup();
   const w = await workspace(c);
   const ck = await newCourier(c, w);
   const batch = [pt(c, 1), pt(c, 2), pt(c, 3)];
   await ping(c, w, 'c1', ck, batch);
-  const r = await ping(c, w, 'c1', ck, batch);
-  assert.equal(r.body.accepted, 0);
-  assert.equal(JSON.parse(c.store.raw(`pts/${w.ws}/c1/${bucketOf(T0)}`)).p.length, 3);
-  // tope por ventana
-  let total = 3;
-  for (let k = 0; total < CFG.MAX_PTS_PER_BUCKET + 60; k++) {
-    const pts = Array.from({ length: 60 }, (_, i) => ({ t: T0 - 6 * 3600e3 + 1000 + k * 100000 + i * 1000, lat: -38, lng: -57.55 }));
-    await ping(c, w, 'c1', ck, pts); total += 60;
-  }
-  assert.equal(JSON.parse(c.store.raw(`pts/${w.ws}/c1/${bucketOf(T0)}`)).p.length, CFG.MAX_PTS_PER_BUCKET);
+  await ping(c, w, 'c1', ck, batch);
+  assert.equal(stored(c, w).keys.length, 2, 'cada envío es un blob (no se lee antes de escribir)');
+  assert.equal((await read(c, w)).body.couriers.c1.pts.length, 3, 'pero el despacho no ve duplicados');
+  for (let i = 2; i < CFG.MAX_PINGS_PER_BUCKET; i++) assert.equal((await ping(c, w, 'c1', ck, [pt(c, 4 + (i % 5))])).status, 200);
+  const over = await ping(c, w, 'c1', ck, [pt(c, 9)]);
+  assert.equal(over.status, 429);
+  assert.equal(over.body.error, 'rate_limited');
+  c.clock.t += CFG.BUCKET_MS;
+  assert.equal((await ping(c, w, 'c1', ck, [pt(c, 9)])).status, 200, 'la ventana siguiente vuelve a aceptar');
 });
 
 test('ping: corrige un reloj del celular desfasado y respeta el que está bien', async () => {
@@ -186,12 +194,12 @@ test('ping: corrige un reloj del celular desfasado y respeta el que está bien',
   const phoneNow = T0 + 10 * 60e3;
   const r = await c.call('ping', { ws: w.ws, cid: 'c1', ck, ct: phoneNow, pts: [{ t: phoneNow - 5000, lat: -38, lng: -57.55 }, { t: phoneNow - 1000, lat: -38.0001, lng: -57.55 }] });
   assert.equal(r.body.accepted, 2);
-  const saved = JSON.parse(c.store.raw(`pts/${w.ws}/c1/${bucketOf(T0)}`)).p;
-  assert.deepEqual(saved.map(p => p.t), [T0 - 5000, T0 - 1000]);
+  assert.deepEqual(stored(c, w).p.map(p => p.t), [T0 - 5000, T0 - 1000]);
   // reloj correcto con 1 s de diferencia: no se toca
   const r2 = await c.call('ping', { ws: w.ws, cid: 'c1', ck, ct: T0 - 1000, pts: [{ t: T0 - 3000, lat: -38.0002, lng: -57.55 }] });
   assert.equal(r2.body.accepted, 1);
-  assert.equal(JSON.parse(c.store.raw(`pts/${w.ws}/c1/${bucketOf(T0)}`)).p.at(-1).t, T0 - 3000);
+  assert.equal(stored(c, w).p.at(-1).t, T0 - 1000, 'el de reloj correcto entra con su hora (T0-3000 queda antes que el corregido)');
+  assert.ok(stored(c, w).p.some(p => p.t === T0 - 3000));
   // ct absurdo se ignora
   assert.equal((await c.call('ping', { ws: w.ws, cid: 'c1', ck, ct: 'x', pts: [pt(c, 1, { lat: -38.5 })] })).status, 200);
 });
@@ -246,7 +254,12 @@ test('read: pedidos largos usan el listado y no piden ventanas inexistentes', as
   const before = { ...c.store.ops };
   await read(c, w, { since: c.clock.t - 15e3 });
   const used = { get: c.store.ops.get - before.get, list: c.store.ops.list - before.list, put: c.store.ops.put - before.put };
-  assert.deepEqual(used, { get: 1 + 2, list: 1, put: 0 }, JSON.stringify(used));     // 1 repartidor, hasta 2 ventanas
+  assert.deepEqual(used, { get: 1, list: 3, put: 0 }, JSON.stringify(used));     // el documento del repartidor + listar repartidores y las 2 ventanas; sin envíos nuevos no se lee ningún blob
+  await ping(c, w, 'c1', ck, [pt(c, 6)]);
+  const b2 = { ...c.store.ops };
+  const r2 = await read(c, w, { since: c.clock.t - 15e3 });
+  assert.equal(r2.body.couriers.c1.pts.length, 1);
+  assert.equal(c.store.ops.get - b2.get, 2, 'con un envío nuevo se lee solo ese blob');
 });
 
 test('clear: borrado lógico (lo que llegó antes no vuelve) y cada repartidor borra lo suyo', async () => {
@@ -265,8 +278,8 @@ test('clear: borrado lógico (lo que llegó antes no vuelve) y cada repartidor b
   assert.ok(!c.store.keys().some(k => k.startsWith(`pts/${w.ws}/c1/`)));
   // un envío que estaba en vuelo con hora de llegada anterior al borrado queda fuera aunque escriba después
   const clr = JSON.parse(c.store.raw(`ck/${w.ws}/c1`)).clr;
-  const key = `pts/${w.ws}/c1/${bucketOf(clr)}`;
-  await c.store.put(key, JSON.stringify({ p: [{ t: clr - 1000, lat: -38, lng: -57.5, a: clr - 10 }], e: [] }), { ifNew: true });
+  const late = clr - 10;
+  await c.store.put(`pts/${w.ws}/c1/${bucketOf(late)}/${String(late).padStart(13, '0')}-zz`, JSON.stringify({ a: late, p: [{ t: clr - 1000, lat: -38, lng: -57.5, a: late }] }));
   assert.equal((await read(c, w)).body.couriers.c1.pts.length, 0);
   // el despacho borra todo
   assert.equal((await c.call('clear', { ws: w.ws, admin: w.admin })).status, 200);
@@ -298,20 +311,48 @@ test('revoke: corta la clave, borra recorridos y el repartidor queda fuera', asy
   assert.equal((await ping(c, w, 'c2', ck2, [pt(c, 4)])).status, 401);
 });
 
-test('concurrencia: dos envíos a la vez sobre la misma ventana no se pisan', async () => {
+test('concurrencia: envíos simultáneos sobre la misma ventana se guardan todos (nada se pisa)', async () => {
   let k = 0;
   const store = memoryStore({ tick: () => new Promise(r => setTimeout(r, (k++ * 7) % 5)) });
   const c = setup({ store });
   const w = await workspace(c);
   const ck = await newCourier(c, w);
-  const sends = Array.from({ length: 3 }, (_, i) => ping(c, w, 'c1', ck, [pt(c, i + 1, { lat: -38 + i * 1e-3 })]));
-  const rs = await Promise.all(sends);
-  const ok = rs.filter(r => r.status === 200);
-  const busy = rs.filter(r => r.status === 503);
-  assert.equal(ok.length + busy.length, 3);
-  assert.ok(ok.length >= 2, 'con 3 intentos por envío al menos dos entran');
-  const saved = JSON.parse(c.store.raw(`pts/${w.ws}/c1/${bucketOf(T0)}`)).p;
-  assert.equal(saved.length, ok.length, 'cada envío confirmado dejó su punto, y ninguno se perdió ni se duplicó');
+  const rs = await Promise.all(Array.from({ length: 8 }, (_, i) => ping(c, w, 'c1', ck, [pt(c, i + 1, { lat: -38 + i * 1e-3 })])));
+  assert.ok(rs.every(r => r.status === 200 && r.body.accepted === 1), JSON.stringify(rs.map(r => r.status)));
+  assert.equal(stored(c, w).p.length, 8, 'los 8 puntos están, ninguno se perdió');
+  assert.equal((await read(c, w)).body.couriers.c1.pts.length, 8);
+});
+
+test('compactación: junta los blobs de una ventana cerrada sin perder ni duplicar nada', async () => {
+  const c = setup();
+  const w = await workspace(c);
+  const ck = await newCourier(c, w);
+  const b0 = bucketOf(T0);
+  for (let i = 0; i < 5; i++) { await ping(c, w, 'c1', ck, [pt(c, i)], i === 0 ? { ev: 'start' } : {}); c.clock.t += 20e3; }
+  await ping(c, w, 'c1', ck, [pt(c, 0)]);                               // un reintento repetido
+  assert.equal(stored(c, w, 'c1', b0).keys.length, 6);
+  const before = (await read(c, w)).body.couriers.c1;
+  // primer envío de la ventana siguiente: compacta la anterior por su cuenta
+  c.clock.t = (b0 + 1) * CFG.BUCKET_MS + 5e3;
+  await ping(c, w, 'c1', ck, [pt(c, 9)]);
+  const keys = stored(c, w, 'c1', b0).keys;
+  assert.deepEqual(keys, [`pts/${w.ws}/c1/${b0}/_c`], 'quedó un solo blob compactado');
+  const after = (await read(c, w, { since: T0 - 3600e3 })).body.couriers.c1;
+  assert.equal(after.pts.length, before.pts.length + 1, 'se conservan los puntos, sin duplicados, y se suma el nuevo');
+  assert.equal(after.ev.k, 'start');
+  // un envío tardío a la ventana ya compactada no se pierde y se junta la próxima vez
+  const late = T0 + 100e3;
+  await c.store.put(`pts/${w.ws}/c1/${b0}/${String(late).padStart(13, '0')}-zz`, JSON.stringify({ a: late, p: [{ t: late, lat: -38.2, lng: -57.5, a: late }] }));
+  assert.equal((await read(c, w, { since: T0 - 3600e3 })).body.couriers.c1.pts.length, after.pts.length + 1);
+  assert.equal(await compactBucket(c.store, w.ws, 'c1', b0), 1);
+  assert.deepEqual(stored(c, w, 'c1', b0).keys, [`pts/${w.ws}/c1/${b0}/_c`]);
+  assert.equal((await read(c, w, { since: T0 - 3600e3 })).body.couriers.c1.pts.length, after.pts.length + 1);
+  assert.equal(await compactBucket(c.store, w.ws, 'c1', b0), 0, 'si no hay blobs sueltos no hace nada');
+  // sin tiempo: no escribe nada y no borra nada
+  await c.store.put(`pts/${w.ws}/c1/${b0}/${String(late + 1).padStart(13, '0')}-yy`, JSON.stringify({ a: late + 1, p: [{ t: late + 1, lat: -38.3, lng: -57.5, a: late + 1 }] }));
+  const before2 = c.store.keys().join();
+  assert.equal(await compactBucket(c.store, w.ws, 'c1', b0, { deadline: 0 }), 0);
+  assert.equal(c.store.keys().join(), before2);
 });
 
 test('un fallo del almacenamiento devuelve 500 sin detalles', async () => {
@@ -328,32 +369,38 @@ test('un fallo del almacenamiento devuelve 500 sin detalles', async () => {
   } finally { console.error = orig; }
 });
 
-test('limpieza programada: vence lo viejo, deja lo reciente, anota cuándo corrió y respeta el tope', async () => {
+test('limpieza programada: vence lo viejo, compacta lo suelto, deja lo reciente, anota cuándo corrió y respeta el tope', async () => {
   const c = setup();
   const w = await workspace(c);
   const ck = await newCourier(c, w, 'c1'); await newCourier(c, w, 'c2');
   await ping(c, w, 'c1', ck, [pt(c, 1)]);
   assert.equal((await c.call('health', {})).body.gcAt, null);
   c.clock.t += 47 * 3600e3;
-  await ping(c, w, 'c1', ck, [pt(c, 2)]);
+  await ping(c, w, 'c1', ck, [pt(c, 2)]); c.clock.t += 20e3; await ping(c, w, 'c1', ck, [pt(c, 3)]);
+  const recent = bucketOf(c.clock.t);
   c.clock.t += 2 * 3600e3;                                   // la primera ventana ya tiene 49 h
   await c.store.put('pts/zzz/x/not-a-number', '{}');
   let r = await gc({ store: c.store, now: () => c.clock.t });
-  assert.equal(r.deleted, 2);
+  assert.equal(r.deleted, 2, 'la ventana de 49 h y la clave rara');
+  assert.equal(r.compacted, 2, 'los dos blobs sueltos de la ventana cerrada se juntaron');
   assert.equal(r.left, 0);
-  assert.deepEqual(c.store.keys().filter(k => k.startsWith('pts/')), [`pts/${w.ws}/c1/${bucketOf(T0 + 47 * 3600e3)}`]);
+  assert.deepEqual(c.store.keys().filter(k => k.startsWith('pts/')), [`pts/${w.ws}/c1/${recent}/_c`]);
   assert.equal(JSON.parse(c.store.raw('meta/gc')).at, c.clock.t);
   assert.equal((await c.call('health', {})).body.gcAt, c.clock.t, '/health informa la última limpieza');
+  // la ventana en curso y la anterior no se tocan
+  await ping(c, w, 'c1', ck, [pt(c, 4)]);
+  r = await gc({ store: c.store, now: () => c.clock.t });
+  assert.equal(r.compacted, 0);
   c.clock.t += 91 * 24 * 3600e3;
   r = await gc({ store: c.store, now: () => c.clock.t });
   assert.deepEqual(c.store.keys().filter(k => !k.startsWith('meta/')), []);
   assert.equal(r.couriers, 2);
   // tope de trabajo por corrida: lo más viejo primero, y avisa cuánto quedó
-  for (let i = 0; i < 25; i++) await c.store.put(`pts/${w.ws}/c9/${i}`, '{}');
+  for (let i = 0; i < 25; i++) await c.store.put(`pts/${w.ws}/c9/${i + 1}/0000000000001-aa`, '{}');
   r = await gc({ store: c.store, now: () => c.clock.t, maxDeletes: 10 });
   assert.equal(r.deleted, 10);
   assert.equal(r.left, 15);
-  assert.ok(!c.store.keys().includes(`pts/${w.ws}/c9/0`) && c.store.keys().includes(`pts/${w.ws}/c9/24`));
+  assert.ok(!c.store.keys().includes(`pts/${w.ws}/c9/1/0000000000001-aa`) && c.store.keys().includes(`pts/${w.ws}/c9/25/0000000000001-aa`));
   // sin tiempo disponible no hace nada, pero igual deja constancia
   r = await gc({ store: c.store, now: () => c.clock.t, budgetMs: -1 });
   assert.equal(r.deleted, 0);

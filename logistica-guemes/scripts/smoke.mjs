@@ -42,12 +42,14 @@ try {
   const mine = rd.data?.couriers?.[cid];
   check('el despacho lee los 3 puntos y el evento', rd.status === 200 && mine?.pts?.length === 3 && mine?.ev?.k === 'start', JSON.stringify(mine && { n: mine.pts.length, ev: mine.ev }));
 
-  // Contrato de escritura condicional (ETag) de Blobs real: envíos en paralelo sobre la misma ventana
-  const par = await Promise.all([3, 4, 5, 6, 7].map(i => post('ping', { ws: w.ws, cid, ck, ct: Date.now(), pts: [P(i)] })));
+  // Envíos simultáneos sobre la misma ventana (con Blobs real): cada uno escribe su propio blob, así que ninguno puede pisar a otro
+  const par = await Promise.all([3, 4, 5, 6, 7, 8, 9, 10].map(i => post('ping', { ws: w.ws, cid, ck, ct: Date.now(), pts: [P(i)] })));
   const okN = par.filter(r => r.status === 200 && r.data?.accepted === 1).length;
-  const busyN = par.filter(r => r.status === 503).length;
   const after = (await post('read', { ws: w.ws, admin: w.admin, since: t - 60000 })).data?.couriers?.[cid];
-  check('5 envíos en paralelo: ninguno se pisa', okN + busyN === 5 && after?.pts?.length === 3 + okN, `ok=${okN} busy=${busyN} guardados=${after?.pts?.length}`);
+  check('8 envíos en paralelo: no se pierde ninguno', okN === 8 && after?.pts?.length === 11, `ok=${okN} guardados=${after?.pts?.length} (esperados 11)`);
+  await post('ping', { ws: w.ws, cid, ck, ct: Date.now(), pts: [P(10)] });
+  check('un reintento repetido no duplica en la lectura', (await post('read', { ws: w.ws, admin: w.admin, since: t - 60000 })).data?.couriers?.[cid]?.pts?.length === 11);
+  check('lectura incremental: pide solo lo nuevo', ((await post('read', { ws: w.ws, admin: w.admin, since: Date.now() + 5000 })).data?.couriers?.[cid]?.pts?.length ?? -1) === 0);
 
   check('el repartidor borra su recorrido', (await post('clear', { ws: w.ws, cid, ck })).status === 200);
   const empty = (await post('read', { ws: w.ws, admin: w.admin, since: t - 60000 })).data?.couriers?.[cid];
