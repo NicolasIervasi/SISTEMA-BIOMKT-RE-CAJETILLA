@@ -19,7 +19,7 @@ Repositorio de guiones y material audiovisual.
 
 ## Apps
 
-- [`logistica-guemes/index.html`](logistica-guemes/index.html) — planificador de reparto para Mar del Plata, zona Güemes. Solo acepta pedidos dentro de un radio de 11 cuadras (1 cuadra = 100 m → 1,1 km) alrededor de Güemes 2800; arma el recorrido más corto con horarios de llegada y lo manda por WhatsApp o Google Maps. Un solo HTML, sin build. Mapa de OpenStreetMap, direcciones con Nominatim y tiempos por calles con OSRM, todos públicos y gratuitos. Hay que abrirla desde un hosting (Netlify, GitHub Pages) o con `python3 -m http.server`: OpenStreetMap exige que el navegador envíe el origen de la página, y abierta con doble clic como archivo local puede no cargar los mapas ni el buscador de direcciones.
+- [`logistica-guemes/`](logistica-guemes/) — **Cuadra**, despacho de reparto para Mar del Plata, zona Güemes: pedidos dentro de un radio de 11 cuadras (1 cuadra = 100 m), reparto automático entre repartidores con rutas óptimas por calles reales, modo repartidor para el celular (con link de ruta por WhatsApp), tarifas por anillo y métricas. Estático, sin build: se sirve con `python3 -m http.server` o se publica en Netlify. Detalle, estructura y límites en su [README](logistica-guemes/README.md).
 
 ## Estructura
 
@@ -27,4 +27,4 @@ Repositorio de guiones y material audiovisual.
 - `guiones/guion-NN-*-visual.html` — versión visual de rodaje del mismo guion: línea de tiempo, beats con timecode y encuadre, textos en pantalla, placas gráficas y guion corrido para teleprompter. Se publica como Artifact para compartir con el equipo de producción.
 - `procesos/` — procesos internos del equipo, un archivo por proceso.
 - `calendario/` — planificación por período. Cada posteo es un bloque `.fila` en el HTML: día, formato, tema y estado (`e-listo`, `e-falta`, `e-sin`).
-- `logistica-guemes/` — app de reparto. El centro, el radio y las cuadras están en `DEFAULT_CENTER`, `radiusBlocks` y `BLOCK_M` al principio del script.
+- `logistica-guemes/` — app de reparto (módulos ES, CSS y tests). El centro y las tarifas por defecto están en `js/config.js`.
