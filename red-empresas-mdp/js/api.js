@@ -41,7 +41,7 @@ async function pedir(path, { method = 'GET', body, timeout = 6000 } = {}) {
 
 export async function cargarContenido() {
   const r = await pedir('contenidos');
-  if (r.status === 200 && r.body) {
+  if (r.status === 200 && r.body?.v === 1) {             // solo la API propia (v: versión) activa el modo servidor
     modo = 'servidor';
     rev = r.body.rev;
     if (Array.isArray(r.body.items)) {
