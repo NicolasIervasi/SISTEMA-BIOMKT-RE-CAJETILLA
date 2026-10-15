@@ -34,7 +34,7 @@ export function mount(root, ctx) {
         el('div', {}, el('dt', { text: 'Publica' }), el('dd', { text: F.publica })),
         el('div', {}, el('dt', { text: 'Contacto' }), el('dd', { text: F.contacto }))),
       el('div', { class: 'fuente-links' },
-        el('span', { class: 'cuenta', text: plural(vig[id] || 0, 'pieza vigente', 'piezas vigentes') }),
+        el('a', { class: 'cuenta link', href: '#/explorar', onclick: () => { store.state.fuenteFiltro = id; store.save(); } }, `Ver ${plural(vig[id] || 0, 'pieza vigente', 'piezas vigentes')}`),
         ext(F.web, { class: 'link' }, 'Sitio oficial', icon('arrow-up-right')),
         F.redes.map(([n, u]) => ext(u, { class: 'link', text: n }))));
   });

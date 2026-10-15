@@ -1,11 +1,12 @@
 // Detalle de una pieza: datos clave, acción principal, agendar, compartir y link al original.
 import { FUENTES, TIPOS } from '../config.js';
-import { esNuevo, estado } from '../content.js';
+import { categoriaDe, esNuevo, estado, relacionados } from '../content.js';
 import { copiar, descargar, el, ext, hoja, icon, toast } from '../dom.js';
 import { fechaLarga, ts } from '../fmt.js';
 import { entradas, googleUrl, ics } from '../ics.js';
 import { registrar } from '../api.js';
-import { botonGuardar, chipFuente, graficoSerie, vacio } from './comun.js';
+import { botonGuardar, chipFuente, graficoSerie, tarjeta, vacio } from './comun.js';
+import * as store from '../store.js';
 
 export const title = 'Detalle';
 
@@ -35,7 +36,8 @@ export function mount(root, ctx, id) {
   const nodos = [
     // Si se llegó navegando dentro de la app, "Volver" vuelve a donde estaba (con su filtro); si se abrió un link compartido, va al inicio
     el('a', { class: 'volver', href: '#/', onclick: ev => { if (ctx.navegoDentro) { ev.preventDefault(); history.back(); } } }, icon('arrow-left'), 'Volver'),
-    el('div', { class: 'det-meta' }, chipFuente(item.fuente), el('span', { class: 'tipo', text: TIPOS[item.tipo]?.label || '' }),
+    el('div', { class: 'det-meta' }, chipFuente(item.fuente),
+      el('a', { class: 'tipo tipo-link', href: '#/explorar/' + categoriaDe(item).id, title: `Ver ${categoriaDe(item).label.toLowerCase()}`, text: TIPOS[item.tipo]?.label || '' }),
       esNuevo(item, now) ? el('span', { class: 'nuevo', text: 'Nuevo' }) : null),
     el('h1', { class: 'det-tit', text: item.titulo }),
     el('span', { class: 'estado grande ' + e.clave, text: e.texto }),
@@ -53,6 +55,10 @@ export function mount(root, ctx, id) {
       `Resumen propio de Red Empresas MDP con datos de ${F.corto}${item.via ? ` publicados por ${item.via}` : ''}`,
       item.verificado ? `, verificado el ${fechaLarga(ts(item.verificado + 'T12:00:00-03:00'))}` : '',
       '. Ante cualquier diferencia, vale lo que dice la fuente.')));
+  const rel = relacionados(ctx.items, item, store.state.perfil, now, 3);
+  if (rel.length) nodos.push(el('section', { class: 'relacionados', 'aria-labelledby': 'tRel' },
+    el('h2', { id: 'tRel', class: 'sec', text: 'También te puede servir' }),
+    el('div', { class: 'lista' }, rel.map(x => tarjeta(x, now, { sinResumen: true })))));
   root.replaceChildren(el('article', { class: 'detalle', style: { '--c': F.color } }, nodos));
 }
 

@@ -11,6 +11,7 @@ const views = {
   agenda: () => import('./views/agenda.js'),
   fuentes: () => import('./views/fuentes.js'),
   perfil: () => import('./views/perfil.js'),
+  explorar: () => import('./views/explorar.js'),
   admin: () => import('./views/admin.js')
 };
 
@@ -31,6 +32,7 @@ function parse() {
   if (head === 'c' && rest[0]) return { view: 'detalle', args: [rest[0]], nav: '' };
   if (head === 'admin') return { view: 'admin', args: rest, nav: 'perfil' };
   if (head === 'bienvenida') return { view: 'perfil', args: ['bienvenida'], nav: '' };
+  if (head === 'explorar') return { view: 'explorar', args: rest.slice(0, 1), nav: 'explorar' };
   if (['agenda', 'fuentes', 'perfil'].includes(head)) return { view: head, args: [], nav: head };
   return { view: 'inicio', args: [], nav: 'inicio' };
 }
@@ -52,7 +54,7 @@ async function route() {
   if (mine !== token) return;
   document.title = r.view === 'inicio' ? APP : `${mod.title} · ${APP}`;
   const key = location.hash || '#/';
-  window.scrollTo(0, r.view === 'inicio' && prevView === 'detalle' ? scrolls.get(key) || 0 : 0);
+  window.scrollTo(0, ['inicio', 'explorar', 'agenda'].includes(r.view) && prevView === 'detalle' ? scrolls.get(key) || 0 : 0);
   prevKey = key; prevView = r.view;
   main.focus({ preventScroll: true });
   pintarBadge();

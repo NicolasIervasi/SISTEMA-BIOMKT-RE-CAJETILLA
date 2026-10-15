@@ -29,11 +29,11 @@ export const FUENTES = {
   pl: {
     id: 'pl', corto: 'Producto Local', color: 'var(--f-pl)',
     nombre: 'Programa Producto Local (Municipio de General Pueyrredon)',
-    que: 'Sello municipal que identifica productos hechos en Mar del Plata, Batán y Sierra de los Padres. Las empresas adheridas reciben piezas para vidriera y punto de venta para que el cliente reconozca lo local.',
-    web: 'https://www.mardelplata.gob.ar/productolocal',
+    que: 'Sello municipal gratuito ("Producto Local – Trabajo Marplatense", Decreto 2032/20) que identifica lo fabricado en el partido. Se suman productores e industrias, y también comercios que venden esos productos.',
+    web: 'https://www.mardelplata.gob.ar/desarrollo-productivo/producto-local-participa-programa',
     novedades: 'https://www.mardelplata.gob.ar/desarrollo-productivo/producto-local-empresas-adheridas',
     redes: [],
-    contacto: 'Salta 1842, 5° piso · 499-7970 int. 4347 / 4376',
+    contacto: 'Salta 1842, 5° piso · productolocal@mardelplata.gob.ar · 499-7970 int. 4347',
     publica: 'Pocas novedades al año (altas de empresas y cifras del programa), casi siempre por gacetilla a medios.'
   }
 };

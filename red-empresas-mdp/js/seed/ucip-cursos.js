@@ -20,7 +20,7 @@ function curso(c) {
   if (c.titulo2) datos.push(['Certificación', c.titulo2]);
   datos.push(['Descuentos', c.promo || PROMO]);
   datos.push(['Costo', 'No publicado: se consulta al inscribirse']);
-  datos.push(['Consultas', 'WhatsApp de cursos 223 436-0509 · 223 499-7777']);
+  datos.push(['Consultas', 'WhatsApp 223 436-0509 · capacitacion@ucip.org.ar · 223 499-7777']);
   const item = {
     id: c.id || `ucip-c-${c.slug}`.slice(0, 80),
     fuente: 'ucip', tipo: 'capacitacion',

@@ -81,7 +81,7 @@ export const UCIP = [
   },
   {
     id: 'ucip-veraz', fuente: 'ucip', tipo: 'servicio',
-    titulo: 'Informes comerciales (Veraz) para dar crédito',
+    titulo: 'Informes comerciales (Veraz): antes de vender en cuotas',
     resumen: 'Antes de vender en cuotas o dar crédito, UCIP informa en el momento los datos del cliente, sus créditos y si pidió financiación en otras empresas ese día.',
     cuerpo: ['El informe incluye datos personales, domicilio y datos laborales actualizados, solicitudes de crédito del día en otras empresas, créditos acordados y su cumplimiento. Para mantener la base al día, el comercio informa si otorgó el crédito, el monto, las cuotas y si entra en mora.'],
     datos: [['Cómo', 'Atención personalizada en la sede'], ['Socios', 'Los informes crediticios figuran entre los beneficios de socio'], ['Dónde', 'Av. Luro 3030 · 223 499-7777']],
@@ -102,7 +102,7 @@ export const UCIP = [
     id: 'ucip-cajas-seguridad', fuente: 'ucip', tipo: 'servicio',
     titulo: 'Cajas de seguridad',
     resumen: '75 cajas de seguridad con tecnología aprobada por el Banco Central, en dos medidas, con atención personalizada de lunes a viernes de 9 a 16.',
-    datos: [['Medidas', '10 × 15 cm y 10 × 30 cm'], ['Horario', 'Lunes a viernes de 9 a 16'], ['Reservas', '0223 499-7777']],
+    datos: [['Medidas', '10 × 15 cm y 10 × 30 cm'], ['Horario', 'Lunes a viernes de 9 a 16'], ['Reservas', '0223 499-7777 · cajasdeseguridad@ucip.org.ar']],
     lugar: LURO, url: U('cajas-de-seguridad/'),
     rubros: ['todos'], temas: [], verificado: V
   },
@@ -174,7 +174,7 @@ export const UCIP = [
     titulo: 'Oferta Exportable de Mar del Plata: cargá tu empresa',
     resumen: 'La UIM difunde la Oferta Exportable municipal: una vidriera de productos locales para compradores del exterior, en castellano e inglés.',
     cuerpo: ['La empresa tiene que estar empadronada en Desarrollo Productivo del Municipio. Después se carga con CUIT y clave fiscal: productos con su posición arancelaria, fotos, logo, países a los que exporta, certificaciones y redes.'],
-    datos: [['Dónde se ve', 'mardelplata.gob.ar/ofertaexportable'], ['Requisito', 'Empadronamiento en Desarrollo Productivo (Municipio)']],
+    datos: [['Dónde se ve', 'mardelplata.gob.ar/ofertaexportable'], ['Requisito', 'Empadronamiento en Desarrollo Productivo (Municipio)'], ['Empadronarse', 'ofertaexportable@mardelplata.gob.ar']],
     url: U('organizaciones-asociadas/union-industrial-marplatense-uim/oferta-exportable/'),
     rubros: ['industria', 'alimentos', 'pesca', 'textil'], temas: ['exportacion', 'visibilidad'], verificado: V
   },

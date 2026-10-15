@@ -2,7 +2,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import { FUENTE_IDS, RUBROS, TAMANOS, TEMAS, TIPO_IDS } from '../js/config.js';
-import { armarAgenda, armarFeed, cierranPronto, coincide, enLaSemana, estado, finDe, proximaFecha, puntaje, sesiones } from '../js/content.js';
+import { CATEGORIAS, agruparPorSemana, armarAgenda, armarFeed, buscar, categoriaDe, cierranPronto, coincide, enLaSemana, estado, finDe, novedadesRecientes, proximaFecha, proximasFechas, puntaje, recomendados, relacionados, secciones, sesiones } from '../js/content.js';
 import { cuando, diasHasta, fechaCorta, hora, isoDia, aInputLocal, deInputLocal } from '../js/fmt.js';
 import { entradas, googleUrl, ics } from '../js/ics.js';
 import { agregar, informe } from '../js/stats.js';
@@ -214,4 +214,101 @@ test('estado local: se sanea lo que venga del almacenamiento', () => {
   assert.deepEqual(s.guardados, ['a']);
   assert.equal(s.usoAnonimo, false);
   assert.equal(sanear(null).listo, false);
+});
+
+// Coherencia de fechas: cada "martes 10/11" de los textos es de verdad martes en 2026, y el "Cuándo" de cada curso
+// coincide con su inicio, su fin y su horario. Si alguien carga una fecha mal, esta prueba lo marca.
+test('coherencia de fechas en todo el contenido', () => {
+  const DIAS = ['domingo', 'lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado'];
+  const n = s => s.toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '');
+  const diaSemana = (d, m) => new Date(Date.UTC(2026, m - 1, d, 15)).getUTCDay();
+  const ar = ms => { const x = new Date(ms - 3 * 3600e3); return { d: x.getUTCDate(), m: x.getUTCMonth() + 1, w: x.getUTCDay(), h: x.getUTCHours(), mi: x.getUTCMinutes() }; };
+  const problemas = [];
+  for (const it of SEED) {
+    const textos = [it.titulo, it.resumen, ...(it.cuerpo || []), ...(it.datos || []).map(x => x.join(': '))];
+    for (const t of textos) for (const m of n(t).matchAll(/(lunes|martes|miercoles|jueves|viernes|sabado|domingo)\s+(\d{1,2})\/(\d{1,2})/g))
+      if (DIAS.indexOf(m[1]) !== diaSemana(+m[2], +m[3])) problemas.push(`${it.id}: ${m[0]}`);
+    const cuando = (it.datos || []).find(x => x[0] === 'Cuándo')?.[1];
+    if (!it.inicio || !cuando || it.todoElDia) continue;
+    const i = ar(T(it.inicio)), f = it.fin ? ar(T(it.fin)) : null, c = n(cuando);
+    const w = DIAS.findIndex(d => c.startsWith(d));
+    if (w >= 0 && w !== i.w) problemas.push(`${it.id}: día de la semana`);
+    const r = c.match(/del (\d{1,2})\/(\d{1,2}) al (\d{1,2})\/(\d{1,2})/);
+    if (r && (+r[1] !== i.d || +r[2] !== i.m || (f && (+r[3] !== f.d || +r[4] !== f.m)))) problemas.push(`${it.id}: rango ${r[0]}`);
+    const h = c.match(/de (\d{1,2})(?::(\d{2}))? a (\d{1,2})(?::(\d{2}))?/);
+    if (h && (+h[1] !== i.h || +(h[2] || 0) !== i.mi || (f && (+h[3] !== f.h || +(h[4] || 0) !== f.mi)))) problemas.push(`${it.id}: horario ${h[0]}`);
+    if (f && f.w !== i.w) problemas.push(`${it.id}: inicio y fin en distinto día`);
+    const s = sesiones(it);
+    if (f) { const u = ar(s.at(-1).inicio); if (u.d !== f.d || u.m !== f.m) problemas.push(`${it.id}: última clase`); }
+    if (it.sesiones && s.length < it.sesiones) problemas.push(`${it.id}: faltan semanas para las clases publicadas`);
+  }
+  assert.deepEqual(problemas, []);
+});
+
+test('explorar: cada categoría separada en secciones coherentes', () => {
+  const o = { sigue: FUENTE_IDS, now: NOW };
+  const ids = secs => secs.map(x => [x.clave, x.items.length]);
+  assert.deepEqual(ids(secciones(SEED, 'cursos', o)), [['pronto', 4], ['ciclo', 14], ['encurso', 18], ['pasados', 2]]);
+  const pronto = secciones(SEED, 'cursos', o)[0].items.map(x => x.item.id);
+  assert.deepEqual(pronto, ['ucip-excel-ia-2026', 'ucip-manipulacion-alimentos-2026-10', 'ucip-ia-trabajo-2026', 'ucip-finanzas-2026']);   // por fecha de inicio
+  const enCurso = secciones(SEED, 'cursos', o)[2].items.map(x => finDe(x.item));
+  assert.deepEqual(enCurso, [...enCurso].sort((a, b) => a - b));                                                                      // el que termina antes, primero
+  const ev = secciones(SEED, 'eventos', o);
+  assert.equal(ev[0].clave, 'proximos');
+  assert.ok(ev[0].items.every(x => x.estado.clave !== 'pasado'));
+  const nov = secciones(SEED, 'novedades', o);
+  assert.deepEqual(nov.map(x => x.clave), ['recientes', 'pasados']);
+  assert.ok(nov[1].items.every(x => x.estado.texto.startsWith('Archivo')));
+  assert.deepEqual(secciones(SEED, 'beneficios', o).map(x => x.clave), ['ucip', 'aticma']);
+  assert.deepEqual(secciones(SEED, 'cursos', { ...o, fuente: 'aticma' }), []);
+  // todas las piezas caen en exactamente una categoría
+  for (const i of SEED) assert.equal(CATEGORIAS.filter(c => c.tipos.includes(i.tipo)).length, 1, i.id);
+  const total = CATEGORIAS.reduce((n, c) => n + secciones(SEED, c.id, o).reduce((m, x) => m + x.items.length, 0), 0);
+  assert.equal(total, SEED.length);
+});
+
+test('búsqueda: plurales, tildes, sinónimos y palabras cortas enteras', () => {
+  const o = { sigue: FUENTE_IDS, now: NOW };
+  const primero = q => buscar(SEED, q, o).principales[0]?.item.id;
+  assert.equal(primero('excel'), 'ucip-excel-ia-2026');
+  assert.equal(primero('créditos para pymes'), 'ucip-financiamiento');
+  assert.equal(primero('créditos'), 'ucip-financiamiento');
+  assert.equal(primero('ronda de negocios'), 'aticma-b2b-2026');
+  assert.equal(primero('buscar personal'), 'ucip-empleo');
+  assert.equal(primero('carnet'), 'ucip-manipulacion-alimentos-2026-10');
+  assert.equal(primero('sorteo'), 'ucip-escanea-y-gana');
+  assert.equal(primero('directorio de proveedores tecnologicos'), 'aticma-socios-directorio');
+  assert.deepEqual(buscar(SEED, 'socio', o).principales.slice(0, 2).map(x => x.item.id).sort(), ['aticma-asociate', 'ucip-socios']);
+  assert.ok(buscar(SEED, 'socio', o).menciones.length > 20);           // los cursos lo mencionan en sus promos: van aparte
+  assert.equal(buscar(SEED, 'xyz123', o).vigentes.length, 0);
+  assert.deepEqual(buscar(SEED, 'de la para', o).palabras, []);
+  // "ia" entera: no coincide con "industria"; "curso" no coincide con "recursos"
+  assert.ok(!buscar(SEED, 'ia', o).vigentes.some(x => x.item.id === 'ucip-uim'));
+  assert.ok(!buscar(SEED, 'curso', o).principales.some(x => x.item.id === 'ucip-empleo'));
+  assert.ok(buscar(SEED, 'cerveza', o).vigentes.some(x => x.item.id === 'pl-directorio'));
+  // lo pasado aparece aparte
+  assert.ok(buscar(SEED, 'trading', o).pasados.some(x => x.item.id === 'ucip-c-trading-desde-cero'));
+});
+
+test('inicio: próximas fechas por semana, recomendados y novedades', () => {
+  const f = proximasFechas(SEED, FUENTE_IDS, NOW, 45);
+  assert.deepEqual(f.slice(0, 4).map(x => [x.item.id, x.que]), [
+    ['ucip-excel-ia-2026', 'empieza'], ['ucip-manipulacion-alimentos-2026-10', 'empieza'], ['ucip-ia-trabajo-2026', 'empieza'], ['ucip-finanzas-2026', 'empieza']]);
+  assert.ok(f.some(x => x.item.id === 'aticma-awards-2026' && x.que === 'cierre'));
+  assert.ok(f.some(x => x.item.id === 'aticma-b2b-2026' && x.que === 'evento'));
+  assert.ok(!f.some(x => x.item.id === 'ucip-c-liquidacion-de-sueldos-y-jornales'));          // en curso: no es una fecha para la empresa
+  for (let k = 1; k < f.length; k++) assert.ok(f[k].fecha >= f[k - 1].fecha);
+  const g = agruparPorSemana(f, NOW);
+  assert.deepEqual(g.map(x => x.clave), ['semana', 'siguiente', 'despues']);
+  assert.deepEqual(g[0].filas.map(x => x.item.id), ['ucip-excel-ia-2026', 'ucip-manipulacion-alimentos-2026-10']);
+  const r = recomendados(SEED, { rubro: 'comercio', temas: [] }, FUENTE_IDS, NOW, 4);
+  assert.equal(r.length, 4);
+  assert.ok(r.every(x => x.item.rubros.includes('comercio') && ['beneficio', 'servicio', 'programa', 'directorio'].includes(x.item.tipo)));
+  const n = novedadesRecientes(SEED, FUENTE_IDS, NOW, 4);
+  assert.equal(n[0].item.id, 'ucip-ley-27826');                                              // la más reciente primero
+  assert.ok(n.every(x => x.estado.clave !== 'pasado'));
+  const rel = relacionados(SEED, SEED.find(i => i.id === 'ucip-ia-trabajo-2026'), {}, NOW, 3);
+  assert.equal(rel.length, 3);
+  assert.ok(rel.every(x => x.item.id !== 'ucip-ia-trabajo-2026' && x.estado.clave !== 'pasado'));
+  assert.equal(categoriaDe(SEED.find(i => i.id === 'pl-directorio')).id, 'directorios');
 });

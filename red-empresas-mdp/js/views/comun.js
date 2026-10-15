@@ -1,8 +1,8 @@
 // Piezas de interfaz compartidas: tarjeta de contenido, etiqueta de fuente, botón de guardar, gráfico de serie.
 import { FUENTES, TIPOS } from '../config.js';
-import { esNuevo, proximaFecha } from '../content.js';
+import { esNuevo, finDe, proximaFecha, sesiones } from '../content.js';
 import { el, icon, toast } from '../dom.js';
-import { hora, mesCorto, numDia, ok, ts } from '../fmt.js';
+import { diaSemana, hora, mesCorto, numDia, ok, ts } from '../fmt.js';
 import { registrar } from '../api.js';
 import * as store from '../store.js';
 
@@ -10,8 +10,21 @@ const CODIGO = { evento: 'EVT', capacitacion: 'CURSO', convocatoria: 'CONV', ben
 
 export const chipFuente = f => el('span', { class: 'fuente', style: { '--c': FUENTES[f]?.color || 'var(--ink-2)' } }, FUENTES[f]?.corto || f);
 
-// Talón de la tarjeta: la fecha que importa (cierre si está abierto, si no la próxima clase o el evento)
+// Talón de la tarjeta: la fecha que importa. El cierre si está abierto; si no, cuándo empieza o pasa.
+// Un curso que ya empezó muestra hasta cuándo dura (su próxima clase no le sirve a quien no está inscripto).
 function talon(item, estado, now) {
+  if (estado.clave === 'en-curso' && !item.todoElDia) {
+    const s = sesiones(item);
+    const ultima = s[s.length - 1].inicio;
+    return el('div', { class: 'talon curso' },
+      el('span', { class: 'talon-pie', text: 'hasta' }),
+      el('span', { class: 'talon-dia', text: String(numDia(ultima)) }),
+      el('span', { class: 'talon-mes', text: mesCorto(ultima) }));
+  }
+  if (estado.clave === 'pasado') {
+    const fin = finDe(item);
+    if (ok(fin)) return el('div', { class: 'talon pasado' }, el('span', { class: 'talon-mes', text: mesCorto(fin) }), el('span', { class: 'talon-dia', text: String(numDia(fin)) }), el('span', { class: 'talon-pie', text: 'terminó' }));
+  }
   const f = proximaFecha(item, now);
   if (!ok(f)) return el('div', { class: 'talon sin' }, el('span', { class: 'talon-cod', text: CODIGO[item.tipo] || '' }));
   const esCierre = ok(ts(item.cierre)) && f === ts(item.cierre);
@@ -52,6 +65,22 @@ export function tarjeta({ item, estado }, now, opts = {}) {
       el('span', { class: 'estado ' + estado.clave, text: estado.texto })),
     botonGuardar(item, opts));
   return a;
+}
+
+// Fila de la agenda de próximas fechas del inicio: día, qué pasa (empieza, cierra, evento) y la pieza
+export function filaFecha({ item, fecha, que }, now) {
+  const lbl = que === 'cierre' ? 'Cierra la inscripción' : que === 'empieza' ? 'Empieza el curso' : item.tipo === 'evento' ? 'Evento' : 'Fecha clave';
+  const h = que !== 'cierre' && !item.todoElDia ? ` · ${hora(fecha)}` : '';
+  return el('a', { class: 'fila' + (que === 'cierre' ? ' cierre' : ''), href: '#/c/' + encodeURIComponent(item.id) },
+    el('span', { class: 'fila-fecha' },
+      el('span', { class: 'fila-dsem', text: diaSemana(fecha) }),
+      el('span', { class: 'fila-dia', text: String(numDia(fecha)) }),
+      el('span', { class: 'fila-mes', text: mesCorto(fecha) })),
+    el('span', { class: 'fila-main' },
+      el('span', { class: 'fila-que', text: lbl + h }),
+      el('span', { class: 'fila-tit', text: item.titulo }),
+      chipFuente(item.fuente)),
+    icon('arrow-up-right', 'fila-ir'));
 }
 
 export function vacio(titulo, texto, ...acciones) {
