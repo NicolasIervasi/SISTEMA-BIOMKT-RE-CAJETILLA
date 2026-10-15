@@ -1,17 +1,19 @@
 // Agendar en el calendario del celular: archivo .ics (iPhone, Outlook, cualquier calendario) y link de Google Calendar.
 // Puro: recibe la pieza y devuelve textos y URLs.
 import { DIA } from './config.js';
-import { isoDia, ok, ts } from './fmt.js';
+import { fechaCorta, isoDia, ok, ts } from './fmt.js';
 import { sesiones } from './content.js';
 
 // Qué se puede agendar de una pieza: el evento (o la primera clase, con repetición semanal) y/o el día de cierre.
 export function entradas(item, now) {
   const out = [];
   const s = sesiones(item);
-  if (s.length && s[s.length - 1].fin >= now) {
+  // Un curso que ya empezó no se ofrece para agendar (no se suma uno a mitad de cursada); un evento de varios días en curso sí
+  const vigente = s.length && (s[0].inicio >= now || (item.todoElDia && s[s.length - 1].fin >= now));
+  if (vigente) {
     out.push({
       clave: 'evento',
-      label: s.length > 1 ? `Agendar las ${s.length} clases` : 'Agendar el evento',
+      label: s.length > 1 ? `Agendar las clases (semanales hasta el ${fechaCorta(s[s.length - 1].inicio)})` : 'Agendar el evento',
       titulo: item.titulo,
       inicio: s[0].inicio, fin: s[0].fin,
       todoElDia: !!item.todoElDia,

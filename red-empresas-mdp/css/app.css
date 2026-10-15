@@ -221,6 +221,8 @@ body.es-panel main { max-width: 1040px; }
 }
 .chip[aria-pressed="true"] { background: var(--ink); border-color: var(--ink); color: var(--bg); }
 .fuente-chip[aria-pressed="true"] { background: var(--c); border-color: var(--c); color: #fff; }
+.chip-chico { min-height: 30px; padding: 0 11px; font-size: .78rem; line-height: 28px; }
+.cuenta-feed { font: 500 .78rem/1 var(--mono); color: var(--ink-3); }
 
 /* ───── Etiquetas ───── */
 .fuente {

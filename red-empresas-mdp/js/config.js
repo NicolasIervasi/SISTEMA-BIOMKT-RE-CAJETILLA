@@ -45,7 +45,9 @@ export const TIPOS = {
   capacitacion: { label: 'Curso', plural: 'Cursos' },
   convocatoria: { label: 'Convocatoria', plural: 'Convocatorias' },
   beneficio: { label: 'Beneficio', plural: 'Beneficios' },
+  servicio: { label: 'Servicio', plural: 'Servicios' },
   programa: { label: 'Programa', plural: 'Programas' },
+  directorio: { label: 'Directorio', plural: 'Directorios' },
   novedad: { label: 'Novedad', plural: 'Novedades' },
   dato: { label: 'Dato del sector', plural: 'Datos del sector' }
 };
@@ -84,7 +86,9 @@ export const TEMAS = {
   normativa: 'Impuestos y normativa',
   visibilidad: 'Visibilidad y marca local',
   datos: 'Datos del sector',
-  red: 'Contactos y networking'
+  red: 'Contactos y networking',
+  empleo: 'Personal y recursos humanos',
+  exportacion: 'Comercio exterior'
 };
 
 // Ventanas de tiempo
@@ -92,3 +96,4 @@ export const DIA = 864e5;
 export const CIERRA_PRONTO_DIAS = 7;   // un plazo que vence en esta ventana se destaca arriba del feed
 export const ESTA_SEMANA_DIAS = 7;
 export const NUEVO_DIAS = 10;          // "Nuevo" en las piezas publicadas hace menos que esto
+export const ARCHIVO_DIAS = 90;        // novedades y datos sin fechas propias pasan al archivo a los 3 meses

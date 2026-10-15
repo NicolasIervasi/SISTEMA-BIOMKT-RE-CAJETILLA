@@ -26,6 +26,9 @@ test('las listas del servidor coinciden con las de la app', () => {
 test('el contenido inicial pasa la validación del servidor', () => {
   assert.deepEqual(server.erroresContenido(SEED), []);
   for (const i of SEED) assert.ok(i.verificado, i.id);
+  // los 38 cursos publicados por UCIP al 15/10/2026
+  assert.equal(SEED.filter(i => i.fuente === 'ucip' && i.tipo === 'capacitacion').length, 38);
+  assert.equal(new Set(SEED.map(i => i.id)).size, SEED.length);
 });
 
 test('fechas en hora de Mar del Plata', () => {
@@ -61,7 +64,18 @@ test('estado de cada pieza', () => {
   assert.equal(estado(byId('aticma-awards-2026'), T('2026-11-02T09:00:00-03:00')).texto, 'Cierra hoy');
   assert.equal(estado(byId('aticma-emprende-2026'), NOW).texto, 'Inscripción cerrada · vie 13/11');
   assert.equal(estado(byId('aticma-techweek-2026'), T('2026-11-07T10:00:00-03:00')).clave, 'en-curso');
-  assert.equal(estado(byId('ucip-ia-trabajo-2026'), T('2026-11-06T10:00:00-03:00')).texto, 'En curso · van 3 de 6 clases');
+  assert.equal(estado(byId('ucip-ia-trabajo-2026'), T('2026-11-06T10:00:00-03:00')).texto, 'En curso · termina el jue 26/11');
+  // cursos con fecha de fin: una clase por semana hasta la última publicada, aunque haya semanas sin clase
+  assert.equal(estado(byId('ucip-c-cerrajeria-general'), NOW).texto, 'En curso · termina el lun 14/12');
+  assert.equal(estado(byId('ucip-c-cerrajeria-general'), T('2026-12-14T22:00:00-03:00')).clave, 'pasado');
+  // ciclo 2027 sin fechas: muestra la etiqueta
+  assert.deepEqual(estado(byId('ucip-c-auxiliar-administrativo'), NOW), { clave: 'info', texto: 'Ciclo 2027 · de abril a diciembre', urgente: false });
+  // las novedades se archivan a los 3 meses; los programas no
+  assert.deepEqual(estado(byId('aticma-cessi'), NOW), { clave: 'pasado', texto: 'Archivo · publicado el 13/5', urgente: false });
+  assert.equal(estado(byId('aticma-subsecretaria'), NOW).clave, 'sin-fecha');                       // publicada el 23/7: 84 días
+  assert.equal(estado(byId('aticma-subsecretaria'), NOW + 7 * 86400e3).clave, 'pasado');           // a los 91 días, al archivo
+  assert.equal(estado(byId('aticma-nuevos-socios'), NOW).clave, 'pasado');                         // 15/7: ya pasó los 90 días
+  assert.equal(estado(byId('ucip-nodo'), T('2027-06-01T12:00:00-03:00')).clave, 'sin-fecha');
   assert.equal(estado(byId('ucip-ley-27826'), NOW).clave, 'sin-fecha');
   assert.equal(estado(byId('ucip-excel-ia-2026'), T('2026-12-05T10:00:00-03:00')).clave, 'pasado');
   assert.equal(estado(byId('aticma-b2b-2026'), T('2026-11-08T10:00:00-03:00')).texto, 'El mar 10/11 · 15:00');
@@ -84,6 +98,10 @@ test('el feed ordena por rubro, intereses y urgencia, sin esconder nada', () => 
   // fuentes seguidas, tipo y búsqueda
   assert.ok(armarFeed(SEED, { sigue: ['pl'], now: NOW }).every(x => x.item.fuente === 'pl'));
   assert.ok(armarFeed(SEED, { sigue: FUENTE_IDS, tipo: 'capacitacion', now: NOW }).every(x => x.item.tipo === 'capacitacion'));
+  assert.ok(armarFeed(SEED, { sigue: FUENTE_IDS, fuente: 'aticma', now: NOW }).every(x => x.item.fuente === 'aticma'));
+  // los cursos que empiezan pronto van antes que los que ya están en curso
+  const cursos = armarFeed(SEED, { sigue: FUENTE_IDS, tipo: 'capacitacion', now: NOW }).map(x => x.estado.clave);
+  assert.ok(cursos.indexOf('en-curso') > cursos.indexOf('manana'));
   assert.deepEqual(armarFeed(SEED, { sigue: FUENTE_IDS, q: 'credito fonapyme', now: NOW }).map(x => x.item.id), ['ucip-socios']);
   assert.ok(coincide(byId('ucip-manipulacion-alimentos-2026-10'), 'MANIPULACIÓN'));
   // lo pasado va aparte
@@ -96,7 +114,8 @@ test('cierra pronto y semana', () => {
   assert.deepEqual(cierranPronto(SEED, FUENTE_IDS, NOW), []);
   assert.deepEqual(cierranPronto(SEED, FUENTE_IDS, T('2026-10-30T10:00:00-03:00')).map(x => x.item.id), ['aticma-awards-2026']);
   assert.deepEqual(cierranPronto(SEED, ['ucip'], T('2026-10-30T10:00:00-03:00')), []);
-  // próximos 7 días = hoy y los 6 siguientes: el curso de IA (22/10, a 7 días) todavía no entra
+  // próximos 7 días = hoy y los 6 siguientes: el curso de IA (22/10, a 7 días) todavía no entra.
+  // Las clases de los cursos que ya empezaron tampoco cuentan.
   const semana = enLaSemana(SEED, FUENTE_IDS, NOW).map(i => i.id).sort();
   assert.deepEqual(semana, ['ucip-excel-ia-2026', 'ucip-manipulacion-alimentos-2026-10']);
   assert.ok(enLaSemana(SEED, FUENTE_IDS, NOW + 86400e3).some(i => i.id === 'ucip-ia-trabajo-2026'));
@@ -130,6 +149,8 @@ test('calendario: .ics con repetición semanal, alarma y líneas plegadas', () =
   assert.deepEqual(aw.map(x => x.clave), ['evento', 'cierre']);
   assert.match(ics(byId('aticma-awards-2026'), aw[1], { now: NOW }), /TRIGGER:-P1D/);
   assert.deepEqual(entradas(byId('ucip-ley-27826'), NOW), []);
+  assert.deepEqual(entradas(byId('ucip-c-liquidacion-de-sueldos-y-jornales'), NOW), []);          // curso ya empezado: no se agenda
+  assert.equal(entradas(byId('aticma-techweek-2026'), T('2026-11-08T10:00:00-03:00')).length, 1);   // evento de varios días en curso: sí
   const g = new URL(googleUrl(it, e));
   assert.equal(g.searchParams.get('dates'), '20261016T213000Z/20261016T233000Z');
   assert.equal(g.searchParams.get('recur'), 'RRULE:FREQ=WEEKLY;COUNT=8');

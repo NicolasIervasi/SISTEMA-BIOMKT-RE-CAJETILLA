@@ -1,5 +1,5 @@
 // Inicio: lo que cierra pronto, la semana y el feed de las fuentes que sigue la empresa.
-import { FUENTES, TIPOS, TIPO_IDS } from '../config.js';
+import { FUENTES, FUENTE_IDS, TIPOS, TIPO_IDS } from '../config.js';
 import { armarFeed, cierranPronto, enLaSemana } from '../content.js';
 import { $, el, icon } from '../dom.js';
 import { plural } from '../fmt.js';
@@ -44,6 +44,13 @@ export function mount(root, ctx) {
           el('span', { class: 'urgente-f', text: FUENTES[x.item.fuente].corto }))))));
   }
 
+  // Filtro por fuente (solo si sigue más de una) y por tipo
+  const fuentesSeguidas = FUENTE_IDS.filter(f => state.sigue.includes(f));
+  if (state.fuenteFiltro && !fuentesSeguidas.includes(state.fuenteFiltro)) state.fuenteFiltro = '';
+  const chipsFuente = fuentesSeguidas.length > 1 ? el('div', { class: 'chips chips-fuente', role: 'group', 'aria-label': 'Filtrar por fuente' },
+    [['', 'Todas las fuentes'], ...fuentesSeguidas.map(f => [f, FUENTES[f].corto])].map(([f, label]) =>
+      el('button', { type: 'button', class: 'chip chip-chico' + (f ? ' fuente-chip' : ''), style: f ? { '--c': FUENTES[f].color } : null, 'aria-pressed': String(state.fuenteFiltro === f), 'data-f': f, text: label,
+        onclick: () => { state.fuenteFiltro = f; store.save(); chipsFuente.querySelectorAll('.chip').forEach(c => c.setAttribute('aria-pressed', String(c.dataset.f === f))); pintarLista(); } }))) : null;
   const tiposPresentes = TIPO_IDS.filter(t => items.some(i => i.tipo === t && state.sigue.includes(i.fuente)));
   if (state.filtro && !tiposPresentes.includes(state.filtro)) state.filtro = '';
   const chips = el('div', { class: 'chips', role: 'group', 'aria-label': 'Filtrar por tipo' },
@@ -59,15 +66,16 @@ export function mount(root, ctx) {
 
   const lista = el('div', { class: 'lista', 'aria-live': 'polite' });
   bloques.push(el('section', { class: 'feed', 'aria-labelledby': 'tFeed' },
-    el('div', { class: 'feed-head' }, el('h2', { id: 'tFeed', class: 'sec', text: 'Para vos' }), buscar), chips, lista));
+    el('div', { class: 'feed-head' }, el('h2', { id: 'tFeed', class: 'sec', text: 'Para vos' }), buscar), chipsFuente, chips, lista));
   root.replaceChildren(...bloques);
 
   function pintarLista() {
-    const opts = { perfil: state.perfil, sigue: state.sigue, tipo: state.filtro, q, now };
+    const opts = { perfil: state.perfil, sigue: state.sigue, tipo: state.filtro, fuente: state.fuenteFiltro, q, now };
     const feed = armarFeed(items, opts);
     const pasados = armarFeed(items, { ...opts, pasados: true });
-    const kids = feed.map(x => tarjeta(x, now));
-    if (!feed.length) kids.push(vacio(q ? 'Sin resultados' : 'Nada por acá', q ? `No hay piezas vigentes que coincidan con "${q}".` : 'No hay piezas vigentes de este tipo en tus fuentes.'));
+    const kids = feed.length
+      ? [el('p', { class: 'cuenta-feed', text: plural(feed.length, 'pieza vigente', 'piezas vigentes') }), ...feed.map(x => tarjeta(x, now))]
+      : [vacio(q ? 'Sin resultados' : 'Nada por acá', q ? `No hay piezas vigentes que coincidan con "${q}".` : 'No hay piezas vigentes con este filtro en tus fuentes.')];
     if (pasados.length) {
       kids.push(el('button', { type: 'button', class: 'btn fantasma ver-pasados', 'aria-expanded': String(verPasados),
         text: verPasados ? 'Ocultar lo que ya pasó' : `Ver lo que ya pasó (${pasados.length})`,

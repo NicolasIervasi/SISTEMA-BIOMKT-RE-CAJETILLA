@@ -6,7 +6,7 @@ import { hora, mesCorto, numDia, ok, ts } from '../fmt.js';
 import { registrar } from '../api.js';
 import * as store from '../store.js';
 
-const CODIGO = { evento: 'EVT', capacitacion: 'CURSO', convocatoria: 'CONV', beneficio: 'BENEF', programa: 'PROG', novedad: 'NOV', dato: 'DATO' };
+const CODIGO = { evento: 'EVT', capacitacion: 'CURSO', convocatoria: 'CONV', beneficio: 'BENEF', servicio: 'SERV', programa: 'PROG', directorio: 'DIR', novedad: 'NOV', dato: 'DATO' };
 
 export const chipFuente = f => el('span', { class: 'fuente', style: { '--c': FUENTES[f]?.color || 'var(--ink-2)' } }, FUENTES[f]?.corto || f);
 

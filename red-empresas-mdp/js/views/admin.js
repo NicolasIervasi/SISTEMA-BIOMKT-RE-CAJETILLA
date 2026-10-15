@@ -194,7 +194,8 @@ function pantallaEditor(body, ctx, id) {
         campo('cierre', 'Cierre de inscripción', input('cierre', { type: 'datetime-local', value: aInputLocal(it.cierre) }))),
       el('div', { class: 'fila2' },
         campo('fin', 'Termina (eventos de varios días)', input('fin', { type: 'datetime-local', value: aInputLocal(it.fin) })),
-        el('label', { class: 'check', for: 'e_todoElDia' }, input('todoElDia', { type: 'checkbox', checked: !!it.todoElDia }), 'Todo el día (sin horario)'))),
+        el('label', { class: 'check', for: 'e_todoElDia' }, input('todoElDia', { type: 'checkbox', checked: !!it.todoElDia }), 'Todo el día (sin horario)')),
+      campo('etiqueta', 'Etiqueta si no hay fechas (opcional)', input('etiqueta', { maxlength: '48', value: it.etiqueta || '', placeholder: 'Ej.: Ciclo 2027 · de abril a diciembre' }), 'Se muestra en la tarjeta cuando la pieza no tiene fechas propias.')),
     el('fieldset', {}, el('legend', { text: 'Dónde y links' }),
       campo('lugar', 'Lugar', input('lugar', { maxlength: '160', value: it.lugar || '' })),
       campo('url', 'Link al original', input('url', { type: 'url', value: it.url || 'https://', required: true }), 'La página de la fuente donde se publicó. Obligatorio.'),
@@ -222,7 +223,7 @@ function pantallaEditor(body, ctx, id) {
       datos: v('datos') ? v('datos').split('\n').map(l => l.trim()).filter(Boolean).map(l => { const i = l.indexOf(':'); return i > 0 ? [l.slice(0, i).trim(), l.slice(i + 1).trim()] : ['Dato', l]; }) : undefined,
       inicio: deInputLocal(f.inicio.value) || undefined, fin: deInputLocal(f.fin.value) || undefined, cierre: deInputLocal(f.cierre.value) || undefined,
       duracionMin: num('duracionMin'), sesiones: num('sesiones'), todoElDia: f.todoElDia.checked || undefined,
-      lugar: v('lugar') || undefined, url: v('url'), via: v('via') || undefined,
+      lugar: v('lugar') || undefined, url: v('url'), via: v('via') || undefined, etiqueta: v('etiqueta') || undefined,
       accion: v('accionTxt') && v('accionUrl') ? { txt: v('accionTxt'), url: v('accionUrl') } : undefined,
       rubros: marcados(rubrosG).length ? marcados(rubrosG) : ['todos'], temas: marcados(temasG),
       serie: it.serie, publicado: v('publicado') || undefined, verificado: v('verificado') || undefined

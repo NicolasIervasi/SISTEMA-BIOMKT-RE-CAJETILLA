@@ -1,8 +1,9 @@
 // Service worker mínimo: la app abre sin conexión con la última versión que se vio.
 // Red primero para lo propio (así nunca queda una versión vieja), caché como respaldo; fuentes tipográficas desde caché.
 // La API nunca pasa por acá: el contenido sin conexión lo resuelve la app con su propia copia.
-const CACHE = 'redmdp-v1';
+const CACHE = 'redmdp-v2';
 const JS = ['main', 'api', 'config', 'content', 'demo', 'dom', 'fmt', 'ics', 'seed', 'stats', 'store',
+  'seed/ucip', 'seed/ucip-cursos', 'seed/aticma', 'seed/pl',
   'views/admin', 'views/agenda', 'views/comun', 'views/detalle', 'views/fuentes', 'views/inicio', 'views/perfil'].map(m => `js/${m}.js`);
 const SHELL = ['./', 'index.html', 'css/app.css', 'icon.svg', 'manifest.webmanifest', ...JS];
 

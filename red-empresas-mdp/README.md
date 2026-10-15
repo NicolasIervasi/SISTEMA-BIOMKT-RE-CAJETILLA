@@ -8,7 +8,7 @@ La app es HTML + módulos ES, sin build ni librerías. El servidor son dos funci
 
 **Para la empresa** (celular primero, instalable desde Safari con *Compartir → Agregar a inicio*):
 - **Bienvenida**: rubro, tamaño, intereses y fuentes a seguir. El nombre es opcional y no sale del celular.
-- **Inicio**: un bloque "Cierra pronto" con los plazos que vencen en 7 días y un feed ordenado por relevancia (rubro, intereses, urgencia y novedad), con filtros por tipo y búsqueda sin tildes. Ordenar no esconde nada: se ve todo lo que publican las fuentes seguidas. Lo que ya pasó queda aparte.
+- **Inicio**: un bloque "Cierra pronto" con los plazos que vencen en 7 días y un feed ordenado por relevancia (rubro, intereses, urgencia y novedad), con filtros por fuente y por tipo (evento, curso, convocatoria, beneficio, servicio, programa, directorio, novedad, dato del sector) y búsqueda sin tildes. Ordenar no esconde nada: se ve todo lo que publican las fuentes seguidas. Lo que ya pasó y las novedades de más de 3 meses quedan aparte.
 - **Detalle**: datos clave, botón de inscripción, link al original y una nota de verificación.
   - **Agendar**: archivo .ics para el calendario del iPhone u Outlook (los cursos entran con sus clases semanales y aviso 2 h antes) o Google Calendar. En convocatorias también se puede agendar el recordatorio del cierre.
   - **Compartir**: por WhatsApp o copiando el link.
@@ -32,15 +32,19 @@ La app es HTML + módulos ES, sin build ni librerías. El servidor son dos funci
 
 ## Contenido inicial (relevado el 15/10/2026)
 
-`js/seed.js` trae 16 piezas reales. Están resumidas con palabras propias, tienen link al original y la fecha de verificación. El servidor arranca vacío: hasta la primera publicación desde el panel, las empresas ven este contenido.
+`js/seed/` trae **97 piezas reales**, todo lo publicado por las tres fuentes que le sirve a una empresa. Están resumidas con palabras propias, tienen link al original y la fecha de verificación. El servidor arranca vacío: hasta la primera publicación desde el panel, las empresas ven este contenido.
 
 | Fuente | Qué se relevó | De dónde |
 |---|---|---|
-| UCIP | Cursos de octubre: Excel con IA (16/10), carnet de manipulación de alimentos (21 y 28/10), IA aplicada (22/10) y finanzas (27/10). Ley 27.826, ventas de septiembre (−7,9%, DESE), Nodo UCIP y cuotas de socio. | [ucip.org.ar/noticias](https://www.ucip.org.ar/noticias/), [cursos](https://www.ucip.org.ar/servicios/capacitacion/cursos-presenciales/), [asociarse](https://www.ucip.org.ar/sociosucip/como-asociarse/), [Infobrisas](https://www.infobrisas.com/noticias/2026/08/31/106226-la-ucip-inauguro-un-nuevo-nodo-para-empresas-en-mar-del-plata-que-servicios-ofrecera) |
-| ATICMA | B2B Demandas Tecnológicas (10/11, gratis, con formulario), ATICMA Awards (postulaciones hasta el 2/11), Tech Week (5 al 13/11), convenio con la UAA, convenio con el Centro de Constructores y ATICMA Emprende. | [aticma.org.ar/novedades](https://www.aticma.org.ar/novedades/), [awards.aticma.org.ar](https://awards.aticma.org.ar/) |
-| Producto Local | Cómo sumarse al sello y qué se recibe; 310 empresas y 13.372 productos (septiembre 2026). | [El Marplatense](https://www.elmarplatense.com/el-programa-producto-local-supero-los-13300-articulos-y-suma-310-empresas), [La Capital](https://www.lacapitalmdp.com/temas/producto-local/), [mardelplata.gob.ar/productolocal](https://www.mardelplata.gob.ar/productolocal) |
+| UCIP (`ucip-cursos.js`, `ucip.js`) | **Los 38 cursos** del Centro de Capacitación, con fechas, horario, clases, docente, destinatarios, requisitos y promociones: 4 empiezan en octubre, 18 están en curso, 2 terminaron y 14 son del ciclo 2027. **Servicios:** financiamiento (todas las líneas cerradas al 15/10), consultoría, empleo UCIP-AMIA, seguros, sellados ARBA, informes Veraz, Provincia NET, cajas de seguridad, autogestión de tasas y DESE. **Programas:** Nodo UCIP, incubadora, Centros Comerciales a Cielo Abierto, UCOM, UIM, Oferta Exportable, UPRI, Mujeres Empresarias, Comisión Joven y programa de TV. **Convocatoria:** Escaneá y Ganá (sorteo del 2/11). **Además:** cuotas de socio, las 30 cámaras socias, la biblioteca digital, ventas de septiembre, el informe industrial 2025 y las 10 noticias del sitio. | [cursos](https://www.ucip.org.ar/servicios/capacitacion/cursos-presenciales/), [servicios y sectores](https://www.ucip.org.ar/), [noticias](https://www.ucip.org.ar/noticias/), [informe industrial 2025 (PDF)](https://www.ucip.org.ar/wp-content/uploads/2026/06/Informe-Encuesta-Pyme-2025.pdf), [Infobrisas](https://www.infobrisas.com/noticias/2026/08/31/106226-la-ucip-inauguro-un-nuevo-nodo-para-empresas-en-mar-del-plata-que-servicios-ofrecera) |
+| ATICMA (`aticma.js`) | **Tech Week:** B2B Demandas Tecnológicas (10/11, gratis), Awards (postulaciones hasta el 2/11), ATICMA Emprende (récord de 250 proyectos, final el 13/11). **Directorios:** las 111 empresas socias y dónde estudiar tecnología. **Socios:** beneficios de asociarse, comisiones y convenio con la UAA. **Además:** cifras del sector TIC y las 11 novedades de 2026 (las de más de 3 meses quedan en el archivo). | [aticma.org.ar](https://www.aticma.org.ar/), [novedades](https://www.aticma.org.ar/novedades/), [socios](https://www.aticma.org.ar/socios/), [emprende.aticma.org.ar](https://emprende.aticma.org.ar/), [awards.aticma.org.ar](https://awards.aticma.org.ar/) |
+| Producto Local (`pl.js`) | Cómo sumarse al sello y qué se recibe, el listado de empresas adheridas para buscar proveedores, y la evolución hasta 310 empresas y 13.372 productos (septiembre 2026). | [El Marplatense](https://www.elmarplatense.com/el-programa-producto-local-supero-los-13300-articulos-y-suma-310-empresas), [La Capital](https://www.lacapitalmdp.com/temas/producto-local/), [Punto Noticias](https://puntonoticias.com/producto-local-casi-300-empresas-adheridas-y-mas-de-12-300-productos-ya-forman-parte-de-esta-iniciativa/), [mardelplata.gob.ar/productolocal](https://www.mardelplata.gob.ar/productolocal) |
 
-Lo que no se pudo confirmar quedó dicho en la pieza: costos de los cursos y del Nodo UCIP (no publicados), requisitos formales de Producto Local y email del programa (el sitio municipal rechaza las consultas automáticas).
+Lo que no se pudo confirmar quedó dicho en la pieza:
+- Los costos de los cursos y del Nodo UCIP no están publicados; la cuota de socio de ATICMA tampoco.
+- Producto Local no publica requisitos ni costo de adhesión. El sitio municipal rechaza las consultas automáticas, así que esos datos salen de gacetillas publicadas en medios.
+- Los mails de UCIP están ocultos en su sitio: se dan teléfonos y la sede.
+- Quedó afuera Aemprender: es un certamen de 2023 que sigue en el menú de UCIP.
 
 Ninguna de las tres fuentes publica RSS. UCIP tiene un newsletter por temas. Por eso la carga es manual desde el panel, como propone el plan: no se extrae nada de redes sociales.
 
@@ -97,7 +101,7 @@ Después del primer día del piloto, medí el consumo en *Billing → Usage* ant
 ```
 index.html, css/app.css         shell, iconos y estilos (claro/oscuro, celular primero)
 js/config.js                    fuentes, tipos, rubros, tamaños, temas
-js/seed.js                      contenido inicial relevado
+js/seed.js, js/seed/            contenido inicial relevado, por fuente
 js/content.js                   estado de cada pieza, relevancia, feed, agenda (puro)
 js/ics.js                       .ics y Google Calendar (puro)
 js/stats.js                     estadísticas e informe (puro)

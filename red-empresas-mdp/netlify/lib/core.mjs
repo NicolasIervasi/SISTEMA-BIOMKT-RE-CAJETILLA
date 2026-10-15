@@ -18,10 +18,10 @@ export const API_VERSION = 1;
 
 // Tienen que coincidir con js/config.js (lo controla una prueba)
 export const FUENTES = ['ucip', 'aticma', 'pl'];
-export const TIPOS = ['evento', 'capacitacion', 'convocatoria', 'beneficio', 'programa', 'novedad', 'dato'];
+export const TIPOS = ['evento', 'capacitacion', 'convocatoria', 'beneficio', 'servicio', 'programa', 'directorio', 'novedad', 'dato'];
 export const RUBROS = ['comercio', 'gastronomia', 'alimentos', 'industria', 'pesca', 'construccion', 'tecnologia', 'turismo', 'textil', 'servicios', 'salud', 'logistica', 'agro', 'otro'];
 export const TAMANOS = ['uni', 'micro', 'mini', 'pyme', 'grande'];
-export const TEMAS = ['capacitacion', 'clientes', 'tecnologia', 'financiamiento', 'normativa', 'visibilidad', 'datos', 'red'];
+export const TEMAS = ['capacitacion', 'clientes', 'tecnologia', 'financiamiento', 'normativa', 'visibilidad', 'datos', 'red', 'empleo', 'exportacion'];
 export const EV_TIPOS = ['abrir', 'ver', 'guardar', 'quitar', 'ir', 'agendar', 'compartir'];
 
 export const CFG = {
@@ -62,7 +62,7 @@ const readJson = async (store, key) => {
 };
 
 // ───────────── Validación del contenido ─────────────
-const LIM = { titulo: 140, resumen: 400, parrafo: 1500, parrafos: 8, dato: 200, datos: 12, url: 500, lugar: 160, via: 60, accion: 60 };
+const LIM = { titulo: 140, resumen: 400, parrafo: 1500, parrafos: 8, dato: 300, datos: 12, url: 500, lugar: 160, via: 60, accion: 60, etiqueta: 48 };
 const str = (v, max) => typeof v === 'string' && v.trim().length > 0 && v.length <= max;
 const optStr = (v, max) => v == null || v === '' || (typeof v === 'string' && v.length <= max);
 const https = v => typeof v === 'string' && v.length <= LIM.url && /^https:\/\/[^\s"<>]+$/.test(v);
@@ -83,6 +83,7 @@ export function erroresItem(it) {
   if (!https(it.url)) e.push('el link al original tiene que empezar con https://');
   if (!optStr(it.via, LIM.via)) e.push('"vía" demasiado largo');
   if (!optStr(it.lugar, LIM.lugar)) e.push('lugar demasiado largo');
+  if (!optStr(it.etiqueta, LIM.etiqueta)) e.push(`etiqueta de más de ${LIM.etiqueta} caracteres`);
   for (const k of ['inicio', 'fin', 'cierre']) if (!fecha(it[k])) e.push(`fecha "${k}" inválida`);
   for (const k of ['publicado', 'verificado']) if (!diaOk(it[k])) e.push(`"${k}" tiene que ser AAAA-MM-DD`);
   if (it.duracionMin != null && !(Number.isInteger(it.duracionMin) && it.duracionMin > 0 && it.duracionMin <= 24 * 60)) e.push('duración inválida');
@@ -93,7 +94,7 @@ export function erroresItem(it) {
   if (!Array.isArray(it.temas) || !it.temas.every(t => TEMAS.includes(t))) e.push('temas inválidos');
   if (it.serie != null && !(isObj(it.serie) && str(it.serie.titulo, LIM.titulo) && Array.isArray(it.serie.puntos) && it.serie.puntos.length <= 24 &&
     it.serie.puntos.every(p => Array.isArray(p) && p.length === 2 && str(p[0], 12) && Number.isFinite(p[1])))) e.push('serie inválida');
-  const permitidos = new Set(['id', 'fuente', 'tipo', 'titulo', 'resumen', 'cuerpo', 'datos', 'inicio', 'fin', 'cierre', 'duracionMin', 'sesiones', 'todoElDia', 'lugar', 'url', 'via', 'accion', 'rubros', 'temas', 'serie', 'publicado', 'verificado']);
+  const permitidos = new Set(['id', 'fuente', 'tipo', 'titulo', 'resumen', 'cuerpo', 'datos', 'inicio', 'fin', 'cierre', 'duracionMin', 'sesiones', 'todoElDia', 'lugar', 'url', 'via', 'accion', 'rubros', 'temas', 'serie', 'publicado', 'verificado', 'etiqueta']);
   const extra = Object.keys(it).filter(k => !permitidos.has(k));
   if (extra.length) e.push(`campos desconocidos: ${extra.join(', ')}`);
   return e;

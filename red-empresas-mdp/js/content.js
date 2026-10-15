@@ -1,18 +1,23 @@
 // Lógica del contenido (pura, sin DOM): fechas de cada pieza, estado, relevancia para una empresa, feed y agenda.
-import { CIERRA_PRONTO_DIAS, DIA, ESTA_SEMANA_DIAS, NUEVO_DIAS, TIPOS } from './config.js';
-import { diasHasta, fechaCorta, hora, norm, ok, ts } from './fmt.js';
+import { ARCHIVO_DIAS, CIERRA_PRONTO_DIAS, DIA, ESTA_SEMANA_DIAS, NUEVO_DIAS, TIPOS } from './config.js';
+import { diaMes, diasHasta, fechaCorta, hora, norm, ok, ts, tsDia } from './fmt.js';
 
 const SEMANA = 7 * DIA;
 
 // Clases de un curso (semanales) o el evento como una sola sesión. [{ inicio, fin }] en ms.
+// Un curso con `fin` (última clase) tiene una clase por semana hasta esa fecha: así coincide con lo que publica la fuente
+// aunque haya semanas sin clase. Sin `fin`, `sesiones` dice cuántas semanas seguidas.
 export function sesiones(item) {
   const ini = ts(item.inicio);
   if (!ok(ini)) return [];
-  if (item.todoElDia) {
-    const fin = ok(ts(item.fin)) ? ts(item.fin) : ini + DIA - 1;
-    return [{ inicio: ini, fin }];
-  }
+  const finItem = ts(item.fin);
+  if (item.todoElDia) return [{ inicio: ini, fin: ok(finItem) ? finItem : ini + DIA - 1 }];
   const dur = (item.duracionMin || 60) * 60e3;
+  if (ok(finItem) && finItem - ini > DIA) {
+    const out = [];
+    for (let t = ini; t <= finItem && out.length < 60; t += SEMANA) out.push({ inicio: t, fin: t + dur });
+    return out;
+  }
   const n = Math.max(1, Math.min(52, item.sesiones | 0 || 1));
   return Array.from({ length: n }, (_, i) => ({ inicio: ini + i * SEMANA, fin: ini + i * SEMANA + dur }));
 }
@@ -33,12 +38,17 @@ export function proximaFecha(item, now) {
   return s ? s.inicio : NaN;
 }
 
+// Novedades y datos sin fechas propias pasan al archivo a los ARCHIVO_DIAS de publicados
+const archivable = item => (item.tipo === 'novedad' || item.tipo === 'dato') && !item.inicio && !item.cierre;
+
 // Estado visible de la pieza.
-//   clave: pasado | cerrado | cierra | en-curso | hoy | manana | semana | proximo | abierto | sin-fecha
+//   clave: pasado | cerrado | cierra | en-curso | hoy | manana | semana | proximo | abierto | info | sin-fecha
 //   texto: frase corta para la tarjeta · urgente: va en el bloque "Cierra pronto"
 export function estado(item, now) {
   const fin = finDe(item);
   if (ok(fin) && fin < now) return { clave: 'pasado', texto: 'Ya pasó', urgente: false };
+  const pub = tsDia(item.publicado);
+  if (archivable(item) && ok(pub) && now - pub > ARCHIVO_DIAS * DIA) return { clave: 'pasado', texto: `Archivo · publicado el ${diaMes(pub)}`, urgente: false };
   const c = ts(item.cierre);
   const s = sesiones(item);
   if (ok(c) && c < now) {
@@ -55,9 +65,8 @@ export function estado(item, now) {
   if (s.length) {
     const primera = s[0].inicio;
     if (primera < now) {
-      const hechas = s.filter(x => x.inicio < now).length;
-      if (item.todoElDia) return { clave: 'en-curso', texto: 'En curso', urgente: false };
-      return { clave: 'en-curso', texto: s.length > 1 ? `En curso · van ${hechas} de ${s.length} clases` : 'En curso', urgente: false };
+      if (item.todoElDia || s.length === 1) return { clave: 'en-curso', texto: 'En curso', urgente: false };
+      return { clave: 'en-curso', texto: `En curso · termina el ${fechaCorta(s[s.length - 1].inicio)}`, urgente: false };
     }
     const d = diasHasta(primera, now);
     const h = item.todoElDia ? '' : ` · ${hora(primera)}`;
@@ -69,11 +78,12 @@ export function estado(item, now) {
     return { clave: 'proximo', texto: `${verbo ? verbo + ' el' : 'El'} ${fechaCorta(primera)}${h}`, urgente: false };
   }
   if (ok(c)) return { clave: 'abierto', texto: `Abierto hasta el ${fechaCorta(c)}`, urgente: false };
+  if (item.etiqueta) return { clave: 'info', texto: item.etiqueta, urgente: false };
   return { clave: 'sin-fecha', texto: TIPOS[item.tipo]?.label || '', urgente: false };
 }
 
 export const esNuevo = (item, now) => {
-  const p = ts(item.publicado);
+  const p = tsDia(item.publicado);
   return ok(p) && now - p >= 0 && now - p < NUEVO_DIAS * DIA;
 };
 
@@ -87,7 +97,7 @@ export function puntaje(item, perfil = {}, now) {
   else if (rubros.includes('todos')) p += 1;
   const temas = perfil.temas || [];
   p += Math.min(4, (item.temas || []).filter(t => temas.includes(t)).length * 2);
-  p += { cierra: 4, hoy: 3, manana: 3, semana: 2, 'en-curso': 0, proximo: 1, abierto: 1, cerrado: -2, 'sin-fecha': 0 }[e.clave] || 0;
+  p += { cierra: 4, hoy: 3, manana: 3, semana: 2, 'en-curso': -1, proximo: 1, abierto: 1, info: 0, cerrado: -2, 'sin-fecha': 0 }[e.clave] || 0;
   if (esNuevo(item, now)) p += 1;
   return p;
 }
@@ -99,14 +109,14 @@ export const coincide = (item, q) => {
 };
 
 // Feed de la empresa: fuentes seguidas, filtro por tipo y búsqueda; ordenado por relevancia y, a igual relevancia, por fecha.
-export function armarFeed(items, { perfil = {}, sigue = [], tipo = '', q = '', now, pasados = false } = {}) {
+export function armarFeed(items, { perfil = {}, sigue = [], tipo = '', fuente = '', q = '', now, pasados = false } = {}) {
   return items
-    .filter(i => sigue.includes(i.fuente))
+    .filter(i => sigue.includes(i.fuente) && (!fuente || i.fuente === fuente))
     .filter(i => !tipo || i.tipo === tipo)
     .filter(i => coincide(i, q))
     .map(i => ({ item: i, estado: estado(i, now), puntaje: puntaje(i, perfil, now), fecha: proximaFecha(i, now) }))
     .filter(x => pasados ? x.estado.clave === 'pasado' : x.estado.clave !== 'pasado')
-    .sort((a, b) => b.puntaje - a.puntaje || orden(a.fecha, b.fecha) || (ts(b.item.publicado) || 0) - (ts(a.item.publicado) || 0));
+    .sort((a, b) => b.puntaje - a.puntaje || orden(a.fecha, b.fecha) || (tsDia(b.item.publicado) || 0) - (tsDia(a.item.publicado) || 0));
 }
 const orden = (a, b) => (ok(a) ? a : Infinity) - (ok(b) ? b : Infinity) || 0;
 
@@ -115,9 +125,11 @@ export const cierranPronto = (items, sigue, now) =>
   items.filter(i => sigue.includes(i.fuente)).map(i => ({ item: i, estado: estado(i, now) }))
     .filter(x => x.estado.urgente).sort((a, b) => ts(a.item.cierre) - ts(b.item.cierre));
 
-// Lo que pasa en los próximos 7 días (clases, eventos o cierres), para el resumen del inicio.
+// Lo que empieza, cierra o pasa en los próximos 7 días, para el resumen del inicio.
+// Las clases de un curso que ya empezó no cuentan: no le sirven a quien no está inscripto.
 export const enLaSemana = (items, sigue, now) =>
   items.filter(i => sigue.includes(i.fuente)).filter(i => {
+    if (estado(i, now).clave === 'en-curso' && !i.todoElDia) return false;
     const f = proximaFecha(i, now);
     return ok(f) && diasHasta(f, now) < ESTA_SEMANA_DIAS;
   });

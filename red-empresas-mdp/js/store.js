@@ -18,7 +18,8 @@ export function fresco() {
     guardados: [],
     vistos: {},                       // itemId -> día en que se abrió (para contar una vista por día)
     usoAnonimo: true,                 // comparte eventos anónimos para las estadísticas de las fuentes
-    filtro: ''
+    filtro: '',
+    fuenteFiltro: ''
   };
 }
 
@@ -41,7 +42,8 @@ export function sanear(s) {
     guardados: Array.isArray(s.guardados) ? s.guardados.filter(x => typeof x === 'string').slice(0, 500) : [],
     vistos: s.vistos && typeof s.vistos === 'object' ? s.vistos : {},
     usoAnonimo: s.usoAnonimo !== false,
-    filtro: typeof s.filtro === 'string' ? s.filtro : ''
+    filtro: typeof s.filtro === 'string' ? s.filtro : '',
+    fuenteFiltro: FUENTE_IDS.includes(s.fuenteFiltro) ? s.fuenteFiltro : ''
   };
 }
 

@@ -6,6 +6,8 @@ export const TZ = 'America/Argentina/Buenos_Aires';
 const OFFSET = -3 * 3600e3;
 
 export const ts = iso => (iso ? Date.parse(iso) : NaN);
+// Una fecha sola (AAAA-MM-DD) es ese día en Mar del Plata, no la medianoche UTC (que acá es el día anterior)
+export const tsDia = s => (typeof s === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(s) ? Date.parse(`${s}T12:00:00-03:00`) : ts(s));
 export const ok = n => Number.isFinite(n);
 
 // Número de día calendario en Mar del Plata (sirve para comparar "hoy", "mañana", "en 3 días")
