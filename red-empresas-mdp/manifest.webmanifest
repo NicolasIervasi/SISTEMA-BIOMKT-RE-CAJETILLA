@@ -1,0 +1,13 @@
+{
+  "name": "Red Empresas MDP",
+  "short_name": "Red MDP",
+  "description": "Cursos, rondas de negocios, convocatorias y beneficios de UCIP, ATICMA y Producto Local para las empresas de Mar del Plata.",
+  "lang": "es-AR",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#f3f5f7",
+  "theme_color": "#0d2436",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}

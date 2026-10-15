@@ -21,6 +21,8 @@ Repositorio de guiones y material audiovisual.
 
 - [`logistica-guemes/`](logistica-guemes/) — **Cuadra**, despacho de reparto para Mar del Plata, zona Güemes: pedidos dentro de un radio de 11 cuadras (1 cuadra = 100 m), reparto automático entre repartidores con rutas óptimas por calles reales, modo repartidor para el celular (con link de ruta por WhatsApp), tarifas por anillo y métricas. Estático, sin build: se sirve con `python3 -m http.server` o se publica en Netlify. En vivo: https://cuadra-guemes.netlify.app. Detalle, estructura y límites en su [README](logistica-guemes/README.md).
 
+- [`red-empresas-mdp/`](red-empresas-mdp/) — **Red Empresas MDP**, piloto que reúne lo que publican UCIP, ATICMA y Producto Local (cursos, rondas, convocatorias, beneficios, datos del sector) y lo ordena para cada empresa por rubro e intereses: "cierra pronto", agenda con paso al calendario del celular, panel de carga y estadísticas anónimas con informe de alcance por cámara. Contenido inicial real, relevado el 15/10/2026. Estático + funciones de Netlify con Blobs, mismo esquema que Cuadra; `node scripts/dev.mjs` la corre completa en local. Detalle, fuentes, legal y límites en su [README](red-empresas-mdp/README.md).
+
 ## Estructura
 
 - `guiones/` — un archivo por guion, numerado (`guion-NN-slug.md`). Cada guion incluye formato, por qué funciona, el guion completo (gancho, desarrollo, CTA, cierre) e indicaciones de producción.
