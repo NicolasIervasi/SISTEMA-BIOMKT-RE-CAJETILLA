@@ -83,8 +83,17 @@ En modo local, el panel publica en ese navegador y puede **cargar datos de ejemp
 ```bash
 npm ci
 node scripts/stage.mjs ../stage-redmdp    # carpeta publicable: site/ (público), funciones y package.json; sin tests ni README
-# desplegar esa carpeta (netlify deploy --dir … o arrastrándola) y configurar:
+cd ../stage-redmdp && npm ci --omit=dev   # @netlify/blobs, para empaquetar las funciones
+netlify deploy --prod --no-build --dir site --functions netlify/functions
 ```
+
+**Publicada en https://red-empresas-mdp.netlify.app.** Es el proyecto `red-empresas-mdp` del equipo Sistema Gantt BIOMKT. Se subió con la CLI desde la carpeta de `stage.mjs` y no está conectado a Git, así que cada cambio hay que volver a desplegarlo.
+
+El equipo crea los proyectos como *Privados*: solo el dueño los ve, entrando con su cuenta de Netlify. Para abrirlo a las empresas: *Project configuration → General → Visitor access → Project visibility → Edit visibility → Public*.
+
+Arrastrar `site/` a Netlify Drop publica solo la parte estática. La app anda en modo local, sin estadísticas compartidas ni panel.
+
+Variables a configurar:
 
 | Variable (alcance *Functions*) | Qué es |
 |---|---|
@@ -92,7 +101,7 @@ node scripts/stage.mjs ../stage-redmdp    # carpeta publicable: site/ (público)
 | `ADMIN_SECRET` | Secreto al azar de 32 caracteres o más (`openssl rand -base64 48`). Nunca se tipea y tiene que ser distinto del código. Cambiarlo cierra todas las sesiones del panel. |
 | `PAUSADO` | `1` deja de guardar eventos (palanca de emergencia de costos). El contenido se sigue sirviendo. |
 
-Un cambio de variables exige volver a desplegar. `GET /api/salud` dice si el panel quedó configurado.
+Un cambio de variables exige volver a desplegar. `GET /api/salud` dice si el panel quedó configurado. En el sitio publicado `ADMIN_CODE` y `ADMIN_SECRET` ya están cargadas; el código del panel se lee en *Project configuration → Environment variables*.
 
 **Costos (plan Free por créditos).** Si se agotan los créditos, se pausan **todos** los sitios de la cuenta, Cuadra incluida. Por eso:
 - El contenido se cachea un minuto en la CDN, así que abrir la app casi nunca invoca la función.
